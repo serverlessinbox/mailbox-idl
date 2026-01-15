@@ -1,0 +1,18 @@
+# Buf configuration for protobuf management
+version: v2
+modules:
+  - path: proto
+    name: buf.build/serverlessinbox/mailbox-idl-admin-api
+lint:
+  use:
+    - STANDARD
+  except:
+    - PACKAGE_VERSION_SUFFIX
+    - PACKAGE_DIRECTORY_MATCH
+    - DIRECTORY_SAME_PACKAGE
+    - PACKAGE_SAME_DIRECTORY
+breaking:
+  use:
+    - FILE
+deps:
+  - buf.build/envoyproxy/protoc-gen-validate

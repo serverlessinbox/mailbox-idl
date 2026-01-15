@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package accounts.v1;
+
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/accounts;accountsv1";
+
+// AccountsService provides operations for managing accounts.
+service AccountsService {
+  // ListAccounts retrieves all accounts with pagination.
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+
+  // GetAccount retrieves a specific account by ID.
+  rpc GetAccount(GetAccountRequest) returns (GetAccountResponse);
+
+  // CreateAccount creates a new account for a user.
+  rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+
+  // UpdateAccount updates account properties.
+  rpc UpdateAccount(UpdateAccountRequest) returns (UpdateAccountResponse);
+
+  // DeleteAccount deletes an account and all associated data (aliases, mailboxes, emails).
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+}
+
+message Account {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  string type = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 50
+  }];
+  string name = 3 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  string email = 4 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];
+  bool shared = 5;
+}
+
+message ListAccountsRequest {
+  optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 1000}];
+  optional string page_token = 2 [(validate.rules).string.max_len = 512];
+}
+
+message ListAccountsResponse {
+  repeated Account accounts = 1;
+  string next_page_token = 2;
+}
+
+message GetAccountRequest {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message GetAccountResponse {
+  Account account = 1;
+}
+
+message CreateAccountRequest {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+  string name = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+
+  // The primary alias for this account will be constructed as:
+  //   <local_part>@<domain.domain>
+  // where domain_id refers to a configured domain in DynamoDB.
+  string local_part = 3 [(validate.rules).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$"
+  }];
+  string domain_id = 4 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message CreateAccountResponse {
+  Account account = 1;
+}
+
+message UpdateAccountRequest {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  optional string name = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+}
+
+message UpdateAccountResponse {
+  Account account = 1;
+}
+
+message DeleteAccountRequest {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message DeleteAccountResponse {}

@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package audit.v1;
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/audit;auditv1";
+
+// ActorType enumerates the types of actors that can perform actions
+enum ActorType {
+  ACTOR_TYPE_UNSPECIFIED = 0;
+  ACTOR_TYPE_USER = 1;       // Human user authenticated via OAuth
+  ACTOR_TYPE_SERVICE = 2;    // Service account or background process
+  ACTOR_TYPE_SYSTEM = 3;     // System-generated action (e.g., bootstrap)
+}
+
+// AuditService provides access to audit logs for admin operations
+service AuditService {
+  // ListAuditLogs retrieves audit logs with optional filtering
+  // Filters use AND logic: all provided filters must match
+  // No filters = timeline (all logs, most efficient)
+  // Operation filter only = uses GSI2 index (efficient)
+  // Actor filters = both actor_type and actor_id required (uses GSI3, efficient)
+  // Both operation and actor = uses GSI2 + client-side actor filtering (less efficient)
+  rpc ListAuditLogs(ListAuditLogsRequest) returns (ListAuditLogsResponse);
+
+  // ListActors returns all actors of a specific type with pagination
+  rpc ListActors(ListActorsRequest) returns (ListActorsResponse);
+
+  // ListOperations returns all available operations that have audit logs
+  rpc ListOperations(ListOperationsRequest) returns (ListOperationsResponse);
+}
+
+// Actor represents who performed an action
+message Actor {
+  string user_id = 1 [(validate.rules).string = {
+    pattern: "^(user_[a-zA-Z0-9_-]{21})?$"
+  }];        // User ID from JWT (empty for system actors)
+  string actor_id = 2 [(validate.rules).string.max_len = 255];       // System actor ID (e.g., "bootstrap-lambda-v1")
+  string username = 3 [(validate.rules).string.max_len = 100];       // User's username or name
+  string email = 4 [(validate.rules).string = {
+    max_len: 255
+  }];          // User email or system identifier
+  ActorType actor_type = 5;  // Type of actor
+  string ip_address = 6 [(validate.rules).string.max_len = 45];     // IP address of requester (empty for system)
+  string user_agent = 7 [(validate.rules).string.max_len = 512];     // User agent string
+  string service_name = 8 [(validate.rules).string.max_len = 255];   // If actorType=ACTOR_TYPE_SERVICE
+}
+
+// Change represents a field-level change
+message Change {
+  string field = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];     // Field name that changed
+  string old_value = 2 [(validate.rules).string.max_len = 1000]; // Previous value (empty for create)
+  string new_value = 3 [(validate.rules).string.max_len = 1000]; // New value (empty for delete)
+}
+
+// AuditLog represents a complete audit trail entry
+message AuditLog {
+  string audit_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^audit_[a-zA-Z0-9_-]{21}$"
+  }];                         // Unique audit entry ID
+  google.protobuf.Timestamp timestamp = 2;     // When action occurred
+  string entity_id = 3 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];                        // ID of entity affected
+  string entity_name = 4 [(validate.rules).string.max_len = 255];                      // Human-readable name of entity (e.g., domain name, email address)
+  string action = 5 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];                           // Service/method (e.g., "domains/AddDomain", "emailIdentities/RemoveEmailIdentity")
+  string status = 6 [(validate.rules).string = {
+    min_len: 1
+    max_len: 20
+  }];                           // "success", "failure"
+  string error_msg = 7 [(validate.rules).string.max_len = 1000];                        // If status=failure
+  Actor actor = 8;                             // Who performed the action
+  repeated Change changes = 9;                 // Field-level changes
+  map<string, string> metadata = 10;           // Custom metadata
+}
+
+// ActorFilter represents a filter for audit logs by actor
+message ActorFilter {
+  ActorType actor_type = 1 [(validate.rules).enum.defined_only = true];        // Type of actor (user, service, system)
+  optional string actor_id = 2 [(validate.rules).string.max_len = 255];    // Actor ID (optional - if omitted, matches all actors of this type)
+}
+
+// ListAuditLogsRequest requests audit logs with optional filtering
+message ListAuditLogsRequest {
+  // All filters are optional and use AND logic if multiple are provided
+  // No filters = timeline (all logs, most efficient)
+  // Operation filter only = uses GSI2 index (efficient, prefix match on service/method)
+  // Actor filter = both actor_type and actor_id enforced by ActorFilter message (uses GSI3, efficient)
+  // Both operation and actor = uses GSI2 + client-side actor filtering (less efficient)
+  
+  optional string operation = 1 [(validate.rules).string.max_len = 255];        // Prefix match on operation (e.g., "domains" matches "domains/AddDomain")
+  optional ActorFilter actor = 2;       // Actor filter (includes both actor_type and actor_id)
+  optional int32 page_size = 3 [(validate.rules).int32 = {gte: 1, lte: 100}];             // Max number of logs to return (default 50, max 100)
+  optional string page_token = 4 [(validate.rules).string.max_len = 512];       // Token from previous response for pagination
+}
+
+// ListAuditLogsResponse returns audit logs
+message ListAuditLogsResponse {
+  repeated AuditLog logs = 1;
+  string next_page_token = 2;  // Token for fetching next page (empty if no more results)
+}
+message ListActorsRequest {
+  ActorType actor_type = 1 [(validate.rules).enum.defined_only = true];        // Actor type to list
+  optional int32 page_size = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];        // Max number of actors to return (default 50, max 100)
+  optional string page_token = 3 [(validate.rules).string.max_len = 512];  // Token from previous response for pagination
+}
+
+// Actor entry in ListActorsResponse
+message ActorEntry {
+  ActorType actor_type = 1;          // Type of actor (user, service, system)
+  string actor_id = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];               // User ID, service name, etc.
+  optional string username = 3 [(validate.rules).string.max_len = 100];      // Username or service identifier (empty if not available)
+}
+
+// ListActorsResponse returns actors of a specific type
+message ListActorsResponse {
+  repeated ActorEntry actors = 1;
+  string next_page_token = 2;  // Token for fetching next page (empty if no more results)
+}
+
+// ListOperationsRequest requests available operations
+message ListOperationsRequest {}
+
+// ListOperationsResponse returns available operations
+message ListOperationsResponse {
+  repeated string operations = 1;  // e.g., ["domains", "emailIdentities", "users"]
+}

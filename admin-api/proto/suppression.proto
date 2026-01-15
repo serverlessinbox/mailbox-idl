@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package suppression.v1;
+
+import "common.proto";
+import "validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "admin-api/generated/suppression;suppressionv1";
+
+// SuppressionService provides operations for managing recipient suppressions
+service SuppressionService {
+  // GetSuppression retrieves suppression details for a specific recipient
+  rpc GetSuppression(GetSuppressionRequest) returns (GetSuppressionResponse);
+  
+  // ListSuppressions lists all suppressions with pagination
+  rpc ListSuppressions(ListSuppressionsRequest) returns (ListSuppressionsResponse);
+
+  // ClearBounceSuppression clears bounce suppression (sets level to NONE) while preserving counters/history.
+  rpc ClearBounceSuppression(ClearBounceSuppressionRequest) returns (ClearBounceSuppressionResponse);
+
+  // ClearComplaintSuppression clears complaint suppression for a specific message class (sets level to NONE)
+  // while preserving counters/history.
+  rpc ClearComplaintSuppression(ClearComplaintSuppressionRequest) returns (ClearComplaintSuppressionResponse);
+}
+
+// BounceLevel represents the severity of bounce events
+enum BounceLevel {
+  BOUNCE_LEVEL_UNSPECIFIED = 0;
+  BOUNCE_LEVEL_NONE = 1;
+  BOUNCE_LEVEL_SOFT = 2;
+  BOUNCE_LEVEL_HARD = 3;
+}
+
+// ComplaintLevel represents the severity of complaint events
+enum ComplaintLevel {
+  COMPLAINT_LEVEL_UNSPECIFIED = 0;
+  COMPLAINT_LEVEL_NONE = 1;
+  COMPLAINT_LEVEL_PERMANENT = 2;
+}
+
+// BounceInfo tracks bounce statistics for a recipient
+message BounceInfo {
+  BounceLevel level = 1;
+  int32 count = 2;
+  optional google.protobuf.Timestamp first_occurrence = 3;
+  optional google.protobuf.Timestamp last_occurrence = 4;
+  
+  // Enhanced tracking for intelligent retry logic
+  int32 soft_bounce_count = 5;        // Track soft bounces separately
+  optional google.protobuf.Timestamp soft_bounce_window_start = 6;
+  string last_bounce_type = 7;         // "Permanent" or "Transient" or "Undetermined"
+  string last_bounce_sub_type = 8;     // Detailed reason (e.g., "General", "NoEmail", "Suppressed")
+  string last_diagnostic_code = 9;     // SMTP status code
+  optional google.protobuf.Timestamp reenable_after = 10;
+}
+
+// ComplaintInfo tracks complaint statistics for a specific message class
+message ComplaintInfo {
+  ComplaintLevel level = 1;
+  int32 count = 2;
+  optional google.protobuf.Timestamp first_occurrence = 3;
+  optional google.protobuf.Timestamp last_occurrence = 4;
+  
+  // Enhanced tracking for reputation monitoring
+  string last_complaint_type = 5; // FeedbackType from SES
+  string last_identity_id = 6;    // Which sender identity triggered complaint
+  optional google.protobuf.Timestamp reenable_after = 7;
+}
+
+// Complaints tracks complaint statistics per message class
+message Complaints {
+  ComplaintInfo transactional = 1;
+  ComplaintInfo mailing_list = 2;
+  ComplaintInfo bulk = 3;
+}
+
+// Suppression represents a recipient suppression record
+message Suppression {
+  string recipient = 1 [(validate.rules).string.email = true];
+  BounceInfo bounce = 2;
+  Complaints complaints = 3;
+}
+
+// GetSuppressionRequest requests suppression details for a recipient
+message GetSuppressionRequest {
+  string recipient = 1 [(validate.rules).string.email = true];
+}
+
+// GetSuppressionResponse returns suppression details
+message GetSuppressionResponse {
+  Suppression suppression = 1;
+}
+
+// ListSuppressionsRequest requests a paginated list of suppressions
+message ListSuppressionsRequest {
+  optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 100}];
+  optional string page_token = 2 [(validate.rules).string.max_len = 512];
+}
+
+// ListSuppressionsResponse returns a list of suppressions
+message ListSuppressionsResponse {
+  repeated Suppression suppressions = 1;
+  string next_page_token = 2;
+}
+
+message ClearBounceSuppressionRequest {
+  string recipient = 1 [(validate.rules).string.email = true];
+}
+
+message ClearBounceSuppressionResponse {
+  Suppression suppression = 1;
+}
+
+message ClearComplaintSuppressionRequest {
+  string recipient = 1 [(validate.rules).string.email = true];
+  common.v1.MessageClass message_class = 2 [(validate.rules).enum.defined_only = true];
+}
+
+message ClearComplaintSuppressionResponse {
+  Suppression suppression = 1;
+}

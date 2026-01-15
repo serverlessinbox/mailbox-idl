@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package aliases.v1;
+
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/aliases;aliasesv1";
+
+// AliasesService provides operations for managing aliases.
+service AliasesService {
+  // ListAccountAliases lists all aliases (receiving addresses) for an account.
+  rpc ListAccountAliases(ListAccountAliasesRequest) returns (ListAccountAliasesResponse);
+
+  // CreateAlias creates a new alias for an account (validates domain is configured).
+  rpc CreateAlias(CreateAliasRequest) returns (CreateAliasResponse);
+
+  // UpdateAlias updates alias properties (IsActive, IsVisible).
+  rpc UpdateAlias(UpdateAliasRequest) returns (UpdateAliasResponse);
+
+  // DeleteAlias deletes an alias (can delete primary aliases).
+  rpc DeleteAlias(DeleteAliasRequest) returns (DeleteAliasResponse);
+}
+
+message Alias {
+  string alias_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^alias_[a-zA-Z0-9_-]{21}$"
+  }];
+  string account_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  string email = 3 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];
+  string domain_id = 13 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];
+  bool is_primary = 4;
+  bool is_active = 5;
+  bool is_visible = 6;
+
+  bool can_send_from = 7;
+  optional string name = 8 [(validate.rules).string.max_len = 255];
+  optional string reply_to = 9 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];
+  optional string bcc = 10 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];
+}
+
+message ListAccountAliasesRequest {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message ListAccountAliasesResponse {
+  repeated Alias aliases = 1;
+}
+
+message CreateAliasRequest {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  string local_part = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$"
+  }];
+  string domain_id = 3 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];
+  optional bool is_active = 4;
+  optional bool is_visible = 5;
+
+  optional bool can_send_from = 6;
+  optional string name = 7 [(validate.rules).string.max_len = 255];
+  optional string reply_to = 8 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];
+  optional string bcc = 9 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];
+}
+
+message CreateAliasResponse {
+  Alias alias = 1;
+}
+
+message UpdateAliasRequest {
+  string alias_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^alias_[a-zA-Z0-9_-]{21}$"
+  }];
+  optional bool is_active = 2;
+  optional bool is_visible = 3;
+
+  optional bool can_send_from = 4;
+  optional string name = 5 [(validate.rules).string.max_len = 255];
+  optional string reply_to = 6 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];
+  optional string bcc = 7 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];
+}
+
+message UpdateAliasResponse {
+  Alias alias = 1;
+}
+
+message DeleteAliasRequest {
+  string alias_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^alias_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message DeleteAliasResponse {}

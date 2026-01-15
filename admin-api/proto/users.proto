@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package users.v1;
+
+import "accounts.proto";
+import "aliases.proto";
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/users;usersv1";
+
+// UsersService provides operations for managing users.
+service UsersService {
+  // ListUsers retrieves all users with pagination.
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+
+  // GetUser retrieves a specific user by ID.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // UpdateUser updates user properties (IsActive, IsAdmin, DisplayName).
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+
+  // DeleteUser soft-deletes a user (sets IsDeleted=true).
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+
+  // ListUserAccounts lists all accounts owned by a user.
+  rpc ListUserAccounts(ListUserAccountsRequest) returns (ListUserAccountsResponse);
+
+  // GetUserOverview returns a UI-friendly, flattened view of a user and their primary mailbox context.
+  rpc GetUserOverview(GetUserOverviewRequest) returns (GetUserOverviewResponse);
+}
+
+message User {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+  string name = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+  string display_name = 3 [(validate.rules).string.max_len = 100];
+  optional string primary_email = 4 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];
+  optional string primary_account_id = 5 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  bool is_active = 6;
+  bool is_admin = 7;
+  bool is_deleted = 8;
+
+  // Persisted IDP identity information (best-effort, may be stale).
+  repeated IdpIdentity idp_identities = 9;
+}
+
+message IdpIdentity {
+  // IDP provider identifier (e.g. "cognito", "auth0", "google", "oidc").
+  string provider = 1 [(validate.rules).string = {min_len: 1, max_len: 50}];
+
+  // OIDC subject ("sub") claim value.
+  string sub = 2 [(validate.rules).string = {min_len: 1, max_len: 255}];
+
+  // Human-friendly username derived from claims.
+  string username = 3 [(validate.rules).string = {min_len: 1, max_len: 255}];
+
+  // Optional email claim value.
+  optional string email = 4 [(validate.rules).string = {email: true, max_len: 255}];
+
+  // Groups/roles claim values.
+  repeated string groups = 5 [(validate.rules).repeated = {min_items: 0, max_items: 100}];
+}
+
+message ListUsersRequest {
+  optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 1000}];
+  optional string page_token = 2 [(validate.rules).string.max_len = 512];
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  string next_page_token = 2;
+}
+
+message GetUserRequest {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message UpdateUserRequest {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+  optional string display_name = 2 [(validate.rules).string.max_len = 100];
+  optional bool is_active = 4;
+  optional bool is_admin = 5;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+}
+
+message DeleteUserRequest {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message DeleteUserResponse {}
+
+message ListUserAccountsRequest {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message ListUserAccountsResponse {
+  repeated accounts.v1.Account accounts = 1;
+}
+
+message GetUserOverviewRequest {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message GetUserOverviewResponse {
+  User user = 1;
+
+  // Present when the user has a primary_account_id.
+  accounts.v1.Account primary_account = 2;
+
+  // Aliases for the primary_account (admin view may include invisible/system aliases).
+  repeated aliases.v1.Alias primary_account_aliases = 3;
+
+  // Accounts owned by this user (current model); future membership/shared access can extend this.
+  repeated accounts.v1.Account accounts = 4;
+}

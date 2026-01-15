@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package mail_feedback.v1;
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/mail_feedback;mail_feedbackv1";
+
+// FeedbackType represents the type of mail feedback
+enum FeedbackType {
+  FEEDBACK_TYPE_UNSPECIFIED = 0;
+  FEEDBACK_TYPE_BOUNCE = 1;
+  FEEDBACK_TYPE_COMPLAINT = 2;
+}
+
+// MailFeedbackService provides access to bounce and complaint feedback
+service MailFeedbackService {
+  // ListRecentFeedback retrieves all recent feedback across all identities and recipients
+  rpc ListRecentFeedback(ListRecentFeedbackRequest) returns (ListRecentFeedbackResponse);
+
+  // ListFeedbackByIdentity retrieves all feedback for a specific identity
+  rpc ListFeedbackByIdentity(ListFeedbackByIdentityRequest) returns (ListFeedbackByIdentityResponse);
+
+  // ListFeedbackByRecipient retrieves all feedback for a specific recipient email
+  rpc ListFeedbackByRecipient(ListFeedbackByRecipientRequest) returns (ListFeedbackByRecipientResponse);
+}
+
+// BounceMetadata contains SES bounce-specific metadata
+message BounceMetadata {
+  string bounce_type = 1 [(validate.rules).string.max_len = 50];       // "Permanent", "Transient", "Undetermined"
+  string bounce_sub_type = 2 [(validate.rules).string.max_len = 100];   // Specific bounce reason
+  string diagnostic_code = 3 [(validate.rules).string.max_len = 500];   // SMTP diagnostic code
+  string status = 4 [(validate.rules).string.max_len = 50];            // SMTP status code
+}
+
+// ComplaintMetadata contains SES complaint-specific metadata
+message ComplaintMetadata {
+  string complaint_feedback_type = 1 [(validate.rules).string.max_len = 50];  // abuse, fraud, etc.
+  string user_agent = 2 [(validate.rules).string.max_len = 512];               // Reporting user agent
+}
+
+// MailFeedback represents bounce or complaint feedback from SES
+message MailFeedback {
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^feedback_[a-zA-Z0-9_-]{21}$"
+  }];                                 // Unique feedback ID
+  FeedbackType type = 2;                         // bounce or complaint
+  common.v1.MessageClass message_class = 3;      // transactional, mailing_list, bulk
+  string recipient = 4 [(validate.rules).string = {
+    email: true
+    max_len: 255
+  }];                          // Email address that bounced/complained
+  string identity_id = 5 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^identity_[a-zA-Z0-9_-]{21}$"
+  }];                        // Identity that sent the email
+  google.protobuf.Timestamp timestamp = 6;       // When feedback was received
+  string account_id = 7 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];                         // Account ID
+  string user_id = 8 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];                            // User ID
+  string submission_id = 9 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^submission_[a-zA-Z0-9_-]{21}$"
+  }];                      // Related EmailSubmission ID
+  string ses_message_id = 10 [(validate.rules).string.max_len = 255];                    // SES MessageID
+
+  // Enrichment / tag context (optional)
+  optional string domain = 13 [(validate.rules).string.max_len = 255];                   // Domain tag from SES outbound send
+  optional string identity_email = 14 [(validate.rules).string.max_len = 255];          // Identity email (for display)
+  optional string identity_name = 15 [(validate.rules).string.max_len = 255];           // Identity name (for display)
+  optional string account_name = 16 [(validate.rules).string.max_len = 255];            // Account name (for display)
+  optional string user_email = 17 [(validate.rules).string.max_len = 255];              // User primary email (for display)
+  optional string user_display_name = 18 [(validate.rules).string.max_len = 255];       // User display name (for display)
+
+  // Type-specific metadata (only one will be populated)
+  BounceMetadata bounce_metadata = 11;
+  ComplaintMetadata complaint_metadata = 12;
+}
+
+// ListRecentFeedbackRequest requests all recent feedback
+message ListRecentFeedbackRequest {
+  optional FeedbackType type = 1 [(validate.rules).enum.defined_only = true];      // Optional filter by feedback type (bounce/complaint)
+  optional int32 page_size = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];            // Max number of items to return (default 50, max 100)
+  optional string page_token = 3 [(validate.rules).string.max_len = 512];      // Token from previous response for pagination
+}
+
+// ListRecentFeedbackResponse returns recent feedback
+message ListRecentFeedbackResponse {
+  repeated MailFeedback feedback = 1;
+  string next_page_token = 2;  // Token for fetching next page (empty if no more results)
+}
+
+// ListFeedbackByIdentityRequest requests feedback for a specific identity
+message ListFeedbackByIdentityRequest {
+  string identity_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^identity_[a-zA-Z0-9_-]{21}$"
+  }];              // Identity ID to query
+  optional int32 page_size = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];            // Max number of items to return (default 50, max 100)
+  optional string page_token = 3 [(validate.rules).string.max_len = 512];      // Token from previous response for pagination
+}
+
+// ListFeedbackByIdentityResponse returns feedback for an identity
+message ListFeedbackByIdentityResponse {
+  repeated MailFeedback feedback = 1;
+  string next_page_token = 2;  // Token for fetching next page (empty if no more results)
+}
+
+// ListFeedbackByRecipientRequest requests feedback for a specific recipient
+message ListFeedbackByRecipientRequest {
+  string recipient = 1 [(validate.rules).string.email = true];                // Recipient email address to query
+  optional int32 page_size = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];            // Max number of items to return (default 50, max 100)
+  optional string page_token = 3 [(validate.rules).string.max_len = 512];      // Token from previous response for pagination
+}
+
+// ListFeedbackByRecipientResponse returns feedback for a recipient
+message ListFeedbackByRecipientResponse {
+  repeated MailFeedback feedback = 1;
+  string next_page_token = 2;  // Token for fetching next page (empty if no more results)
+}

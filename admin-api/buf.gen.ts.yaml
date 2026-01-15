@@ -1,0 +1,14 @@
+# buf.gen.ts.yaml - TypeScript SDK generation (from protobuf)
+version: v2
+plugins:
+  - remote: buf.build/bufbuild/es
+    out: .
+    include_imports: true
+    opt:
+      - target=ts
+
+  - local: ["tools/protoc-gen-ts-client/protoc-gen-ts-client"]
+    out: .
+    strategy: all
+    opt:
+      - paths=source_relative

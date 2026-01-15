@@ -1,0 +1,18 @@
+# buf.gen.go.yaml - Go SDK generation (from protobuf)
+version: v2
+plugins:
+  - local: protoc-gen-go
+    out: .
+    opt:
+      - module=admin-api
+
+  - local: protoc-gen-validate
+    out: .
+    opt:
+      - lang=go
+      - module=admin-api
+
+  - local: ["tools/protoc-gen-go-interface/protoc-gen-go-interface"]
+    out: .
+    opt:
+      - module=admin-api

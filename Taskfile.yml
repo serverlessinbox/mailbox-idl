@@ -1,0 +1,24 @@
+version: '3'
+
+tasks:
+  admin-api:generate:go:
+    desc: Generate Go server SDK for Admin API (output outside this repo)
+    cmds:
+      - task -d admin-api generate:go OUTPUT_DIR={{.OUTPUT_DIR}}
+
+  admin-api:generate:ts:
+    desc: Generate TypeScript SDK for Admin API
+    vars:
+      OUTPUT_DIR: '{{default "../admin-ui/src/api/generated" .OUTPUT_DIR}}'
+    cmds:
+      - task -d admin-api generate:ts OUTPUT_DIR={{.OUTPUT_DIR}}
+
+  admin-api:lint:
+    desc: Lint Admin API protobuf definitions
+    cmds:
+      - task -d admin-api lint
+
+  admin-api:breaking:
+    desc: Run breaking-change checks for Admin API protos
+    cmds:
+      - task -d admin-api breaking

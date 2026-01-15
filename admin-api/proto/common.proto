@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "admin-api/generated/common;commonv1";
+
+// ============================================
+// Shared Enums
+// ============================================
+
+// VerificationStatus indicates the verification state of a domain or email identity.
+// Used across multiple services to represent email verification progress.
+//
+// Client Usage:
+//   - PENDING: Initial state, verification process is in progress
+//   - SUCCESS: Verification completed successfully, identity is ready for email sending
+//   - FAILED: Verification failed, may need to retry or reconfigure
+//   - UNSPECIFIED: Unknown or error state, should not occur in normal operation
+enum VerificationStatus {
+  VERIFICATION_STATUS_UNSPECIFIED = 0;
+  VERIFICATION_STATUS_PENDING = 1;
+  VERIFICATION_STATUS_SUCCESS = 2;
+  VERIFICATION_STATUS_FAILED = 3;
+}
+
+// MessageClass represents the category/purpose of an email message
+// Used for tracking bounces and complaints per message type
+enum MessageClass {
+  MESSAGE_CLASS_UNSPECIFIED = 0;
+  MESSAGE_CLASS_TRANSACTIONAL = 1;  // Transactional emails (receipts, confirmations, etc.)
+  MESSAGE_CLASS_MAILING_LIST = 2;   // Mailing list emails
+  MESSAGE_CLASS_BULK = 3;           // Bulk/marketing emails
+}

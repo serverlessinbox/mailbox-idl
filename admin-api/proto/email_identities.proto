@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package email_identities.v1;
+
+import "validate/validate.proto";
+import "common.proto";
+
+option go_package = "admin-api/generated/email_identities;email_identitiesv1";
+
+// ============================================
+// Messages
+// ============================================
+
+// SESIdentity represents an email identity registered with AWS SES.
+// Before sending emails from an identity, it must be verified.
+message SESIdentity {
+  string email = 1;  // The email address
+  common.v1.VerificationStatus verification_status = 2;  // Current verification status
+}
+
+// ============================================
+// Email Identity Operations
+// ============================================
+
+message AddEmailIdentityRequest {
+  string email = 1 [(validate.rules).string = {
+    min_len: 1,
+    email: true
+  }];
+}
+
+message AddEmailIdentityResponse {
+  SESIdentity identity = 1;
+}
+
+message ListEmailIdentitiesRequest {
+  // page_size: Maximum number of identities to return per page (default: 50, max: 100)
+  optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 100}];
+  // page_token: Token from previous response to retrieve the next page
+  optional string page_token = 2 [(validate.rules).string.max_len = 512];
+}
+
+message ListEmailIdentitiesResponse {
+  repeated SESIdentity identities = 1;  // Identities for this page
+  // next_page_token: Token to pass to next ListEmailIdentitiesRequest for additional results
+  // Empty string means no more results
+  string next_page_token = 2;
+}
+
+message RemoveEmailIdentityRequest {
+  string email = 1 [(validate.rules).string = {
+    min_len: 1,
+    email: true
+  }];
+}
+
+message RemoveEmailIdentityResponse {}
+
+message ResendVerificationEmailRequest {
+  string email = 1 [(validate.rules).string = {
+    min_len: 1,
+    email: true
+  }];
+}
+
+message ResendVerificationEmailResponse {}
+
+// ============================================
+// Email Identities Service
+// ============================================
+
+// EmailIdentitiesService manages email identities for AWS SES.
+// Use this service to register, verify, and manage email addresses
+// that can be used as email senders.
+//
+// Typical Workflow:
+//   1. Call AddEmailIdentity() to register an email
+//   2. Recipient receives verification email
+//   3. Recipient clicks verification link
+//   4. Call ListEmailIdentities() to check verification_status
+//   5. Once VERIFICATION_STATUS_SUCCESS, emails can be sent from this address
+service EmailIdentitiesService {
+  // AddEmailIdentity registers a new email address with SES.
+  rpc AddEmailIdentity(AddEmailIdentityRequest) returns (AddEmailIdentityResponse);
+  
+  // ListEmailIdentities retrieves all registered email identities.
+  rpc ListEmailIdentities(ListEmailIdentitiesRequest) returns (ListEmailIdentitiesResponse);
+  
+  // RemoveEmailIdentity deletes an email identity (cannot be undone).
+  rpc RemoveEmailIdentity(RemoveEmailIdentityRequest) returns (RemoveEmailIdentityResponse);
+  
+  // ResendVerificationEmail sends another verification email for an identity.
+  rpc ResendVerificationEmail(ResendVerificationEmailRequest) returns (ResendVerificationEmailResponse);
+}

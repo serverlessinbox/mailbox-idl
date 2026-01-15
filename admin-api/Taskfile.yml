@@ -1,0 +1,44 @@
+version: '3'
+
+tasks:
+  generate:go:
+    desc: Generate Go server SDK from protobuf (output outside this repo)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+    cmds:
+      - |
+        set -euo pipefail
+        if [ -z "{{.OUTPUT_DIR}}" ]; then
+          echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
+          exit 2
+        fi
+        buf generate --template buf.gen.go.yaml -o "{{.OUTPUT_DIR}}"
+    sources:
+      - proto/**/*.proto
+      - buf.yaml
+      - buf.lock
+      - buf.gen.go.yaml
+      - tools/protoc-gen-go-interface/**
+
+  generate:ts:
+    desc: Generate TypeScript SDK from protobuf
+    vars:
+      OUTPUT_DIR: '{{default "../../admin-ui/src/api/generated" .OUTPUT_DIR}}'
+    cmds:
+      - buf generate --template buf.gen.ts.yaml -o "{{.OUTPUT_DIR}}"
+    sources:
+      - proto/**/*.proto
+      - buf.yaml
+      - buf.lock
+      - buf.gen.ts.yaml
+      - tools/protoc-gen-ts-client/**
+
+  lint:
+    desc: Lint protobuf definitions
+    cmds:
+      - buf lint
+
+  breaking:
+    desc: Run breaking change checks (against local baseline)
+    cmds:
+      - buf breaking --against '.git#branch=main'

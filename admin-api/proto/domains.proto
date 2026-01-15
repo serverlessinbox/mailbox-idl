@@ -1,0 +1,405 @@
+syntax = "proto3";
+
+package domains.v1;
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+import "common.proto";
+
+option go_package = "admin-api/generated/domains;domainsv1";
+
+// ============================================
+// Enums
+// ============================================
+
+// DNSRecordType specifies the type of DNS record required for domain verification.
+enum DNSRecordType {
+  DNS_RECORD_TYPE_UNSPECIFIED = 0;  // Unknown record type
+  DNS_RECORD_TYPE_CNAME = 1;         // CNAME record for DKIM verification
+  DNS_RECORD_TYPE_MX = 2;            // Mail exchange record for receiving emails
+  DNS_RECORD_TYPE_TXT = 3;           // Text record for DMARC, SPF, or DKIM
+  DNS_RECORD_TYPE_A = 4;             // Address record for MX hostname resolution
+}
+
+// DMARCPolicyType specifies the DMARC policy enforcement level.
+// DMARC (Domain-based Message Authentication, Reporting and Conformance) helps
+// prevent email spoofing by defining how to handle authentication failures.
+enum DMARCPolicyType {
+  DMARC_POLICY_TYPE_UNSPECIFIED = 0;  // Policy not set
+  DMARC_POLICY_TYPE_NONE = 1;         // Report violations but don't enforce
+  DMARC_POLICY_TYPE_QUARANTINE = 2;   // Quarantine non-compliant messages
+  DMARC_POLICY_TYPE_REJECT = 3;       // Reject non-compliant messages (most strict)
+}
+
+// DNSProviderType indicates which DNS provider is being used for DNS management.
+enum DNSProviderType {
+  DNS_PROVIDER_TYPE_UNSPECIFIED = 0;  // DNS provider not determined
+  DNS_PROVIDER_TYPE_ROUTE53 = 1;      // AWS Route53 is available for automatic DNS updates
+}
+
+// SPFMode controls how SPF should be handled.
+// SPF is recommended for good deliverability, but not strictly required.
+enum SPFMode {
+  SPF_MODE_UNSPECIFIED = 0;
+  SPF_MODE_OFF = 1;              // Do not check or apply SPF
+  SPF_MODE_CHECK_ONLY = 2;       // Check SPF and report status, but do not apply
+  SPF_MODE_CREATE_IF_MISSING = 3; // Best-effort: prefer not overwriting existing SPF (provider limitations may apply)
+  SPF_MODE_FORCE_VALUE = 4;      // Apply configured value (or default) via automation
+}
+
+// DNSApplyStatus tracks whether DNS automation was attempted/applied.
+// This is independent from DNS verification/propagation.
+enum DNSApplyStatus {
+  DNS_APPLY_STATUS_UNSPECIFIED = 0;
+  DNS_APPLY_STATUS_NOT_APPLIED = 1;
+  DNS_APPLY_STATUS_APPLIED = 2;
+  DNS_APPLY_STATUS_APPLY_FAILED = 3;
+}
+
+// DNSRecordRequirement indicates whether a record is required or recommended.
+enum DNSRecordRequirement {
+  DNS_RECORD_REQUIREMENT_UNSPECIFIED = 0;
+  DNS_RECORD_REQUIREMENT_REQUIRED = 1;
+  DNS_RECORD_REQUIREMENT_RECOMMENDED = 2;
+}
+
+// ============================================
+// Messages (Data Types)
+// ============================================
+
+// Domain represents a domain configured for email sending via AWS SES.
+// This includes domain verification status, DKIM configuration, and DMARC policy.
+//
+// Workflow:
+//   1. Create domain with AddDomain()
+//   2. Check DNS validation requirements with GetDomain(includeValidation=true)
+//   3. Apply DNS records using ApplyDomainRecords() or manual DNS configuration
+//   4. Monitor verification_status and dkim_status until both are SUCCESS
+message Domain {
+  string id = 1;  // Unique domain identifier
+  string name = 2;  // The actual domain name (e.g., "example.com")
+
+  // SES-derived state (actual)
+  common.v1.VerificationStatus verification_status = 3;  // Domain verification for sending
+  common.v1.VerificationStatus dkim_status = 4;  // DKIM verification status
+  bool dkim_enabled = 5;  // DKIM signing enabled in SES (always-on by default)
+  string mail_from_domain = 6;  // Mail From domain (used in MAIL FROM envelope)
+
+  // Dynamo-derived configuration (desired)
+  bool send_enabled = 7;
+  bool receive_enabled = 8;
+  bool dmarc_enabled = 9;
+  SPFMode spf_mode = 10;
+  optional string spf_value = 11;
+
+  DMARCPolicyType dmarc_policy = 12;  // DMARC policy enforcement level
+  optional string dmarc_report_email = 13;  // Email address for DMARC failure reports
+
+  // DNS automation apply state (separate from verification)
+  optional DNSApplyState dns_apply_state = 14;
+
+  // DNS validation snapshot (required vs recommended)
+  optional DNSValidationResult dns_validation = 15;
+
+  google.protobuf.Timestamp created_at = 16;  // When the domain was added
+  google.protobuf.Timestamp updated_at = 17;  // When the domain was last modified
+}
+
+message DNSApplyState {
+  DNSApplyStatus status = 1;
+  optional DNSProviderType provider_type = 2;
+  optional google.protobuf.Timestamp last_attempt_at = 3;
+  optional google.protobuf.Timestamp last_success_at = 4;
+  optional string last_error = 5;
+  repeated string applied_record_names = 6;
+}
+
+// DNSRecord represents a DNS record required for domain verification.
+// Clients use this to understand what DNS changes are needed and their current status.
+message DNSRecord {
+  string name = 1;  // DNS record name (FQDN)
+  DNSRecordType record_type = 2;  // Type of DNS record (CNAME, MX, TXT, or A)
+  string value = 3;  // The record value/target
+  int32 ttl = 4;  // Time To Live in seconds (recommended: 3600)
+  bool exists = 5;  // Whether the record currently exists in DNS
+  bool valid = 6;  // Whether the record is correctly configured
+  DNSRecordRequirement requirement = 7;  // Whether record is required or recommended
+}
+
+// DNSValidationResult contains the DNS records required for domain verification.
+// Check these records against your DNS provider to complete domain setup.
+//
+// Client Guide:
+//   - Review each DNSRecord for name, type, and value
+//   - Create or update records in your DNS provider
+//   - Check the exists and valid fields to verify configuration
+//   - Call GetDomain again after updates to refresh validation status
+message DNSValidationResult {
+  repeated DNSRecord dkim_records = 1;  // DKIM token records (typically 3)
+  optional DNSRecord mx_record = 2;  // Mail exchange record (only required for receiving)
+  optional DNSRecord dmarc_record = 3;  // DMARC policy record (recommended)
+  optional DNSRecord spf_record = 4;  // SPF policy record (recommended / configurable)
+  bool required_valid = 5;  // True if all required records are correctly configured
+  bool recommended_valid = 6;  // True if all recommended records are correctly configured
+}
+
+// DMARCPolicy represents a parsed DMARC policy from a domain's TXT record.
+// This is informational and shows how the domain's DMARC is currently configured.
+message DMARCPolicy {
+  string version = 1;  // DMARC protocol version (typically "DMARC1")
+  DMARCPolicyType policy = 2;  // Policy for messages that fail authentication
+  DMARCPolicyType subdomain_policy = 3;  // Policy for subdomains (sp=)
+  int32 percentage = 4;  // Percentage of messages to apply policy to (0-100)
+  string report_email = 5;  // Email address for aggregate DMARC reports
+  bool valid = 6;  // Whether the DMARC policy is valid
+  repeated string errors = 7;  // Human-readable DMARC validation errors (if any)
+}
+
+// Route53HostedZone represents an AWS Route53 hosted zone.
+// Returned when the domain's DNS is managed by Route53 and can be auto-configured.
+message Route53HostedZone {
+  string id = 1;  // Route53 hosted zone ID
+  string name = 2;  // The zone name
+  int32 record_count = 3;  // Current number of records in the zone
+}
+
+// ============================================
+// Core Domain Operations - Request/Response
+// ============================================
+//
+// Domain Setup Workflow:
+//   1. AddDomain: Create the domain in SES
+//   2. GetDomain(includeValidation=true): Retrieve DNS records needed
+//   3. ApplyDomainRecords or Manual DNS: Configure DNS records (CNAME, MX, TXT, etc.)
+//   4. GetDomain: Poll until verification_status and dkim_status are SUCCESS
+//   5. ListDomains: View all configured domains
+//   6. UpdateDomain: Modify DMARC policy as needed
+//   7. RemoveDomain: Delete when domain is no longer needed
+
+// AddDomainRequest initiates domain setup for email sending.
+// After creation, call GetDomain with includeValidation=true to get DNS records.
+message AddDomainRequest {
+  // domain: The domain to add (e.g., "mail.example.com"). Must be a valid FQDN.
+  string domain = 1 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 253,
+    pattern: "^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+  }];
+  // dmarc_policy: Optional DMARC policy to set (defaults to NONE for new domains)
+  optional DMARCPolicyType dmarc_policy = 2 [(validate.rules).enum.defined_only = true];
+  // dmarc_report_email: Optional email for DMARC failure reports
+  optional string dmarc_report_email = 3 [(validate.rules).string.email = true];
+
+  // send_enabled: Whether this domain should be configured for sending (default true)
+  optional bool send_enabled = 4;
+  // receive_enabled: Whether this domain should be configured for receiving (default false)
+  optional bool receive_enabled = 5;
+  // dmarc_enabled: Whether to recommend/apply DMARC record (default true)
+  optional bool dmarc_enabled = 6;
+  // spf_mode: SPF handling mode (default CREATE_IF_MISSING)
+  optional SPFMode spf_mode = 7 [(validate.rules).enum.defined_only = true];
+  // spf_value: Optional SPF record value (used with FORCE_VALUE)
+  optional string spf_value = 8;
+}
+
+// AddDomainResponse returns the newly created domain.
+message AddDomainResponse {
+  Domain domain = 1;  // The domain that was created with initial verification status
+}
+
+// GetDomainRequest retrieves domain details and optionally DNS validation records.
+message GetDomainRequest {
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];  // The domain ID to retrieve
+  // include_dns_validation: Set to true to receive DNS validation snapshot
+  optional bool include_dns_validation = 2;
+}
+
+// GetDomainResponse returns domain information and optionally validation records.
+message GetDomainResponse {
+  Domain domain = 1;  // Domain details, including validation_records if requested
+}
+
+// ListDomainsRequest retrieves domains with optional pagination.
+message ListDomainsRequest {
+  // page_size: Maximum number of domains to return per page (default: 50, max: 100)
+  optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 100}];
+  // page_token: Token from previous response to retrieve the next page
+  optional string page_token = 2;
+}
+
+// ListDomainsResponse contains domains for a page and optionally a token for the next page.
+message ListDomainsResponse {
+  repeated Domain domains = 1;  // Domains for this page
+  // next_page_token: Token to pass to next ListDomainsRequest for additional results
+  // Empty string means no more results
+  string next_page_token = 2;
+}
+
+// UpdateDomainRequest modifies domain settings (primarily DMARC policy).
+message UpdateDomainRequest {
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];  // The domain ID to update
+  // dmarc_policy: New DMARC policy type
+  optional DMARCPolicyType dmarc_policy = 2 [(validate.rules).enum.defined_only = true];
+  // dmarc_report_email: New email address for DMARC reports
+  optional string dmarc_report_email = 3 [(validate.rules).string.email = true];
+
+  optional bool send_enabled = 4;
+  optional bool receive_enabled = 5;
+  optional bool dmarc_enabled = 6;
+  optional SPFMode spf_mode = 7 [(validate.rules).enum.defined_only = true];
+  optional string spf_value = 8;
+}
+
+// UpdateDomainResponse returns the updated domain.
+message UpdateDomainResponse {
+  Domain domain = 1;  // The domain after updates
+}
+
+// RemoveDomainRequest deletes a domain.
+message RemoveDomainRequest {
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];  // The domain ID to remove
+}
+
+// RemoveDomainResponse indicates successful removal.
+message RemoveDomainResponse {
+  // Empty - success indicated by no error
+}
+
+// ============================================
+// Route53 Automation - Request/Response
+// ============================================
+//
+// These operations allow automatic DNS record management when using Route53.
+
+// CheckDNSProviderRequest checks if Route53 automation is available.
+message CheckDNSProviderRequest {
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];  // The domain ID to check
+}
+
+// CheckDNSProviderResponse indicates DNS provider availability and details.
+message CheckDNSProviderResponse {
+  // has_access: True if Route53 access is available for this domain
+  bool has_access = 1;
+  // provider_type: The DNS provider type (if available)
+  optional DNSProviderType provider_type = 2;
+  // route53: Route53 hosted zone details (if provider is Route53)
+  optional Route53HostedZone route53 = 3;
+}
+
+// ApplyDomainRecordsRequest automatically creates DNS records in Route53.
+message ApplyDomainRecordsRequest {
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];  // The domain ID to configure
+}
+
+// ApplyDomainRecordsResponse indicates which records were applied successfully.
+message ApplyDomainRecordsResponse {
+  // dns_apply_state: Updated automation apply state
+  optional DNSApplyState dns_apply_state = 1;
+  // dns_validation: Current DNS validation snapshot after applying records
+  optional DNSValidationResult dns_validation = 2;
+  // records_failed: List of record names that failed to create (if any)
+  repeated string records_failed = 3;
+}
+
+// ============================================
+// Test Email Operations
+// ============================================
+
+// TestEmailType specifies the type of test email to send
+enum TestEmailType {
+  TEST_EMAIL_TYPE_UNSPECIFIED = 0;
+  TEST_EMAIL_TYPE_NORMAL = 1;        // Normal test email
+  TEST_EMAIL_TYPE_BOUNCE = 2;        // Triggers a bounce (use SES simulator)
+  TEST_EMAIL_TYPE_COMPLAINT = 3;     // Triggers a complaint (use SES simulator)
+  TEST_EMAIL_TYPE_OOTO = 4;          // Out of office auto-reply (use SES simulator)
+}
+
+message SendTestEmailRequest {
+  // from_email: Verified sender email address (optional if id provided)
+  optional string from_email = 1 [(validate.rules).string.email = true];
+  
+  // id: Domain ID - use test@{domain} as sender (optional if from_email provided)
+  optional string id = 2;
+  
+  // to_email: Recipient email address (required only for NORMAL test type; ignored for simulator types)
+  optional string to_email = 3 [(validate.rules).string.email = true];
+  
+  // test_type: Type of test to perform
+  TestEmailType test_type = 4 [(validate.rules).enum.defined_only = true];
+  
+  // message_class: Category of email for tracking (optional, defaults to TRANSACTIONAL)
+  optional common.v1.MessageClass message_class = 5;
+}
+
+message SendTestEmailResponse {
+  // message_id: SES message ID for tracking
+  string message_id = 1;
+  
+  // note: Information about the test (e.g., simulator address used)
+  string note = 2;
+
+  // submission_id: EmailSubmission ID (standard async send pipeline)
+  // When sending via the normal JMAP submission flow, SES message ID is not known synchronously.
+  // Use submission_id to track status until SES message ID is populated.
+  optional string submission_id = 3;
+}
+
+// ============================================
+// Domains Service Definition
+// ============================================
+
+// DomainsService manages domain configuration for email sending via AWS SES.
+// Use this service to register, verify, and manage domains that can send emails.
+//
+// Getting Started:
+//   1. Call AddDomain() to register a domain
+//   2. Call GetDomain(includeValidation=true) to see required DNS records
+//   3. Configure DNS records in your provider (or use ApplyDomainRecords for Route53)
+//   4. Poll GetDomain() until verification_status is SUCCESS
+//   5. Domain is ready to send emails once both verification_status and dkim_status are SUCCESS
+service DomainsService {
+  // Core Domain Operations
+  
+  // AddDomain creates a new domain in AWS SES for email sending.
+  rpc AddDomain(AddDomainRequest) returns (AddDomainResponse);
+  
+  // GetDomain retrieves domain information and optionally DNS validation records.
+  rpc GetDomain(GetDomainRequest) returns (GetDomainResponse);
+  
+  // ListDomains returns all domains configured for the account.
+  rpc ListDomains(ListDomainsRequest) returns (ListDomainsResponse);
+  
+  // UpdateDomain modifies domain settings like DMARC policy.
+  rpc UpdateDomain(UpdateDomainRequest) returns (UpdateDomainResponse);
+  
+  // RemoveDomain deletes a domain and stops sending from this address.
+  rpc RemoveDomain(RemoveDomainRequest) returns (RemoveDomainResponse);
+
+  // Route53 Automation
+  
+  // CheckDNSProvider checks if Route53 DNS automation is available.
+  rpc CheckDNSProvider(CheckDNSProviderRequest) returns (CheckDNSProviderResponse);
+  
+  // ApplyDomainRecords automatically creates DNS records in Route53.
+  rpc ApplyDomainRecords(ApplyDomainRecordsRequest) returns (ApplyDomainRecordsResponse);
+  
+  // Testing
+  
+  // SendTestEmail sends a test email from a verified domain.
+  rpc SendTestEmail(SendTestEmailRequest) returns (SendTestEmailResponse);
+}
