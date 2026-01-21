@@ -221,7 +221,7 @@ func generateServiceClient(gen *protogen.Plugin, file *protogen.File, service *p
 		g.P("      throw new Error(`", methodName, " failed: ${response.status} ${error}`);")
 		g.P("    }")
 		g.P()
-		g.P("    const responseData = await response.json();")
+		g.P("    const responseData = (await response.json()) as any;")
 		g.P("    return fromJson(", outputType, "Schema, responseData);")
 		g.P("  }")
 		g.P()

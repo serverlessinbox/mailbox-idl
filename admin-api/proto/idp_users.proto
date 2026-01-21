@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package idp_users.v1;
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/idp_users;idp_usersv1";
+
+// IdpUsersService provides operations for managing IdP users (provider-specific).
+service IdpUsersService {
+  // ListIdpUsers retrieves IdP users with pagination.
+  rpc ListIdpUsers(ListIdpUsersRequest) returns (ListIdpUsersResponse);
+
+  // GetIdpUser retrieves a specific IdP user by username.
+  rpc GetIdpUser(GetIdpUserRequest) returns (GetIdpUserResponse);
+
+  // CreateIdpUser creates a new IdP user (admin-driven onboarding).
+  rpc CreateIdpUser(CreateIdpUserRequest) returns (CreateIdpUserResponse);
+
+  // SetIdpUserEnabled enables/disables an IdP user.
+  rpc SetIdpUserEnabled(SetIdpUserEnabledRequest) returns (SetIdpUserEnabledResponse);
+
+  // SetIdpUserPassword sets a user's password (admin-driven; avoids email dependency).
+  rpc SetIdpUserPassword(SetIdpUserPasswordRequest) returns (SetIdpUserPasswordResponse);
+}
+
+message IdpUser {
+  string username = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  bool enabled = 2;
+  optional string user_status = 3 [(validate.rules).string.max_len = 100];
+  optional google.protobuf.Timestamp created_at = 4;
+  optional google.protobuf.Timestamp modified_at = 5;
+
+  // Best-effort attributes snapshot (provider-specific; e.g. email, sub).
+  map<string, string> attributes = 6;
+}
+
+message ListIdpUsersRequest {
+  optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 1000}];
+  optional string page_token = 2 [(validate.rules).string.max_len = 2048];
+  optional string filter = 3 [(validate.rules).string.max_len = 1024];
+}
+
+message ListIdpUsersResponse {
+  repeated IdpUser users = 1;
+  string next_page_token = 2;
+}
+
+message GetIdpUserRequest {
+  string username = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
+}
+
+message GetIdpUserResponse {
+  IdpUser user = 1;
+}
+
+message CreateIdpUserRequest {
+  string username = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  optional string email = 2 [(validate.rules).string = {email: true, max_len: 255}];
+  string password = 3 [(validate.rules).string = {min_len: 8, max_len: 1024}];
+
+  // Optional desired enabled state. If omitted, defaults to true.
+  optional bool enabled = 4;
+
+  // Optional group memberships (best-effort).
+  repeated string groups = 5 [(validate.rules).repeated = {min_items: 0, max_items: 100}];
+}
+
+message CreateIdpUserResponse {
+  IdpUser user = 1;
+}
+
+message SetIdpUserEnabledRequest {
+  string username = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  bool enabled = 2;
+}
+
+message SetIdpUserEnabledResponse {}
+
+message SetIdpUserPasswordRequest {
+  string username = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  string password = 2 [(validate.rules).string = {min_len: 8, max_len: 1024}];
+  optional bool permanent = 3;
+}
+
+message SetIdpUserPasswordResponse {}
