@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package monitoring.v1;
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/monitoring;monitoringv1";
+
+// MonitoringService provides low-cost, on-demand observability endpoints for the Admin UI.
+//
+// Design goals:
+// - Prefer CloudWatch metrics + Logs Insights queries (no always-on alarms/dashboards).
+// - Support a lightweight "drill-down" flow from error summaries to surrounding log context.
+service MonitoringService {
+  // GetOverview returns a coarse, low-cost snapshot of key metrics.
+  rpc GetOverview(GetOverviewRequest) returns (GetOverviewResponse) {}
+
+  // ListRecentErrors returns recent error log entries across configured log groups.
+  rpc ListRecentErrors(ListRecentErrorsRequest) returns (ListRecentErrorsResponse) {}
+
+  // GetLogContext returns log lines around a specific timestamp for drill-down.
+  rpc GetLogContext(GetLogContextRequest) returns (GetLogContextResponse) {}
+}
+
+message GetOverviewRequest {
+  // Lookback window for metrics aggregation (minutes).
+  // Defaults to 60 when unset.
+  int32 lookback_minutes = 1 [(validate.rules).int32 = {gte: 1, lte: 1440}];
+
+  // Period for metric datapoints (seconds). Defaults to 60 when unset.
+  int32 period_seconds = 2 [(validate.rules).int32 = {gte: 60, lte: 3600}];
+}
+
+message GetOverviewResponse {
+  repeated ApiGatewayOverview api_gateways = 1;
+  repeated CloudFrontOverview cloudfront_distributions = 2;
+  repeated LambdaOverview lambdas = 3;
+  repeated SqsQueueOverview sqs_queues = 4;
+}
+
+message ApiGatewayOverview {
+  string name = 1;
+  string api_id = 2;
+  string stage = 3;
+
+  // Sum over lookback window.
+  int64 request_count = 10;
+  int64 error_5xx = 11;
+
+  // Percentile latency in milliseconds.
+  double latency_p95_ms = 20;
+}
+
+message CloudFrontOverview {
+  string name = 1;
+  string distribution_id = 2;
+
+  // Sum over lookback window.
+  int64 requests = 10;
+
+  // Average error rate (0-100).
+  double error_5xx_rate = 11;
+}
+
+message LambdaOverview {
+  string name = 1;
+  string function_name = 2;
+
+  // Sum over lookback window.
+  int64 invocations = 10;
+  int64 errors = 11;
+  int64 throttles = 12;
+
+  // Percentile duration in milliseconds.
+  double duration_p95_ms = 20;
+}
+
+message SqsQueueOverview {
+  string name = 1;
+  string queue_name = 2;
+
+  // Latest datapoint in lookback window.
+  int64 approx_messages_visible = 10;
+  int64 approx_age_oldest_seconds = 11;
+}
+
+message ListRecentErrorsRequest {
+  // Lookback window for error query (minutes).
+  // Defaults to 60 when unset.
+  int32 lookback_minutes = 1 [(validate.rules).int32 = {gte: 1, lte: 1440}];
+
+  // Maximum number of error entries to return.
+  // Defaults to 50 when unset.
+  int32 limit = 2 [(validate.rules).int32 = {gte: 1, lte: 200}];
+}
+
+message ListRecentErrorsResponse {
+  repeated ErrorLogEntry entries = 1;
+}
+
+message ErrorLogEntry {
+  google.protobuf.Timestamp timestamp = 1;
+
+  // Which log group this entry came from.
+  string log_group = 2;
+
+  // Structured fields when available.
+  optional string level = 3;
+  optional string msg = 4;
+  optional string correlation_id = 5;
+  optional string aws_request_id = 6;
+
+  // Raw log line (best-effort).
+  string raw = 10;
+}
+
+message GetLogContextRequest {
+  // Log group to query.
+  string log_group = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Center timestamp for context window.
+  google.protobuf.Timestamp center_timestamp = 2;
+
+  // Window size around center (seconds). Default 60 when unset.
+  int32 window_seconds = 3 [(validate.rules).int32 = {gte: 5, lte: 900}];
+
+  // Optional: filter by correlation id when present.
+  optional string correlation_id = 4;
+
+  // Optional: filter by aws request id when present.
+  optional string aws_request_id = 5;
+
+  // Maximum log lines to return. Default 200 when unset.
+  int32 limit = 6 [(validate.rules).int32 = {gte: 1, lte: 500}];
+}
+
+message GetLogContextResponse {
+  repeated LogLine lines = 1;
+}
+
+message LogLine {
+  google.protobuf.Timestamp timestamp = 1;
+  string message = 2;
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Mailbox.get.args.schema.json",
+  "title": "Mailbox/get args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "ids": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/MailboxId" }
+    },
+    "properties": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

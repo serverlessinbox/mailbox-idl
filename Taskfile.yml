@@ -1,6 +1,21 @@
 version: '3'
 
 tasks:
+  jmap:generate:ts:
+    desc: Generate TypeScript types for JMAP (output outside this repo)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+    cmds:
+      - task -d jmap generate:ts OUTPUT_DIR={{.OUTPUT_DIR}}
+
+  jmap:generate:go:
+    desc: Generate Go types for JMAP (output outside this repo)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      PACKAGE: '{{default "jmaptypes" .PACKAGE}}'
+    cmds:
+      - task -d jmap generate:go OUTPUT_DIR={{.OUTPUT_DIR}} PACKAGE={{.PACKAGE}}
+
   admin-api:generate:go:
     desc: Generate Go server SDK for Admin API (output outside this repo)
     cmds:

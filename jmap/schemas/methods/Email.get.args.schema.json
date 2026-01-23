@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.get.args.schema.json",
+  "title": "Email/get args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "ids": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
+    },
+    "properties": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "bodyProperties": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "fetchTextBodyValues": { "type": "boolean" },
+    "fetchHTMLBodyValues": { "type": "boolean" },
+    "fetchAllBodyValues": { "type": "boolean" },
+    "maxBodyValueBytes": { "type": "integer", "minimum": 0 },
+    "fetchHeaders": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "fetchAllHeaders": { "type": ["boolean", "null"] }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

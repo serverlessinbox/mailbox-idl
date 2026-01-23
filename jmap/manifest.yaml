@@ -1,0 +1,17 @@
+version: 1
+capabilities:
+  - urn:ietf:params:jmap:core
+  - urn:ietf:params:jmap:mail
+methods:
+  - name: Mailbox/get
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Mailbox.get.args.schema.json
+    responseSchema: schemas/methods/Mailbox.get.response.schema.json
+  - name: Email/get
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Email.get.args.schema.json
+    responseSchema: schemas/methods/Email.get.response.schema.json
+  - name: Email/query
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Email.query.args.schema.json
+    responseSchema: schemas/methods/Email.query.response.schema.json
