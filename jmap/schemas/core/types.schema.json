@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/core/types.schema.json",
+  "title": "ServerlessInbox JMAP Core Types",
+  "type": "object",
+  "$defs": {
+    "AccountId": { "type": "string", "minLength": 1 },
+    "EmailId": { "type": "string", "minLength": 1 },
+    "MailboxId": { "type": "string", "minLength": 1 },
+    "ThreadId": { "type": "string", "minLength": 1 },
+
+    "JmapDate": { "type": "string", "format": "date-time" },
+
+    "Keywords": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    },
+
+    "Mailbox": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/MailboxId" },
+        "accountId": { "$ref": "#/$defs/AccountId" },
+        "name": { "type": "string" },
+        "role": { "type": ["string", "null"] },
+        "parentId": { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }] },
+        "sortOrder": { "type": "integer", "minimum": 0 },
+        "deletable": { "type": "boolean" },
+        "totalEmails": { "type": "integer", "minimum": 0 },
+        "unreadEmails": { "type": "integer", "minimum": 0 },
+        "totalThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "unreadThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+
+    "MailboxBase": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/MailboxId" },
+        "accountId": { "$ref": "#/$defs/AccountId" },
+        "name": { "type": "string" },
+        "role": { "type": ["string", "null"] },
+        "parentId": { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }] },
+        "sortOrder": { "type": "integer", "minimum": 0 },
+        "deletable": { "type": "boolean" },
+        "totalEmails": { "type": "integer", "minimum": 0 },
+        "unreadEmails": { "type": "integer", "minimum": 0 },
+        "totalThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "unreadThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] }
+      },
+      "required": ["id"]
+    },
+
+    "MailboxExt": {
+      "allOf": [
+        { "$ref": "#/$defs/MailboxBase" },
+        {
+          "type": "object",
+          "patternProperties": {
+            "^sib:": {}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+
+    "Email": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/EmailId" },
+        "blobId": { "type": "string" },
+        "threadId": { "$ref": "#/$defs/ThreadId" },
+        "mailboxIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MailboxId" }
+        },
+        "keywords": { "$ref": "#/$defs/Keywords" },
+        "size": { "type": "integer" },
+        "receivedAt": { "$ref": "#/$defs/JmapDate" },
+        "subject": { "type": "string" },
+        "preview": { "type": "string" },
+        "hasAttachment": { "type": "boolean" },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+
+    "EmailBase": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/EmailId" },
+        "blobId": { "type": "string" },
+        "threadId": { "$ref": "#/$defs/ThreadId" },
+        "mailboxIds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MailboxId" }
+        },
+        "keywords": { "$ref": "#/$defs/Keywords" },
+        "size": { "type": "integer" },
+        "receivedAt": { "$ref": "#/$defs/JmapDate" },
+        "subject": { "type": "string" },
+        "preview": { "type": "string" },
+        "hasAttachment": { "type": "boolean" },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "required": ["id"]
+    },
+
+    "EmailExt": {
+      "allOf": [
+        { "$ref": "#/$defs/EmailBase" },
+        {
+          "type": "object",
+          "patternProperties": {
+            "^sib:": {}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@serverlessinbox/mailbox-idl-jmap",
+  "private": true,
+  "type": "module",
+  "packageManager": "yarn@4.12.0",
+  "devDependencies": {
+    "fast-glob": "^3.3.2",
+    "json-schema-to-typescript": "^13.1.2",
+    "yaml": "^2.4.5"
+  },
+  "scripts": {
+    "generate:ts": "node ./scripts/generate-ts.mjs"
+  }
+}

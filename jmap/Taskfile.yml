@@ -1,0 +1,40 @@
+version: '3'
+
+tasks:
+  generate:ts:
+    desc: Generate TypeScript types from JMAP JSON Schemas
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+    cmds:
+      - |
+        set -euo pipefail
+        if [ -z "{{.OUTPUT_DIR}}" ]; then
+          echo "ERROR: OUTPUT_DIR is required (directory to write generated TS files to)." >&2
+          exit 2
+        fi
+        if [ -d "{{.TASKFILE_DIR}}/node_modules" ]; then
+          echo "ERROR: node_modules detected at {{.TASKFILE_DIR}}/node_modules. This repo uses Yarn PnP; remove it and re-run." >&2
+          exit 2
+        fi
+        if [ -f "{{.TASKFILE_DIR}}/package-lock.json" ]; then
+          echo "ERROR: package-lock.json detected at {{.TASKFILE_DIR}}/package-lock.json. This repo uses Yarn PnP; remove it and re-run." >&2
+          exit 2
+        fi
+        yarn --cwd "{{.TASKFILE_DIR}}" install --immutable
+        OUTPUT_DIR="{{.OUTPUT_DIR}}" yarn --cwd "{{.TASKFILE_DIR}}" node ./scripts/generate-ts.mjs
+
+  generate:go:
+    desc: Generate Go types from JMAP JSON Schemas (optional)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      PACKAGE: '{{default "jmaptypes" .PACKAGE}}'
+    cmds:
+      - |
+        set -euo pipefail
+        if [ -z "{{.OUTPUT_DIR}}" ]; then
+          echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
+          exit 2
+        fi
+        echo "NOTE: Go generation is intentionally optional; quicktype output may need manual cleanup." >&2
+        mkdir -p "{{.OUTPUT_DIR}}"
+        yarn --cwd "{{.TASKFILE_DIR}}" dlx quicktype -s schema "{{.TASKFILE_DIR}}/schemas/methods/Email.get.response.schema.json" -o "{{.OUTPUT_DIR}}/email_get_response.go" --package "{{.PACKAGE}}"
