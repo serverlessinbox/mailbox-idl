@@ -156,8 +156,48 @@ message ChangeRequestEvent {
   // Optional provider identifiers when discovered later.
   optional ProviderReference provider_reference = 6;
 
+  reserved 7;
+
   // Optional structured info for the event.
-  optional string details_json = 7 [(validate.rules).string = {max_len: 8192}];
+  // Prefer using these typed messages over opaque JSON.
+  oneof details {
+    ProviderUpdatedDetails provider_updated = 20;
+    SupportCaseOpenedDetails support_case_opened = 21;
+    ActionRequiredDetails action_required = 22;
+    UserProvidedInfoDetails user_provided_info = 23;
+    CommentDetails comment = 24;
+  }
+}
+
+message ProviderUpdatedDetails {
+  // Provider-specific status string (e.g. "PendingReview").
+  string provider_status = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  // Optional provider message or summary.
+  optional string note = 2 [(validate.rules).string = {max_len: 2048}];
+}
+
+message SupportCaseOpenedDetails {
+  // Optional provider URL to the support case or workflow.
+  optional string provider_url = 1 [(validate.rules).string = {max_len: 2048}];
+}
+
+message ActionRequiredDetails {
+  // Keys/fields the UI should collect.
+  repeated string required_fields = 1 [(validate.rules).repeated = {max_items: 50}];
+  // Human-readable instructions.
+  optional string instructions = 2 [(validate.rules).string = {max_len: 2048}];
+}
+
+message UserProvidedInfoDetails {
+  // Keys/fields the user provided in a follow-up.
+  repeated string provided_fields = 1 [(validate.rules).repeated = {max_items: 50}];
+  // Whether the user provided contact info (do not store the actual email here).
+  optional bool provided_contact_email = 2;
+}
+
+message CommentDetails {
+  // A comment intended for timeline rendering.
+  string text = 1 [(validate.rules).string = {min_len: 1, max_len: 2048}];
 }
 
 message CreateChangeRequestRequest {
@@ -215,7 +255,36 @@ message ListChangeRequestEventsResponse {
 
 message ProvideChangeRequestInfoRequest {
   string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
-  string info_json = 2 [(validate.rules).string = {min_len: 1, max_len: 8192}];
+
+  reserved 2;
+
+  // Strongly-typed follow-up info. Use this when a request is in ACTION_REQUIRED.
+  oneof info {
+    SesSendingLimitIncreaseInfo ses_sending_limit = 10;
+    LambdaConcurrencyIncreaseInfo lambda_concurrency = 11;
+    ProvideChangeRequestComment comment = 12;
+  }
+}
+
+message SesSendingLimitIncreaseInfo {
+  // Optional additional details.
+  optional string use_case = 1 [(validate.rules).string = {max_len: 2048}];
+  optional double desired_max_24h_send = 2 [(validate.rules).double = {gte: 0}];
+  optional double desired_max_send_rate_per_second = 3 [(validate.rules).double = {gte: 0}];
+  optional string website_url = 4 [(validate.rules).string = {max_len: 2048}];
+  // Optional contact email. Consider treating this as sensitive and excluding it from audit/events.
+  optional string contact_email = 5 [(validate.rules).string = {max_len: 320}];
+}
+
+message LambdaConcurrencyIncreaseInfo {
+  optional int32 desired_account_limit = 1 [(validate.rules).int32 = {gte: 1, lte: 100000}];
+  optional string reason = 2 [(validate.rules).string = {max_len: 2048}];
+  // Optional contact email. Consider treating this as sensitive and excluding it from audit/events.
+  optional string contact_email = 3 [(validate.rules).string = {max_len: 320}];
+}
+
+message ProvideChangeRequestComment {
+  string text = 1 [(validate.rules).string = {min_len: 1, max_len: 2048}];
 }
 
 message ProvideChangeRequestInfoResponse {
