@@ -20,6 +20,68 @@ tasks:
       - buf.gen.go.yaml
       - tools/protoc-gen-go-interface/**
 
+  generate:go:http-client:
+    desc: Generate Go HTTP client SDK (output outside this repo)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+    cmds:
+      - |
+        set -euo pipefail
+        if [ -z "{{.OUTPUT_DIR}}" ]; then
+          echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
+          exit 2
+        fi
+
+        # Ensure local protoc plugin exists for this platform.
+        (cd tools/protoc-gen-go-http-client && GOWORK=off go build -o protoc-gen-go-http-client .)
+
+        buf generate --template buf.gen.go.httpclient.yaml -o "{{.OUTPUT_DIR}}"
+    sources:
+      - proto/**/*.proto
+      - buf.yaml
+      - buf.lock
+      - buf.gen.go.httpclient.yaml
+      - tools/protoc-gen-go-http-client/**
+
+  generate:go:e2e:
+    desc: Generate standalone Go E2E SDK (protobuf types + HTTP client)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+    cmds:
+      - |
+        set -euo pipefail
+        if [ -z "{{.OUTPUT_DIR}}" ]; then
+          echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
+          exit 2
+        fi
+
+        TMP_DIR=".tmp-buf-e2e"
+        rm -rf "${TMP_DIR}"
+        mkdir -p "${TMP_DIR}/proto"
+
+        cp buf.yaml "${TMP_DIR}/buf.yaml"
+        if [ -f buf.lock ]; then
+          cp buf.lock "${TMP_DIR}/buf.lock"
+        fi
+        cp -R proto/* "${TMP_DIR}/proto/"
+
+        # Rewrite go_package so E2E-generated types live under the e2e-tests module.
+        # This keeps the per-file Go package split (statusv1, aliasesv1, etc.) intact.
+        find "${TMP_DIR}/proto" -name '*.proto' -print0 | \
+          xargs -0 perl -pi -e 's#option go_package = "admin-api/generated/#option go_package = "e2e-tests/generated/adminapi/#g'
+
+        # Ensure local protoc plugin exists for this platform.
+        (cd tools/protoc-gen-go-http-client && GOWORK=off go build -o protoc-gen-go-http-client .)
+
+        (cd "${TMP_DIR}" && buf generate --template ../buf.gen.go.e2e.yaml -o "{{.OUTPUT_DIR}}")
+        rm -rf "${TMP_DIR}"
+    sources:
+      - proto/**/*.proto
+      - buf.yaml
+      - buf.lock
+      - buf.gen.go.e2e.yaml
+      - tools/protoc-gen-go-http-client/**
+
   generate:ts:
     desc: Generate TypeScript SDK from protobuf
     vars:

@@ -1,0 +1,311 @@
+syntax = "proto3";
+
+package ops.v1;
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/ops;opsv1";
+
+// ============================================
+// Change Requests (Long-running / Human-in-loop)
+// ============================================
+//
+// Purpose
+// -------
+// Track operational requests that may take minutes to days and may involve
+// provider workflows (e.g. Service Quotas, Support cases).
+//
+// Key properties
+// --------------
+// - Durable request object (current status)
+// - Append-only event history (audit + UX timeline)
+// - Server-side de-duplication: prevent multiple open requests of same type
+//
+// Notes
+// -----
+// - Scope is currently implicit (derived from auth/account context).
+
+enum ChangeRequestType {
+  CHANGE_REQUEST_TYPE_UNSPECIFIED = 0;
+  CHANGE_REQUEST_TYPE_SES_SENDING_LIMIT_INCREASE = 1;
+  CHANGE_REQUEST_TYPE_LAMBDA_CONCURRENCY_INCREASE = 2;
+}
+
+enum ChangeRequestStatus {
+  CHANGE_REQUEST_STATUS_UNSPECIFIED = 0;
+
+  // Accepted and stored, but not yet submitted to provider.
+  CHANGE_REQUEST_STATUS_ACCEPTED = 1;
+
+  // Submitted to provider (or provider workflow initiated).
+  CHANGE_REQUEST_STATUS_SUBMITTED = 2;
+
+  // Provider indicates progress.
+  CHANGE_REQUEST_STATUS_IN_PROGRESS = 3;
+
+  // A provider workflow exists and is waiting (e.g. AWS opened a support case).
+  CHANGE_REQUEST_STATUS_WAITING_ON_PROVIDER = 4;
+
+  // Cannot proceed without user input in this UI.
+  CHANGE_REQUEST_STATUS_ACTION_REQUIRED = 5;
+
+  // Final states
+  CHANGE_REQUEST_STATUS_SUCCEEDED = 6;
+  CHANGE_REQUEST_STATUS_REJECTED = 7;
+  CHANGE_REQUEST_STATUS_FAILED = 8;
+  CHANGE_REQUEST_STATUS_CANCELED = 9;
+}
+
+enum ConflictBehavior {
+  CONFLICT_BEHAVIOR_UNSPECIFIED = 0;
+
+  // Default: return the existing open request (idempotent UX).
+  CONFLICT_BEHAVIOR_RETURN_EXISTING_OPEN = 1;
+
+  // Fail when an open request exists.
+  CONFLICT_BEHAVIOR_FAIL_IF_OPEN = 2;
+
+  // Allow multiple open requests (rarely desired).
+  CONFLICT_BEHAVIOR_ALLOW_DUPLICATE = 3;
+}
+
+message ProviderReference {
+  // e.g. "aws"
+  string provider = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
+
+  // Optional identifiers; set when known.
+  optional string service_quotas_request_id = 2 [(validate.rules).string = {max_len: 128}];
+  optional string support_case_id = 3 [(validate.rules).string = {max_len: 128}];
+
+  // Optional provider URL.
+  optional string provider_url = 4 [(validate.rules).string = {max_len: 2048}];
+}
+
+message SesSendingLimitIncreasePayload {
+  // Free-form explanation of use case, volume expectations, and safety controls.
+  string use_case = 1 [(validate.rules).string = {min_len: 1, max_len: 2048}];
+
+  // Optional desired sending limits.
+  optional double desired_max_24h_send = 2 [(validate.rules).double = {gte: 0}];
+  optional double desired_max_send_rate_per_second = 3 [(validate.rules).double = {gte: 0}];
+
+  // Optional metadata.
+  optional string website_url = 4 [(validate.rules).string = {max_len: 2048}];
+  optional string contact_email = 5 [(validate.rules).string = {max_len: 320}];
+}
+
+message LambdaConcurrencyIncreasePayload {
+  // Desired account-level concurrent executions limit.
+  int32 desired_account_limit = 1 [(validate.rules).int32 = {gte: 1, lte: 100000}];
+
+  // Free-form justification.
+  string reason = 2 [(validate.rules).string = {min_len: 1, max_len: 2048}];
+
+  // Optional contact email.
+  optional string contact_email = 3 [(validate.rules).string = {max_len: 320}];
+}
+
+message ChangeRequest {
+  string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  ChangeRequestType type = 2;
+  ChangeRequestStatus status = 3;
+
+  google.protobuf.Timestamp created_at = 4;
+  optional google.protobuf.Timestamp updated_at = 5;
+  optional google.protobuf.Timestamp closed_at = 6;
+
+  optional ProviderReference provider_reference = 7;
+
+  // Human readable summary of current state.
+  optional string summary = 8 [(validate.rules).string = {max_len: 512}];
+  optional string last_error = 9 [(validate.rules).string = {max_len: 2048}];
+
+  oneof payload {
+    SesSendingLimitIncreasePayload ses_sending_limit = 20;
+    LambdaConcurrencyIncreasePayload lambda_concurrency = 21;
+  }
+}
+
+enum ChangeRequestEventKind {
+  CHANGE_REQUEST_EVENT_KIND_UNSPECIFIED = 0;
+  CHANGE_REQUEST_EVENT_KIND_CREATED = 1;
+  CHANGE_REQUEST_EVENT_KIND_SUBMITTED = 2;
+  CHANGE_REQUEST_EVENT_KIND_PROVIDER_UPDATED = 3;
+  CHANGE_REQUEST_EVENT_KIND_SUPPORT_CASE_OPENED = 4;
+  CHANGE_REQUEST_EVENT_KIND_ACTION_REQUIRED = 5;
+  CHANGE_REQUEST_EVENT_KIND_USER_PROVIDED_INFO = 6;
+  CHANGE_REQUEST_EVENT_KIND_APPROVED = 7;
+  CHANGE_REQUEST_EVENT_KIND_REJECTED = 8;
+  CHANGE_REQUEST_EVENT_KIND_SUCCEEDED = 9;
+  CHANGE_REQUEST_EVENT_KIND_FAILED = 10;
+  CHANGE_REQUEST_EVENT_KIND_CANCELED = 11;
+  CHANGE_REQUEST_EVENT_KIND_COMMENT = 12;
+}
+
+message ChangeRequestEvent {
+  string event_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  string request_id = 2 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  google.protobuf.Timestamp at = 3;
+
+  ChangeRequestEventKind kind = 4;
+
+  // One-line message for timeline rendering.
+  optional string message = 5 [(validate.rules).string = {max_len: 512}];
+
+  // Optional provider identifiers when discovered later.
+  optional ProviderReference provider_reference = 6;
+
+  reserved 7;
+
+  // Optional structured info for the event.
+  // Prefer using these typed messages over opaque JSON.
+  oneof details {
+    ProviderUpdatedDetails provider_updated = 20;
+    SupportCaseOpenedDetails support_case_opened = 21;
+    ActionRequiredDetails action_required = 22;
+    UserProvidedInfoDetails user_provided_info = 23;
+    CommentDetails comment = 24;
+  }
+}
+
+message ProviderUpdatedDetails {
+  // Provider-specific status string (e.g. "PendingReview").
+  string provider_status = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  // Optional provider message or summary.
+  optional string note = 2 [(validate.rules).string = {max_len: 2048}];
+}
+
+message SupportCaseOpenedDetails {
+  // Optional provider URL to the support case or workflow.
+  optional string provider_url = 1 [(validate.rules).string = {max_len: 2048}];
+}
+
+message ActionRequiredDetails {
+  // Keys/fields the UI should collect.
+  repeated string required_fields = 1 [(validate.rules).repeated = {max_items: 50}];
+  // Human-readable instructions.
+  optional string instructions = 2 [(validate.rules).string = {max_len: 2048}];
+}
+
+message UserProvidedInfoDetails {
+  // Keys/fields the user provided in a follow-up.
+  repeated string provided_fields = 1 [(validate.rules).repeated = {max_items: 50}];
+  // Whether the user provided contact info (do not store the actual email here).
+  optional bool provided_contact_email = 2;
+}
+
+message CommentDetails {
+  // A comment intended for timeline rendering.
+  string text = 1 [(validate.rules).string = {min_len: 1, max_len: 2048}];
+}
+
+message CreateChangeRequestRequest {
+  ChangeRequestType type = 1;
+
+  // Safe retry key for button-click retries.
+  optional string idempotency_key = 2 [(validate.rules).string = {max_len: 128}];
+
+  // Default should be RETURN_EXISTING_OPEN.
+  optional ConflictBehavior conflict_behavior = 3;
+
+  oneof payload {
+    SesSendingLimitIncreasePayload ses_sending_limit = 10;
+    LambdaConcurrencyIncreasePayload lambda_concurrency = 11;
+  }
+}
+
+message CreateChangeRequestResponse {
+  ChangeRequest request = 1;
+  bool reused_existing_open = 2;
+}
+
+message GetChangeRequestRequest {
+  string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+}
+
+message GetChangeRequestResponse {
+  ChangeRequest request = 1;
+}
+
+message ListChangeRequestsRequest {
+  // Return newest-first.
+  optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 200}];
+  optional string page_token = 2 [(validate.rules).string = {max_len: 512}];
+
+  optional ChangeRequestType type = 3;
+  repeated ChangeRequestStatus status = 4;
+}
+
+message ListChangeRequestsResponse {
+  repeated ChangeRequest requests = 1;
+  optional string next_page_token = 2 [(validate.rules).string = {max_len: 512}];
+}
+
+message ListChangeRequestEventsRequest {
+  string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  optional int32 page_size = 2 [(validate.rules).int32 = {gte: 1, lte: 500}];
+  optional string page_token = 3 [(validate.rules).string = {max_len: 512}];
+}
+
+message ListChangeRequestEventsResponse {
+  repeated ChangeRequestEvent events = 1;
+  optional string next_page_token = 2 [(validate.rules).string = {max_len: 512}];
+}
+
+message ProvideChangeRequestInfoRequest {
+  string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+
+  reserved 2;
+
+  // Strongly-typed follow-up info. Use this when a request is in ACTION_REQUIRED.
+  oneof info {
+    SesSendingLimitIncreaseInfo ses_sending_limit = 10;
+    LambdaConcurrencyIncreaseInfo lambda_concurrency = 11;
+    ProvideChangeRequestComment comment = 12;
+  }
+}
+
+message SesSendingLimitIncreaseInfo {
+  // Optional additional details.
+  optional string use_case = 1 [(validate.rules).string = {max_len: 2048}];
+  optional double desired_max_24h_send = 2 [(validate.rules).double = {gte: 0}];
+  optional double desired_max_send_rate_per_second = 3 [(validate.rules).double = {gte: 0}];
+  optional string website_url = 4 [(validate.rules).string = {max_len: 2048}];
+  // Optional contact email. Consider treating this as sensitive and excluding it from audit/events.
+  optional string contact_email = 5 [(validate.rules).string = {max_len: 320}];
+}
+
+message LambdaConcurrencyIncreaseInfo {
+  optional int32 desired_account_limit = 1 [(validate.rules).int32 = {gte: 1, lte: 100000}];
+  optional string reason = 2 [(validate.rules).string = {max_len: 2048}];
+  // Optional contact email. Consider treating this as sensitive and excluding it from audit/events.
+  optional string contact_email = 3 [(validate.rules).string = {max_len: 320}];
+}
+
+message ProvideChangeRequestComment {
+  string text = 1 [(validate.rules).string = {min_len: 1, max_len: 2048}];
+}
+
+message ProvideChangeRequestInfoResponse {
+  ChangeRequest request = 1;
+}
+
+message CancelChangeRequestRequest {
+  string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  optional string reason = 2 [(validate.rules).string = {max_len: 512}];
+}
+
+message CancelChangeRequestResponse {
+  ChangeRequest request = 1;
+}
+
+service ChangeRequestsService {
+  rpc CreateChangeRequest(CreateChangeRequestRequest) returns (CreateChangeRequestResponse);
+  rpc GetChangeRequest(GetChangeRequestRequest) returns (GetChangeRequestResponse);
+  rpc ListChangeRequests(ListChangeRequestsRequest) returns (ListChangeRequestsResponse);
+  rpc ListChangeRequestEvents(ListChangeRequestEventsRequest) returns (ListChangeRequestEventsResponse);
+
+  rpc ProvideChangeRequestInfo(ProvideChangeRequestInfoRequest) returns (ProvideChangeRequestInfoResponse);
+  rpc CancelChangeRequest(CancelChangeRequestRequest) returns (CancelChangeRequestResponse);
+}

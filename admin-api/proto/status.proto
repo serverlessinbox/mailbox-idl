@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package status.v1;
+
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/status;statusv1";
+
+// ============================================
+// Admin Status / Environment Introspection
+// ============================================
+//
+// Purpose
+// -------
+// The admin UI needs a single, fast endpoint to determine:
+// - Whether SES is in sandbox mode (aka production access is disabled)
+// - Helpful SES-related status that affects admin onboarding and testing
+// - Operational signals that impact reliability (e.g. Lambda concurrency)
+//
+// Suggested implementation (server-side)
+// -------------------------------------
+// - SES sandbox / production access:
+//   Use SESv2 GetAccount (ProductionAccessEnabled / SendingEnabled)
+//   and/or SESv2 GetSendQuota as supporting info.
+//
+// - Lambda concurrency:
+//   Use Lambda GetAccountSettings to retrieve AccountLimit and
+//   UnreservedConcurrentExecutions; optionally include reserved
+//   concurrency totals if you track them.
+//
+// - Authentication:
+//   This endpoint should require admin auth and may optionally return
+//   the caller email extracted from the JWT for UI convenience.
+
+message GetStatusRequest {
+  // Reserved for future options, e.g. include_extended = true
+}
+
+message LambdaConcurrencyStatus {
+  // The account-level concurrent execution limit.
+  optional int32 account_limit = 1 [(validate.rules).int32 = {gte: 0}];
+
+  // Total reserved concurrency across functions (if computed).
+  optional int32 reserved_concurrency_total = 2 [(validate.rules).int32 = {gte: 0}];
+
+  // Unreserved concurrency available to functions without reserved concurrency.
+  optional int32 unreserved_concurrency = 3 [(validate.rules).int32 = {gte: 0}];
+
+  // Optional best-effort estimate of current concurrency usage.
+  optional int32 current_usage_estimate = 4 [(validate.rules).int32 = {gte: 0}];
+
+  // True when usage/limits indicate an elevated risk of throttling.
+  optional bool near_limit = 5;
+
+  // Human-readable warning suitable for display.
+  optional string warning = 6 [(validate.rules).string.max_len = 1024];
+}
+
+message SesQuotaStatus {
+  // Rolling 24h quota, as reported by SES.
+  optional double max_24h_send = 1 [(validate.rules).double = {gte: 0}];
+
+  // Rolling 24h total already sent.
+  optional double sent_last_24h = 2 [(validate.rules).double = {gte: 0}];
+
+  // Convenience: max(0, max_24h_send - sent_last_24h).
+  optional double remaining_24h_send = 3 [(validate.rules).double = {gte: 0}];
+
+  // Max send rate per second.
+  optional double max_send_rate_per_second = 4 [(validate.rules).double = {gte: 0}];
+}
+
+message SesReputationStatus {
+  // Rates are computed from recent sending stats (best-effort).
+  optional double bounce_rate = 1 [(validate.rules).double = {gte: 0, lte: 1}];
+  optional double complaint_rate = 2 [(validate.rules).double = {gte: 0, lte: 1}];
+
+  // Underlying counts for the window used.
+  optional int64 delivery_attempts = 3 [(validate.rules).int64 = {gte: 0}];
+  optional int64 bounces = 4 [(validate.rules).int64 = {gte: 0}];
+  optional int64 complaints = 5 [(validate.rules).int64 = {gte: 0}];
+
+  // Human-readable description of the aggregation window (e.g. "24h").
+  optional string window = 6 [(validate.rules).string.max_len = 32];
+}
+
+message SesAccountStatus {
+  // True when SES production access is enabled (i.e. not in sandbox).
+  optional bool production_access_enabled = 1;
+
+  // Convenience: true when the account is in sandbox.
+  // If provided, it should be the inverse of production_access_enabled.
+  optional bool sandbox = 2;
+
+  // Whether SES sending is enabled.
+  optional bool sending_enabled = 3;
+
+  // SES enforcement status (e.g. "HEALTHY", "PROBATION", "SHUTDOWN").
+  optional string enforcement_status = 4 [(validate.rules).string.max_len = 64];
+
+  // SES quota snapshot (rolling 24h).
+  SesQuotaStatus quota = 5;
+
+  // Best-effort reputation snapshot.
+  SesReputationStatus reputation = 6;
+}
+
+message AdminStatus {
+  // AWS account metadata.
+  optional string aws_account_id = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
+  optional string aws_region = 2 [(validate.rules).string = {min_len: 1, max_len: 32}];
+
+  // SES status needed for onboarding.
+  SesAccountStatus ses = 3;
+
+  // Operational health signals.
+  LambdaConcurrencyStatus lambda_concurrency = 4;
+
+  // Convenience for UI: server may echo the authenticated admin email.
+  optional string caller_email = 5 [(validate.rules).string = {max_len: 320}];
+}
+
+message GetStatusResponse {
+  AdminStatus status = 1;
+}
+
+service StatusService {
+  // GetStatus returns a snapshot of SES sandbox status + operational hints.
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+}

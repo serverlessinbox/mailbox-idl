@@ -21,6 +21,16 @@ tasks:
     cmds:
       - task -d admin-api generate:go OUTPUT_DIR={{.OUTPUT_DIR}}
 
+  admin-api:generate:go:http-client:
+    desc: Generate Go HTTP client SDK for Admin API (output outside this repo)
+    cmds:
+      - task -d admin-api generate:go:http-client OUTPUT_DIR={{.OUTPUT_DIR}}
+
+  admin-api:generate:go:e2e:
+    desc: Generate standalone Go E2E SDK for Admin API (protobuf types + HTTP client)
+    cmds:
+      - task -d admin-api generate:go:e2e OUTPUT_DIR={{.OUTPUT_DIR}}
+
   admin-api:generate:ts:
     desc: Generate TypeScript SDK for Admin API
     vars:
