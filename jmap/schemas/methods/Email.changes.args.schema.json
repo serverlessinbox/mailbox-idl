@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.changes.args.schema.json",
+  "title": "Email/changes args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "sinceState": { "type": "string", "minLength": 1 },
+    "maxChanges": { "type": "integer", "minimum": 0 }
+  },
+  "required": ["accountId", "sinceState"],
+  "additionalProperties": false
+}
