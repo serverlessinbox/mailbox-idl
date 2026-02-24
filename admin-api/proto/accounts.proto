@@ -22,7 +22,75 @@ service AccountsService {
 
   // DeleteAccount deletes an account and all associated data (aliases, mailboxes, emails).
   rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+
+  // ListAccountMembers lists all ACL members of an account.
+  rpc ListAccountMembers(ListAccountMembersRequest) returns (ListAccountMembersResponse);
+
+  // PutAccountMember creates or updates a user's role on an account.
+  rpc PutAccountMember(PutAccountMemberRequest) returns (PutAccountMemberResponse);
+
+  // DeleteAccountMember removes a user from an account ACL.
+  rpc DeleteAccountMember(DeleteAccountMemberRequest) returns (DeleteAccountMemberResponse);
 }
+
+enum AccountRole {
+  ACCOUNT_ROLE_UNSPECIFIED = 0;
+  ACCOUNT_ROLE_READ = 1;
+  ACCOUNT_ROLE_WRITE = 2;
+  ACCOUNT_ROLE_ADMIN = 3;
+}
+
+message AccountMember {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  string user_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+  AccountRole role = 3 [(validate.rules).enum = {defined_only: true, not_in: [0]}];
+}
+
+message ListAccountMembersRequest {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message ListAccountMembersResponse {
+  repeated AccountMember members = 1;
+}
+
+message PutAccountMemberRequest {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  string user_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+  AccountRole role = 3 [(validate.rules).enum = {defined_only: true, not_in: [0]}];
+}
+
+message PutAccountMemberResponse {
+  AccountMember member = 1;
+}
+
+message DeleteAccountMemberRequest {
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  string user_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message DeleteAccountMemberResponse {}
 
 message Account {
   string account_id = 1 [(validate.rules).string = {
