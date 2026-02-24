@@ -40,7 +40,9 @@ for (const schemaFile of schemaFiles) {
   });
 
   await fs.writeFile(outFile, ts, 'utf8');
-  exports.push(`export * from './${base}';`);
+  // Export only the primary top-level type to avoid name collisions between
+  // helper types generated for different schemas (e.g. EmailBase, Keywords).
+  exports.push(`export type { ${typeNameFromSchemaBase(base)} } from './${base}';`);
 }
 
 function pascalCase(str) {
