@@ -41,6 +41,11 @@ methods:
     argsSchema: schemas/methods/Email.queryChanges.args.schema.json
     responseSchema: schemas/methods/Email.queryChanges.response.schema.json
 
+  - name: Email/set
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Email.set.args.schema.json
+    responseSchema: schemas/methods/Email.set.response.schema.json
+
   - name: Thread/get
     capability: urn:ietf:params:jmap:mail
     argsSchema: schemas/methods/Thread.get.args.schema.json
