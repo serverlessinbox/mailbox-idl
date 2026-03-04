@@ -28,8 +28,14 @@ option go_package = "admin-api/generated/ops;opsv1";
 
 enum ChangeRequestType {
   CHANGE_REQUEST_TYPE_UNSPECIFIED = 0;
-  CHANGE_REQUEST_TYPE_SES_SENDING_LIMIT_INCREASE = 1;
+  // Increase the SES daily sending quota (max emails in 24h).
+  CHANGE_REQUEST_TYPE_SES_MAX_24H_SEND_INCREASE = 1;
+
+  // Increase the Lambda account-level concurrency quota.
   CHANGE_REQUEST_TYPE_LAMBDA_CONCURRENCY_INCREASE = 2;
+
+  // Increase the SES sending rate quota (emails/second).
+  CHANGE_REQUEST_TYPE_SES_MAX_SEND_RATE_INCREASE = 3;
 }
 
 enum ChangeRequestStatus {
@@ -70,16 +76,27 @@ enum ConflictBehavior {
   CONFLICT_BEHAVIOR_ALLOW_DUPLICATE = 3;
 }
 
-message ProviderReference {
-  // e.g. "aws"
-  string provider = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
+message AwsQuotaRequestReference {
+  // AWS region used for the quota request (e.g. "us-east-1").
+  string region = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
 
-  // Optional identifiers; set when known.
-  optional string service_quotas_request_id = 2 [(validate.rules).string = {max_len: 128}];
-  optional string support_case_id = 3 [(validate.rules).string = {max_len: 128}];
+  // AWS Service Quotas identifiers for the quota.
+  // Examples: service_code="ses", quota_code="L-05D7B1F0" (codes vary).
+  string service_code = 2 [(validate.rules).string = {min_len: 1, max_len: 64}];
+  string quota_code = 3 [(validate.rules).string = {min_len: 1, max_len: 128}];
 
-  // Optional provider URL.
-  optional string provider_url = 4 [(validate.rules).string = {max_len: 2048}];
+  // Human-friendly display strings for UI.
+  string quota_name = 4 [(validate.rules).string = {min_len: 1, max_len: 256}];
+  optional string quota_description = 5 [(validate.rules).string = {max_len: 2048}];
+
+  // AWS provider identifiers; set when known.
+  optional string service_quotas_request_id = 6 [(validate.rules).string = {max_len: 128}];
+
+  // Optional AWS Console deep link.
+  optional string console_url = 7 [(validate.rules).string = {max_len: 2048}];
+
+  // Optional requested value (for display). Units depend on quota.
+  optional double requested_value = 8;
 }
 
 message SesSendingLimitIncreasePayload {
@@ -115,7 +132,7 @@ message ChangeRequest {
   optional google.protobuf.Timestamp updated_at = 5;
   optional google.protobuf.Timestamp closed_at = 6;
 
-  optional ProviderReference provider_reference = 7;
+  optional AwsQuotaRequestReference aws_reference = 7;
 
   // Human readable summary of current state.
   optional string summary = 8 [(validate.rules).string = {max_len: 512}];
@@ -153,8 +170,8 @@ message ChangeRequestEvent {
   // One-line message for timeline rendering.
   optional string message = 5 [(validate.rules).string = {max_len: 512}];
 
-  // Optional provider identifiers when discovered later.
-  optional ProviderReference provider_reference = 6;
+  // Optional AWS reference when discovered later.
+  optional AwsQuotaRequestReference aws_reference = 6;
 
   reserved 7;
 
