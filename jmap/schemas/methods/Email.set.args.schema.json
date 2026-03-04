@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.set.args.schema.json",
+  "title": "Email/set args",
+  "$defs": {
+    "CreationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "PatchObject": {
+      "type": "object",
+      "description": "JMAP PatchObject: keys are JSON Pointers to properties; values are the new values (or null to remove).",
+      "patternProperties": {
+        "^/": {}
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "ifInState": { "type": ["string", "null"], "minLength": 1 },
+
+    "create": {
+      "type": "object",
+      "description": "Map of client-assigned creation ids to Email objects.",
+      "propertyNames": { "$ref": "#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/EmailExt" }
+    },
+
+    "update": {
+      "type": "object",
+      "description": "Map of EmailId to PatchObject.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
+      "additionalProperties": { "$ref": "#/$defs/PatchObject" }
+    },
+
+    "destroy": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

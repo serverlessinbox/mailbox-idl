@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.queryChanges.response.schema.json",
+  "title": "Email/queryChanges response",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "oldQueryState": { "type": "string", "minLength": 1 },
+    "newQueryState": { "type": "string", "minLength": 1 },
+    "hasMoreChanges": { "type": "boolean" },
+    "removed": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
+    },
+    "added": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
+          "index": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["id", "index"],
+        "additionalProperties": false
+      }
+    },
+    "total": { "type": "integer", "minimum": 0 },
+    "upToId": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
+  },
+  "required": [
+    "accountId",
+    "oldQueryState",
+    "newQueryState",
+    "hasMoreChanges",
+    "removed",
+    "added"
+  ],
+  "additionalProperties": false
+}

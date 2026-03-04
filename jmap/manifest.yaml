@@ -7,11 +7,46 @@ methods:
     capability: urn:ietf:params:jmap:mail
     argsSchema: schemas/methods/Mailbox.get.args.schema.json
     responseSchema: schemas/methods/Mailbox.get.response.schema.json
+  - name: Mailbox/changes
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Mailbox.changes.args.schema.json
+    responseSchema: schemas/methods/Mailbox.changes.response.schema.json
   - name: Email/get
     capability: urn:ietf:params:jmap:mail
     argsSchema: schemas/methods/Email.get.args.schema.json
     responseSchema: schemas/methods/Email.get.response.schema.json
+    dx:
+      resultRefs:
+        accepts:
+          - argKey: "#ids"
+            targetArgPath: /ids
+            source:
+              method: Email/query
+              responsePath: /ids
+  - name: Email/changes
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Email.changes.args.schema.json
+    responseSchema: schemas/methods/Email.changes.response.schema.json
   - name: Email/query
     capability: urn:ietf:params:jmap:mail
     argsSchema: schemas/methods/Email.query.args.schema.json
     responseSchema: schemas/methods/Email.query.response.schema.json
+    dx:
+      resultRefs:
+        provides:
+          - responsePath: /ids
+
+  - name: Email/queryChanges
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Email.queryChanges.args.schema.json
+    responseSchema: schemas/methods/Email.queryChanges.response.schema.json
+
+  - name: Email/set
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Email.set.args.schema.json
+    responseSchema: schemas/methods/Email.set.response.schema.json
+
+  - name: Thread/get
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Thread.get.args.schema.json
+    responseSchema: schemas/methods/Thread.get.response.schema.json

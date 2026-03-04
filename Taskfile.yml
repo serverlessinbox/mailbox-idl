@@ -47,3 +47,23 @@ tasks:
     desc: Run breaking-change checks for Admin API protos
     cmds:
       - task -d admin-api breaking
+
+  push-ws:generate:go:
+    desc: Generate Go types for Push WS protocol (output outside this repo)
+    cmds:
+      - task -d push-ws generate:go OUTPUT_DIR={{.OUTPUT_DIR}}
+
+  push-ws:generate:ts:
+    desc: Generate TypeScript types for Push WS protocol (output outside this repo)
+    cmds:
+      - task -d push-ws generate:ts OUTPUT_DIR={{.OUTPUT_DIR}}
+
+  push-ws:lint:
+    desc: Lint Push WS protobuf definitions
+    cmds:
+      - task -d push-ws lint
+
+  push-ws:breaking:
+    desc: Run breaking-change checks for Push WS protos
+    cmds:
+      - task -d push-ws breaking

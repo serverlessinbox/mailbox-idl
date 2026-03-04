@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package pushws.v1;
+
+option go_package = "shared/generated/pushws;pushwsv1";
+
+// PushMessage is the single JSON text-frame payload for the WebSocket protocol.
+// It uses a oneof envelope so JSON is self-describing without a discriminator field:
+// {"subscribe":{...}} | {"subscribed":{...}} | {"stateChange":{...}} | {"error":{...}}
+message PushMessage {
+	oneof message {
+		Subscribe subscribe = 1;
+		Subscribed subscribed = 2;
+		StateChange state_change = 3;
+		Error error = 4;
+	}
+}
+
+// Subscribe is sent by the client to subscribe this connection to an account's state changes.
+message Subscribe {
+	// Client-generated correlation id.
+	string id = 1;
+
+	// JMAP accountId to subscribe to.
+	string account_id = 2;
+
+	// JMAP data types to subscribe to (e.g. ["Email", "Mailbox"]). Empty means all types.
+	repeated string types = 3;
+}
+
+// Subscribed confirms a successful subscription.
+message Subscribed {
+	string id = 1;
+}
+
+// StateChange notifies the client about a new state for one or more JMAP data types.
+// The client should follow up with JMAP */changes calls.
+message StateChange {
+	// JMAP accountId where the change occurred.
+	string account_id = 1;
+
+	// Map of JMAP dataType -> new state string.
+	map<string, string> changes = 2;
+}
+
+// Error is sent when a request cannot be processed.
+message Error {
+	// Correlation id (if applicable).
+	string id = 1;
+
+	// Stable error code string (e.g. "forbidden", "invalidArguments").
+	string code = 2;
+
+	// Human-readable description.
+	string description = 3;
+}

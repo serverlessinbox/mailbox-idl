@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.set.response.schema.json",
+  "title": "Email/set response",
+  "$defs": {
+    "CreationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "SetError": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "description": { "type": ["string", "null"] },
+        "properties": { "type": ["object", "null"], "additionalProperties": true }
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    }
+  },
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "oldState": { "type": "string", "minLength": 1 },
+    "newState": { "type": "string", "minLength": 1 },
+
+    "created": {
+      "type": ["object", "null"],
+      "propertyNames": { "$ref": "#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/EmailExt" }
+    },
+
+    "updated": {
+      "type": ["object", "null"],
+      "description": "Map of EmailId to null on success.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
+      "additionalProperties": { "type": "null" }
+    },
+
+    "destroyed": {
+      "anyOf": [
+        { "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" } },
+        { "type": "null" }
+      ]
+    },
+
+    "notCreated": {
+      "type": ["object", "null"],
+      "propertyNames": { "$ref": "#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "#/$defs/SetError" }
+    },
+
+    "notUpdated": {
+      "type": ["object", "null"],
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
+      "additionalProperties": { "$ref": "#/$defs/SetError" }
+    },
+
+    "notDestroyed": {
+      "type": ["object", "null"],
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
+      "additionalProperties": { "$ref": "#/$defs/SetError" }
+    }
+  },
+  "required": ["accountId", "oldState", "newState"],
+  "additionalProperties": false
+}

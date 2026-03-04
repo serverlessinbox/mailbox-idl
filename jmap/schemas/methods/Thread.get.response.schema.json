@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Thread.get.response.schema.json",
+  "title": "Thread/get response",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "state": { "type": "string", "minLength": 1 },
+    "list": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": { "$ref": "../core/types.schema.json#/$defs/ThreadId" },
+              "emailIds": {
+                "type": "array",
+                "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
+              }
+            },
+            "required": ["id", "emailIds"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "patternProperties": {
+              "^sib:": {}
+            }
+          }
+        ],
+        "unevaluatedProperties": false
+      }
+    },
+    "notFound": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/ThreadId" }
+    }
+  },
+  "required": ["accountId", "state", "list"],
+  "additionalProperties": false
+}

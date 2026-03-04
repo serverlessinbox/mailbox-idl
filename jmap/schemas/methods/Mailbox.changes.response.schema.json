@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Mailbox.changes.response.schema.json",
+  "title": "Mailbox/changes response",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "oldState": { "type": "string", "minLength": 1 },
+    "newState": { "type": "string", "minLength": 1 },
+    "hasMoreChanges": { "type": "boolean" },
+    "created": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/MailboxId" }
+    },
+    "updated": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/MailboxId" }
+    },
+    "destroyed": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/MailboxId" }
+    }
+  },
+  "required": [
+    "accountId",
+    "oldState",
+    "newState",
+    "hasMoreChanges",
+    "created",
+    "updated",
+    "destroyed"
+  ],
+  "additionalProperties": false
+}
