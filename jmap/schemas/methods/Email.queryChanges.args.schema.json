@@ -4,15 +4,16 @@
   "title": "Email/queryChanges args",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "filter": { "type": "object", "additionalProperties": true },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to check for query changes." },
+    "filter": { "type": "object", "additionalProperties": true, "description": "Must match the filter used in the original Email/query call." },
     "sort": {
       "type": "array",
+      "description": "Must match the sort used in the original Email/query call.",
       "items": { "type": "object", "additionalProperties": true }
     },
-    "sinceQueryState": { "type": "string", "minLength": 1 },
-    "maxChanges": { "type": "integer", "minimum": 0 },
-    "upToId": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
+    "sinceQueryState": { "type": "string", "minLength": 1, "description": "The queryState from the previous Email/query or Email/queryChanges response." },
+    "maxChanges": { "type": "integer", "minimum": 0, "description": "Maximum number of changes to return. If exceeded, hasMoreChanges will be true." },
+    "upToId": { "$ref": "../core/types.schema.json#/$defs/EmailId", "description": "Return changes only up to and including this EmailId." }
   },
   "required": ["accountId", "sinceQueryState"],
   "additionalProperties": false

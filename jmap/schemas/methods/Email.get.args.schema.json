@@ -4,28 +4,32 @@
   "title": "Email/get args",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch emails from." },
     "ids": {
       "type": "array",
+      "description": "IDs of the emails to fetch. Omit or pass null to fetch all (subject to limit).",
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
     },
     "properties": {
       "type": "array",
+      "description": "Email properties to include in the response. Omit for all properties.",
       "items": { "type": "string", "minLength": 1 }
     },
     "bodyProperties": {
       "type": "array",
+      "description": "Properties to include for each body part object. Defaults to a standard set.",
       "items": { "type": "string", "minLength": 1 }
     },
-    "fetchTextBodyValues": { "type": "boolean" },
-    "fetchHTMLBodyValues": { "type": "boolean" },
-    "fetchAllBodyValues": { "type": "boolean" },
-    "maxBodyValueBytes": { "type": "integer", "minimum": 0 },
+    "fetchTextBodyValues": { "type": "boolean", "description": "If true, fetch the value of text/plain body parts." },
+    "fetchHTMLBodyValues": { "type": "boolean", "description": "If true, fetch the value of text/html body parts." },
+    "fetchAllBodyValues": { "type": "boolean", "description": "If true, fetch all body part values regardless of content type." },
+    "maxBodyValueBytes": { "type": "integer", "minimum": 0, "description": "Truncate body values to this many bytes. 0 means no truncation." },
     "fetchHeaders": {
       "type": "array",
+      "description": "List of specific header field names to return as header: values.",
       "items": { "type": "string", "minLength": 1 }
     },
-    "fetchAllHeaders": { "type": ["boolean", "null"] }
+    "fetchAllHeaders": { "type": ["boolean", "null"], "description": "If true, return all raw headers regardless of fetchHeaders list." }
   },
   "required": ["accountId"],
   "additionalProperties": false

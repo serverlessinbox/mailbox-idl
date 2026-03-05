@@ -4,20 +4,23 @@
   "title": "Email/changes response",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "oldState": { "type": "string", "minLength": 1 },
-    "newState": { "type": "string", "minLength": 1 },
-    "hasMoreChanges": { "type": "boolean" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account these changes belong to." },
+    "oldState": { "type": "string", "minLength": 1, "description": "The state this response starts from (matches sinceState from the request)." },
+    "newState": { "type": "string", "minLength": 1, "description": "The current state after all listed changes; pass to the next call." },
+    "hasMoreChanges": { "type": "boolean", "description": "If true, additional changes exist beyond maxChanges. Call again with newState." },
     "created": {
       "type": "array",
+      "description": "IDs of emails created since sinceState.",
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
     },
     "updated": {
       "type": "array",
+      "description": "IDs of emails whose properties changed since sinceState.",
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
     },
     "destroyed": {
       "type": "array",
+      "description": "IDs of emails destroyed since sinceState.",
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
     }
   },

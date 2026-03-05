@@ -4,18 +4,19 @@
   "title": "Email/query args",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "filter": { "type": "object", "additionalProperties": true },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to query." },
+    "filter": { "type": "object", "additionalProperties": true, "description": "Optional filter conditions to narrow results (e.g. inMailbox, from, subject)." },
     "sort": {
       "type": "array",
+      "description": "Sort criteria. Each object has a property name and isAscending flag. Defaults to date descending.",
       "items": { "type": "object", "additionalProperties": true }
     },
-    "position": { "type": "integer", "minimum": 0 },
-    "anchor": { "type": ["string", "null"] },
-    "anchorOffset": { "type": "integer" },
-    "limit": { "type": "integer", "minimum": 0 },
-    "calculateTotal": { "type": "boolean" },
-    "collapseThreads": { "type": "boolean" }
+    "position": { "type": "integer", "minimum": 0, "description": "Zero-based index of the first result to return. Cannot be combined with anchor." },
+    "anchor": { "type": ["string", "null"], "description": "EmailId to use as the anchor for pagination. The page starts at this email." },
+    "anchorOffset": { "type": "integer", "description": "Offset in results relative to the anchor. Negative values move backwards." },
+    "limit": { "type": "integer", "minimum": 0, "description": "Maximum number of EmailIds to return. Defaults to server maximum." },
+    "calculateTotal": { "type": "boolean", "description": "If true, compute the total number of matching emails (may be slower)." },
+    "collapseThreads": { "type": "boolean", "description": "If true, return only the latest email per thread, de-duplicating results." }
   },
   "required": ["accountId"],
   "additionalProperties": false

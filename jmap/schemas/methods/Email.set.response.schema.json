@@ -20,24 +20,26 @@
   },
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "oldState": { "type": "string", "minLength": 1 },
-    "newState": { "type": "string", "minLength": 1 },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the changes were applied to." },
+    "oldState": { "type": "string", "minLength": 1, "description": "The Email state before this set operation." },
+    "newState": { "type": "string", "minLength": 1, "description": "The Email state after this set operation." },
 
     "created": {
       "type": ["object", "null"],
+      "description": "Successfully created emails, keyed by the client-assigned creation id.",
       "propertyNames": { "$ref": "#/$defs/CreationId" },
       "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/EmailExt" }
     },
 
     "updated": {
       "type": ["object", "null"],
-      "description": "Map of EmailId to null on success.",
+      "description": "Map of successfully updated EmailId to null.",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
       "additionalProperties": { "type": "null" }
     },
 
     "destroyed": {
+      "description": "IDs of successfully destroyed emails, or null if none.",
       "anyOf": [
         { "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" } },
         { "type": "null" }
@@ -46,18 +48,21 @@
 
     "notCreated": {
       "type": ["object", "null"],
+      "description": "Creation ids that failed, with a SetError describing the reason.",
       "propertyNames": { "$ref": "#/$defs/CreationId" },
       "additionalProperties": { "$ref": "#/$defs/SetError" }
     },
 
     "notUpdated": {
       "type": ["object", "null"],
+      "description": "EmailIds that failed to update, with a SetError describing the reason.",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
       "additionalProperties": { "$ref": "#/$defs/SetError" }
     },
 
     "notDestroyed": {
       "type": ["object", "null"],
+      "description": "EmailIds that failed to destroy, with a SetError describing the reason.",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
       "additionalProperties": { "$ref": "#/$defs/SetError" }
     }

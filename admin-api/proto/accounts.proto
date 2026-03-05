@@ -35,20 +35,23 @@ service AccountsService {
 
 enum AccountRole {
   ACCOUNT_ROLE_UNSPECIFIED = 0;
-  ACCOUNT_ROLE_READ = 1;
-  ACCOUNT_ROLE_WRITE = 2;
-  ACCOUNT_ROLE_ADMIN = 3;
+  ACCOUNT_ROLE_READ = 1;   // Can read email and mailboxes
+  ACCOUNT_ROLE_WRITE = 2;  // Can create, update, and delete email
+  ACCOUNT_ROLE_ADMIN = 3;  // Full access including managing aliases and account settings
 }
 
 message AccountMember {
+  // account_id: The account this membership belongs to.
   string account_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^acc_[a-zA-Z0-9_-]{21}$"
   }];
+  // user_id: The user who holds this membership.
   string user_id = 2 [(validate.rules).string = {
     min_len: 1
     pattern: "^user_[a-zA-Z0-9_-]{21}$"
   }];
+  // role: The access level granted to this user.
   AccountRole role = 3 [(validate.rules).enum = {defined_only: true, not_in: [0]}];
 }
 
@@ -93,32 +96,40 @@ message DeleteAccountMemberRequest {
 message DeleteAccountMemberResponse {}
 
 message Account {
+  // account_id: Unique account identifier (acc_ prefix).
   string account_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^acc_[a-zA-Z0-9_-]{21}$"
   }];
+  // type: Account type — "personal" for single-user mailboxes, "shared" for team accounts.
   string type = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 50
   }];
+  // name: Human-readable display name for this account.
   string name = 3 [(validate.rules).string = {
     min_len: 1
     max_len: 255
   }];
+  // email: Primary email address (the account's default sending alias).
   string email = 4 [(validate.rules).string = {
     email: true
     max_len: 255
   }];
+  // shared: True if this account has more than one member.
   bool shared = 5;
 }
 
 message ListAccountsRequest {
+  // page_size: Maximum number of accounts per page (1–1000, default 50).
   optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 1000}];
+  // page_token: Token from previous response to fetch the next page.
   optional string page_token = 2 [(validate.rules).string.max_len = 512];
 }
 
 message ListAccountsResponse {
   repeated Account accounts = 1;
+  // next_page_token: Pass to the next request to get the following page. Empty means no more pages.
   string next_page_token = 2;
 }
 
@@ -134,10 +145,12 @@ message GetAccountResponse {
 }
 
 message CreateAccountRequest {
+  // user_id: The user who will own this account.
   string user_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^user_[a-zA-Z0-9_-]{21}$"
   }];
+  // name: Display name for the account.
   string name = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100
@@ -151,6 +164,7 @@ message CreateAccountRequest {
     max_len: 64
     pattern: "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$"
   }];
+  // domain_id: Domain for the primary alias (must be a configured sending domain).
   string domain_id = 4 [(validate.rules).string = {
     min_len: 1
     pattern: "^dom_[a-zA-Z0-9_-]{21}$"
@@ -166,6 +180,7 @@ message UpdateAccountRequest {
     min_len: 1
     pattern: "^acc_[a-zA-Z0-9_-]{21}$"
   }];
+  // name: New display name for the account.
   optional string name = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100

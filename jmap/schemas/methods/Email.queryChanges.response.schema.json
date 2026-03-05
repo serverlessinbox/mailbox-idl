@@ -4,16 +4,18 @@
   "title": "Email/queryChanges response",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "oldQueryState": { "type": "string", "minLength": 1 },
-    "newQueryState": { "type": "string", "minLength": 1 },
-    "hasMoreChanges": { "type": "boolean" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account these query changes belong to." },
+    "oldQueryState": { "type": "string", "minLength": 1, "description": "The queryState this response starts from (matches sinceQueryState from request)." },
+    "newQueryState": { "type": "string", "minLength": 1, "description": "The current queryState. Pass to the next Email/queryChanges call." },
+    "hasMoreChanges": { "type": "boolean", "description": "If true, more changes exist beyond maxChanges. Call again with newQueryState." },
     "removed": {
       "type": "array",
+      "description": "EmailIds that are no longer in the query result set.",
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
     },
     "added": {
       "type": "array",
+      "description": "Emails that are now in the result set, with their new positions.",
       "items": {
         "type": "object",
         "properties": {
@@ -24,8 +26,8 @@
         "additionalProperties": false
       }
     },
-    "total": { "type": "integer", "minimum": 0 },
-    "upToId": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
+    "total": { "type": "integer", "minimum": 0, "description": "Updated total count of results (if calculateTotal was true in the original query)." },
+    "upToId": { "$ref": "../core/types.schema.json#/$defs/EmailId", "description": "Echoes the upToId from the request, if provided." }
   },
   "required": [
     "accountId",

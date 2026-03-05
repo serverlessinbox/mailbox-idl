@@ -4,13 +4,15 @@
   "title": "Mailbox/get args",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch mailboxes from." },
     "ids": {
       "type": "array",
+      "description": "IDs of specific mailboxes to fetch. Omit to fetch all mailboxes for the account.",
       "items": { "$ref": "../core/types.schema.json#/$defs/MailboxId" }
     },
     "properties": {
       "type": "array",
+      "description": "Mailbox properties to include in the response. Omit for all properties.",
       "items": { "type": "string", "minLength": 1 }
     }
   },

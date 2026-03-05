@@ -4,13 +4,15 @@
   "title": "Thread/get args",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch threads from." },
     "ids": {
       "type": "array",
+      "description": "IDs of specific threads to fetch.",
       "items": { "$ref": "../core/types.schema.json#/$defs/ThreadId" }
     },
     "properties": {
       "type": "array",
+      "description": "Thread properties to include. Omit for all properties.",
       "items": { "type": "string", "minLength": 1 }
     }
   },

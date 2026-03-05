@@ -4,17 +4,18 @@
   "title": "Email/query response",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "queryState": { "type": "string" },
-    "canCalculateChanges": { "type": "boolean" },
-    "position": { "type": "integer", "minimum": 0 },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account this query result belongs to." },
+    "queryState": { "type": "string", "description": "Opaque state string for this query. Pass to Email/queryChanges to detect changes to the result set." },
+    "canCalculateChanges": { "type": "boolean", "description": "Whether Email/queryChanges is supported for this query." },
+    "position": { "type": "integer", "minimum": 0, "description": "Zero-based index of the first ID in the full result list." },
     "ids": {
       "type": "array",
+      "description": "EmailIds of the results for this page, in the requested sort order.",
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
     },
-    "total": { "type": "integer", "minimum": 0 },
-    "limit": { "type": "integer", "minimum": 0 },
-    "anchor": { "type": "string" }
+    "total": { "type": "integer", "minimum": 0, "description": "Total number of matching emails. Only present when calculateTotal was true." },
+    "limit": { "type": "integer", "minimum": 0, "description": "The limit applied by the server (may be lower than the requested limit)." },
+    "anchor": { "type": "string", "description": "The anchor EmailId used for this page, if anchor-based pagination was requested." }
   },
   "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"],
   "additionalProperties": false

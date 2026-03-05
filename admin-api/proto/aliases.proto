@@ -22,32 +22,43 @@ service AliasesService {
 }
 
 message Alias {
+  // alias_id: Unique alias identifier (alias_ prefix).
   string alias_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^alias_[a-zA-Z0-9_-]{21}$"
   }];
+  // account_id: Account this alias belongs to.
   string account_id = 2 [(validate.rules).string = {
     min_len: 1
     pattern: "^acc_[a-zA-Z0-9_-]{21}$"
   }];
+  // email: Full email address for this alias (e.g. "hello@example.com").
   string email = 3 [(validate.rules).string = {
     email: true
     max_len: 255
   }];
+  // domain_id: Domain this alias is associated with.
   string domain_id = 13 [(validate.rules).string = {
     min_len: 1
     pattern: "^dom_[a-zA-Z0-9_-]{21}$"
   }];
+  // is_primary: True if this is the account's primary address; cannot be deleted without deleting the account.
   bool is_primary = 4;
+  // is_active: If false, incoming mail to this alias is rejected.
   bool is_active = 5;
+  // is_visible: If false, this alias is hidden from UI sender picker lists.
   bool is_visible = 6;
 
+  // can_send_from: If true, this alias can be used as the From address when composing or replying.
   bool can_send_from = 7;
+  // name: Optional display name used in the From header (e.g. "Jane Smith").
   optional string name = 8 [(validate.rules).string.max_len = 255];
+  // reply_to: Optional override Reply-To address for outgoing mail sent from this alias.
   optional string reply_to = 9 [(validate.rules).string = {
     email: true
     max_len: 255
   }];
+  // bcc: Optional address added as BCC on every email sent from this alias.
   optional string bcc = 10 [(validate.rules).string = {
     email: true
     max_len: 255
@@ -66,28 +77,36 @@ message ListAccountAliasesResponse {
 }
 
 message CreateAliasRequest {
+  // account_id: Account to create the alias for.
   string account_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^acc_[a-zA-Z0-9_-]{21}$"
   }];
+  // local_part: The part before the @ sign (e.g. "support" for support@example.com).
   string local_part = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 64
     pattern: "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$"
   }];
+  // domain_id: Domain for the alias (must be a configured and verified sending domain).
   string domain_id = 3 [(validate.rules).string = {
     min_len: 1
     pattern: "^dom_[a-zA-Z0-9_-]{21}$"
   }];
+  // is_active: If false, incoming mail to this alias will be rejected. Default true.
   optional bool is_active = 4;
+  // is_visible: If false, this alias will not appear in UI sender picker lists. Default true.
   optional bool is_visible = 5;
-
+  // can_send_from: If true, this alias can be used as From address. Default false.
   optional bool can_send_from = 6;
+  // name: Display name shown in the From header (e.g. "Support Team").
   optional string name = 7 [(validate.rules).string.max_len = 255];
+  // reply_to: Override Reply-To address for outgoing mail sent from this alias.
   optional string reply_to = 8 [(validate.rules).string = {
     email: true
     max_len: 255
   }];
+  // bcc: Address added as BCC on every email sent from this alias.
   optional string bcc = 9 [(validate.rules).string = {
     email: true
     max_len: 255
@@ -99,19 +118,25 @@ message CreateAliasResponse {
 }
 
 message UpdateAliasRequest {
+  // alias_id: The alias to update.
   string alias_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^alias_[a-zA-Z0-9_-]{21}$"
   }];
+  // is_active: Set to false to stop accepting mail to this alias.
   optional bool is_active = 2;
+  // is_visible: Set to false to hide this alias from UI sender picker lists.
   optional bool is_visible = 3;
-
+  // can_send_from: Update whether this alias can be used as a From address.
   optional bool can_send_from = 4;
+  // name: Update the From header display name.
   optional string name = 5 [(validate.rules).string.max_len = 255];
+  // reply_to: Update the override Reply-To address.
   optional string reply_to = 6 [(validate.rules).string = {
     email: true
     max_len: 255
   }];
+  // bcc: Update the always-BCC address.
   optional string bcc = 7 [(validate.rules).string = {
     email: true
     max_len: 255

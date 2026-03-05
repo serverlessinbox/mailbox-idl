@@ -4,9 +4,9 @@
   "title": "Email/changes args",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "sinceState": { "type": "string", "minLength": 1 },
-    "maxChanges": { "type": "integer", "minimum": 0 }
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch changes for." },
+    "sinceState": { "type": "string", "minLength": 1, "description": "The state string from the last Email/get or Email/changes response. Only changes after this state are returned." },
+    "maxChanges": { "type": "integer", "minimum": 0, "description": "Maximum number of change records to return. Omit for no limit. If exceeded, hasMoreChanges will be true." }
   },
   "required": ["accountId", "sinceState"],
   "additionalProperties": false

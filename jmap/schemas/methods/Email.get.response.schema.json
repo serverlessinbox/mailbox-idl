@@ -4,13 +4,15 @@
   "title": "Email/get response",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "state": { "type": "string" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the emails belong to." },
+    "state": { "type": "string", "description": "The current state of the Email type. Pass to Email/changes to detect future changes." },
     "list": {
       "type": "array",
+      "description": "The list of Email objects that were requested and found.",
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailExt" }
     },
     "notFound": {
+      "description": "IDs from the request that could not be found, or null if all were found.",
       "anyOf": [
         { "type": "array", "items": { "type": "string" } },
         { "type": "null" }

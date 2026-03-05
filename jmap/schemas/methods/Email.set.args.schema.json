@@ -18,8 +18,8 @@
   },
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "ifInState": { "type": ["string", "null"], "minLength": 1 },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to apply changes to." },
+    "ifInState": { "type": ["string", "null"], "minLength": 1, "description": "Optimistic concurrency guard; the call fails with stateMismatch if the Email state has changed." },
 
     "create": {
       "type": "object",
@@ -37,6 +37,7 @@
 
     "destroy": {
       "type": "array",
+      "description": "List of EmailIds to permanently delete.",
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
     }
   },

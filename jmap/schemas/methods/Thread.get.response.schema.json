@@ -4,9 +4,10 @@
   "title": "Thread/get response",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "state": { "type": "string", "minLength": 1 },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the threads belong to." },
+    "state": { "type": "string", "minLength": 1, "description": "The current state of the Thread type." },
     "list": {
+      "description": "The list of Thread objects that were found.",
       "type": "array",
       "items": {
         "allOf": [
@@ -34,6 +35,7 @@
     },
     "notFound": {
       "type": "array",
+      "description": "IDs from the request that could not be found.",
       "items": { "$ref": "../core/types.schema.json#/$defs/ThreadId" }
     }
   },
