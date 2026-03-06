@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Thread.query.response.schema.json",
+  "title": "Thread/query response",
+  "description": "Response for Thread/query (RFC 8621 §2.3 / RFC 8620 §5.5).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "queryState": { "type": "string", "description": "Server state string for this query result." },
+    "canCalculateChanges": { "type": "boolean", "description": "Whether the server can calculate query changes." },
+    "position": { "type": "integer", "minimum": 0, "description": "Zero-based index of the first result in ids." },
+    "ids": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "The Thread ids in the requested window."
+    },
+    "total": { "type": ["integer", "null"], "minimum": 0, "description": "Total number of results (if calculateTotal was true)." },
+    "limit": { "type": ["integer", "null"], "minimum": 0, "description": "The limit applied to this query." }
+  },
+  "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"],
+  "additionalProperties": false
+}

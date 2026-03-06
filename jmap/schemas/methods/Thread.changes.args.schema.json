@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Thread.changes.args.schema.json",
+  "title": "Thread/changes args",
+  "description": "Arguments for Thread/changes (RFC 8621 §2.2 / RFC 8620 §5.2). Returns thread ids changed since a given state.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "sinceState": { "type": "string", "description": "The state to get changes since." },
+    "maxChanges": { "type": ["integer", "null"], "minimum": 1, "description": "Maximum number of changes to return." }
+  },
+  "required": ["accountId", "sinceState"],
+  "additionalProperties": false
+}

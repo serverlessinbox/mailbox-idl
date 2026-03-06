@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.copy.args.schema.json",
+  "title": "Email/copy args",
+  "description": "Arguments for Email/copy (RFC 8621 §5.7 / RFC 8620 §5.4). Copies emails between accounts.",
+  "type": "object",
+  "properties": {
+    "fromAccountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to copy emails from." },
+    "ifFromInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard on the source Email state." },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to copy emails into." },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard on the destination Email state." },
+    "create": {
+      "type": "object",
+      "description": "Map of client-assigned creation ids to objects describing the copy.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "../core/types.schema.json#/$defs/Id", "description": "The id of the Email in the source account." },
+          "mailboxIds": {
+            "type": "object",
+            "description": "Map of Mailbox id to true in the destination account.",
+            "additionalProperties": { "type": "boolean", "enum": [true] }
+          },
+          "keywords": {
+            "type": "object",
+            "description": "Keywords to set on the copied email.",
+            "additionalProperties": { "type": "boolean", "enum": [true] }
+          }
+        },
+        "required": ["id", "mailboxIds"],
+        "additionalProperties": false
+      }
+    },
+    "onSuccessDestroyOriginal": {
+      "type": ["boolean", "null"],
+      "description": "If true, destroy original emails on success. Default: false."
+    },
+    "destroyFromIfInState": {
+      "type": ["string", "null"],
+      "description": "Guard on source state when destroying originals."
+    }
+  },
+  "required": ["fromAccountId", "accountId", "create"],
+  "additionalProperties": false
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Identity.changes.args.schema.json",
+  "title": "Identity/changes args",
+  "description": "Arguments for Identity/changes (RFC 8621 §6.2 / RFC 8620 §5.2).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "sinceState": { "type": "string" },
+    "maxChanges": { "type": ["integer", "null"], "minimum": 1 }
+  },
+  "required": ["accountId", "sinceState"],
+  "additionalProperties": false
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/EmailSubmission.queryChanges.response.schema.json",
+  "title": "EmailSubmission/queryChanges response",
+  "description": "Response for EmailSubmission/queryChanges (RFC 8621 §7.3 / RFC 8620 §5.6).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "oldQueryState": { "type": "string" },
+    "newQueryState": { "type": "string" },
+    "total": { "type": ["integer", "null"], "minimum": 0 },
+    "removed": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "Ids removed from the query results."
+    },
+    "added": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "../core/types.schema.json#/$defs/Id" },
+          "index": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["id", "index"],
+        "additionalProperties": false
+      },
+      "description": "Items added to the query results with their new index."
+    }
+  },
+  "required": ["accountId", "oldQueryState", "newQueryState", "removed", "added"],
+  "additionalProperties": false
+}

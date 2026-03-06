@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.import.args.schema.json",
+  "title": "Email/import args",
+  "description": "Arguments for Email/import (RFC 8621 §5.4). Imports raw RFC 5322 messages from blobs.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to import into." },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard on the Email state." },
+    "emails": {
+      "type": "object",
+      "description": "Map of client-assigned creation ids to ImportEmailObject.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/ImportEmailObject" }
+    }
+  },
+  "required": ["accountId", "emails"],
+  "additionalProperties": false
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Identity.get.response.schema.json",
+  "title": "Identity/get response",
+  "description": "Response for Identity/get (RFC 8621 §6.1 / RFC 8620 §5.1).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "state": { "type": "string", "description": "Current Identity state." },
+    "list": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/Identity" },
+      "description": "The requested Identity objects."
+    },
+    "notFound": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "Ids that were not found."
+    }
+  },
+  "required": ["accountId", "state", "list"],
+  "additionalProperties": false
+}

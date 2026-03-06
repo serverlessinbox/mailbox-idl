@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.import.response.schema.json",
+  "title": "Email/import response",
+  "description": "Response for Email/import (RFC 8621 §5.4).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "oldState": { "type": ["string", "null"], "description": "The state before the import." },
+    "newState": { "type": "string", "description": "The state after the import." },
+    "created": {
+      "type": ["object", "null"],
+      "description": "Map of creation id to created Email object (subset of properties).",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "../core/types.schema.json#/$defs/Id" },
+          "blobId": { "$ref": "../core/types.schema.json#/$defs/BlobId" },
+          "threadId": { "$ref": "../core/types.schema.json#/$defs/Id" },
+          "size": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["id", "blobId", "threadId", "size"],
+        "additionalProperties": false
+      }
+    },
+    "notCreated": {
+      "type": ["object", "null"],
+      "description": "Map of creation id to SetError for failed imports.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    }
+  },
+  "required": ["accountId", "oldState", "newState"],
+  "additionalProperties": false
+}

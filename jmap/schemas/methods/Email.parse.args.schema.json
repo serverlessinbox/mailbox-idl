@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.parse.args.schema.json",
+  "title": "Email/parse args",
+  "description": "Arguments for Email/parse (RFC 8621 §5.5). Parses blobs as RFC 5322 messages without importing them.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "blobIds": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/BlobId" },
+      "description": "Blob ids of the messages to parse."
+    },
+    "properties": {
+      "type": ["array", "null"],
+      "items": { "type": "string" },
+      "description": "Email properties to return. Defaults to all properties."
+    },
+    "bodyProperties": {
+      "type": ["array", "null"],
+      "items": { "type": "string" },
+      "description": "Body part properties to include."
+    },
+    "fetchTextBodyValues": {
+      "type": ["boolean", "null"],
+      "description": "If true, include values for text/plain body parts."
+    },
+    "fetchHTMLBodyValues": {
+      "type": ["boolean", "null"],
+      "description": "If true, include values for text/html body parts."
+    },
+    "fetchAllBodyValues": {
+      "type": ["boolean", "null"],
+      "description": "If true, include values for all body parts."
+    },
+    "maxBodyValueBytes": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Truncate body values to this byte length."
+    }
+  },
+  "required": ["accountId", "blobIds"],
+  "additionalProperties": false
+}

@@ -4,32 +4,35 @@
   "title": "ServerlessInbox JMAP Core Types",
   "type": "object",
   "$defs": {
-    "AccountId": { "type": "string", "minLength": 1 },
-    "EmailId": { "type": "string", "minLength": 1 },
-    "MailboxId": { "type": "string", "minLength": 1 },
-    "ThreadId": { "type": "string", "minLength": 1 },
+    "Id": { "type": "string", "minLength": 1, "description": "An opaque server-assigned identifier string (RFC 8620 §1.2)." },
+    "AccountId": { "type": "string", "minLength": 1, "description": "Identifies a JMAP account (RFC 8620 §1.6.2)." },
+    "EmailId": { "type": "string", "minLength": 1, "description": "Identifies an Email object (RFC 8621 §4)." },
+    "MailboxId": { "type": "string", "minLength": 1, "description": "Identifies a Mailbox object (RFC 8621 §3)." },
+    "ThreadId": { "type": "string", "minLength": 1, "description": "Identifies a Thread object (RFC 8621 §2)." },
 
-    "JmapDate": { "type": "string", "format": "date-time" },
+    "JmapDate": { "type": "string", "format": "date-time", "description": "An ISO 8601 date-time string in UTC (RFC 8620 §1.4)." },
 
     "Keywords": {
       "type": "object",
+      "description": "Map of IMAP keyword → true. The presence of a key means the keyword is set (RFC 8621 §4.1.1).",
       "additionalProperties": { "type": "boolean" }
     },
 
     "Mailbox": {
       "type": "object",
+      "description": "A JMAP Mailbox object (RFC 8621 §3). Represents a folder or label used to organise emails.",
       "properties": {
-        "id": { "$ref": "#/$defs/MailboxId" },
-        "accountId": { "$ref": "#/$defs/AccountId" },
-        "name": { "type": "string" },
-        "role": { "type": ["string", "null"] },
-        "parentId": { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }] },
-        "sortOrder": { "type": "integer", "minimum": 0 },
-        "deletable": { "type": "boolean" },
-        "totalEmails": { "type": "integer", "minimum": 0 },
-        "unreadEmails": { "type": "integer", "minimum": 0 },
-        "totalThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
-        "unreadThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] }
+        "id":            { "$ref": "#/$defs/MailboxId", "description": "The mailbox id (server-set, immutable)." },
+        "accountId":    { "$ref": "#/$defs/AccountId", "description": "The account this mailbox belongs to (server-set)." },
+        "name":         { "type": "string", "description": "User-visible name of the mailbox." },
+        "role":         { "type": ["string", "null"], "description": "System role (inbox, trash, drafts, etc.), or null for user-created mailboxes." },
+        "parentId":     { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }], "description": "Id of the parent mailbox, or null if top-level." },
+        "sortOrder":    { "type": "integer", "minimum": 0, "description": "Client sort-order hint; lower values sort first." },
+        "deletable":    { "type": "boolean", "description": "Whether the user may delete this mailbox (server-set)."},
+        "totalEmails":  { "type": "integer", "minimum": 0, "description": "Total number of emails in the mailbox (server-set)." },
+        "unreadEmails": { "type": "integer", "minimum": 0, "description": "Number of emails without the \\Seen keyword (server-set)." },
+        "totalThreads":  { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }], "description": "Total number of threads with at least one email in this mailbox, or null if not supported (server-set)." },
+        "unreadThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }], "description": "Number of threads with at least one unread email in this mailbox, or null if not supported (server-set)." }
       },
       "required": ["id"],
       "additionalProperties": false
@@ -37,18 +40,19 @@
 
     "MailboxBase": {
       "type": "object",
+      "description": "Base Mailbox shape used as the allOf anchor for MailboxExt (allows vendor-prefixed properties).",
       "properties": {
-        "id": { "$ref": "#/$defs/MailboxId" },
-        "accountId": { "$ref": "#/$defs/AccountId" },
-        "name": { "type": "string" },
-        "role": { "type": ["string", "null"] },
-        "parentId": { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }] },
-        "sortOrder": { "type": "integer", "minimum": 0 },
-        "deletable": { "type": "boolean" },
-        "totalEmails": { "type": "integer", "minimum": 0 },
-        "unreadEmails": { "type": "integer", "minimum": 0 },
-        "totalThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
-        "unreadThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] }
+        "id":            { "$ref": "#/$defs/MailboxId", "description": "The mailbox id (server-set, immutable)." },
+        "accountId":    { "$ref": "#/$defs/AccountId", "description": "The account this mailbox belongs to (server-set)." },
+        "name":         { "type": "string", "description": "User-visible name of the mailbox." },
+        "role":         { "type": ["string", "null"], "description": "System role (inbox, trash, drafts, etc.), or null for user-created mailboxes." },
+        "parentId":     { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }], "description": "Id of the parent mailbox, or null if top-level." },
+        "sortOrder":    { "type": "integer", "minimum": 0, "description": "Client sort-order hint; lower values sort first." },
+        "deletable":    { "type": "boolean", "description": "Whether the user may delete this mailbox (server-set)." },
+        "totalEmails":  { "type": "integer", "minimum": 0, "description": "Total number of emails in the mailbox (server-set)." },
+        "unreadEmails": { "type": "integer", "minimum": 0, "description": "Number of emails without the \\Seen keyword (server-set)." },
+        "totalThreads":  { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }], "description": "Total number of threads with at least one email in this mailbox, or null if not supported (server-set)." },
+        "unreadThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }], "description": "Number of threads with at least one unread email in this mailbox, or null if not supported (server-set)." }
       },
       "required": ["id"]
     },
@@ -68,24 +72,19 @@
 
     "Email": {
       "type": "object",
+      "description": "A JMAP Email object (RFC 8621 §4). Represents a single RFC 5322 message.",
       "properties": {
-        "id": { "$ref": "#/$defs/EmailId" },
-        "blobId": { "type": "string" },
-        "threadId": { "$ref": "#/$defs/ThreadId" },
-        "mailboxIds": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/MailboxId" }
-        },
-        "keywords": { "$ref": "#/$defs/Keywords" },
-        "size": { "type": "integer" },
-        "receivedAt": { "$ref": "#/$defs/JmapDate" },
-        "subject": { "type": "string" },
-        "preview": { "type": "string" },
-        "hasAttachment": { "type": "boolean" },
-        "headers": {
-          "type": "object",
-          "additionalProperties": { "type": "string" }
-        }
+        "id":            { "$ref": "#/$defs/EmailId", "description": "The email id (server-set, immutable)." },
+        "blobId":        { "$ref": "#/$defs/BlobId", "description": "Blob id of the raw RFC 5322 message (server-set)." },
+        "threadId":      { "$ref": "#/$defs/ThreadId", "description": "Thread this email belongs to (server-set)." },
+        "mailboxIds":    { "type": "array", "items": { "$ref": "#/$defs/MailboxId" }, "description": "Mailboxes this email is in." },
+        "keywords":      { "$ref": "#/$defs/Keywords", "description": "IMAP keywords set on this email." },
+        "size":          { "type": "integer", "minimum": 0, "description": "Size in bytes of the raw RFC 5322 message (server-set)." },
+        "receivedAt":    { "$ref": "#/$defs/JmapDate", "description": "Date/time the message was received by the server." },
+        "subject":       { "type": "string", "description": "Decoded Subject header value." },
+        "preview":       { "type": "string", "description": "Plain-text excerpt of the message body (at most 256 characters, server-set)." },
+        "hasAttachment": { "type": "boolean", "description": "True if the message has at least one attachment (server-set)." },
+        "headers":       { "type": "object", "additionalProperties": { "type": "string" }, "description": "Raw header field name → value map." }
       },
       "required": ["id"],
       "additionalProperties": false
@@ -93,24 +92,19 @@
 
     "EmailBase": {
       "type": "object",
+      "description": "Base Email shape used as the allOf anchor for EmailExt (allows vendor-prefixed properties).",
       "properties": {
-        "id": { "$ref": "#/$defs/EmailId" },
-        "blobId": { "type": "string" },
-        "threadId": { "$ref": "#/$defs/ThreadId" },
-        "mailboxIds": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/MailboxId" }
-        },
-        "keywords": { "$ref": "#/$defs/Keywords" },
-        "size": { "type": "integer" },
-        "receivedAt": { "$ref": "#/$defs/JmapDate" },
-        "subject": { "type": "string" },
-        "preview": { "type": "string" },
-        "hasAttachment": { "type": "boolean" },
-        "headers": {
-          "type": "object",
-          "additionalProperties": { "type": "string" }
-        }
+        "id":            { "$ref": "#/$defs/EmailId", "description": "The email id (server-set, immutable)." },
+        "blobId":        { "$ref": "#/$defs/BlobId", "description": "Blob id of the raw RFC 5322 message (server-set)." },
+        "threadId":      { "$ref": "#/$defs/ThreadId", "description": "Thread this email belongs to (server-set)." },
+        "mailboxIds":    { "type": "array", "items": { "$ref": "#/$defs/MailboxId" }, "description": "Mailboxes this email is in." },
+        "keywords":      { "$ref": "#/$defs/Keywords", "description": "IMAP keywords set on this email." },
+        "size":          { "type": "integer", "minimum": 0, "description": "Size in bytes of the raw RFC 5322 message (server-set)." },
+        "receivedAt":    { "$ref": "#/$defs/JmapDate", "description": "Date/time the message was received by the server." },
+        "subject":       { "type": "string", "description": "Decoded Subject header value." },
+        "preview":       { "type": "string", "description": "Plain-text excerpt of the message body (at most 256 characters, server-set)." },
+        "hasAttachment": { "type": "boolean", "description": "True if the message has at least one attachment (server-set)." },
+        "headers":       { "type": "object", "additionalProperties": { "type": "string" }, "description": "Raw header field name → value map." }
       },
       "required": ["id"]
     },
@@ -126,6 +120,188 @@
         }
       ],
       "unevaluatedProperties": false
+    },
+
+    "SubmissionId": { "type": "string", "minLength": 1, "description": "Identifies an EmailSubmission object (RFC 8621 §7)." },
+    "IdentityId":   { "type": "string", "minLength": 1, "description": "Identifies an Identity object (RFC 8621 §6)." },
+    "BlobId":       { "type": "string", "minLength": 1, "description": "Identifies a binary blob (RFC 8620 §6)." },
+    "CreationId":   { "type": "string", "minLength": 1, "description": "Client-assigned temporary id used within a single /set or /import call." },
+
+    "SetError": {
+      "type": "object",
+      "description": "Describes why a create, update or destroy operation failed (RFC 8620 §5.3).",
+      "properties": {
+        "type":        { "type": "string", "minLength": 1 },
+        "description": { "type": ["string", "null"] },
+        "properties":  { "type": ["array", "null"], "items": { "type": "string" } }
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    },
+
+    "PatchObject": {
+      "type": "object",
+      "description": "JMAP PatchObject (RFC 8620 §5.3): keys are JSON Pointers (e.g. /name); values are replacement values or null to remove.",
+      "patternProperties": { "^/": {} },
+      "additionalProperties": false
+    },
+
+    "Thread": {
+      "type": "object",
+      "description": "A JMAP Thread object (RFC 8621 §2). Groups related Email objects.",
+      "properties": {
+        "id":       { "$ref": "#/$defs/ThreadId", "description": "The thread id." },
+        "emailIds": { "type": "array", "items": { "$ref": "#/$defs/EmailId" }, "description": "Ordered list of email ids in this thread, oldest first." }
+      },
+      "required": ["id", "emailIds"],
+      "additionalProperties": false
+    },
+
+    "EmailAddress": {
+      "type": "object",
+      "description": "An email address with an optional display name (RFC 8621 §4.1.2).",
+      "properties": {
+        "name":  { "type": ["string", "null"], "description": "Display name, or null if none." },
+        "email": { "type": "string", "description": "The email address (addr-spec)." }
+      },
+      "required": ["email"],
+      "additionalProperties": false
+    },
+
+    "AddressWithParameters": {
+      "type": "object",
+      "description": "SMTP envelope address with optional SMTP parameters (RFC 8621 §7).",
+      "properties": {
+        "email":      { "type": "string", "description": "The SMTP envelope address." },
+        "parameters": {
+          "anyOf": [{ "type": "object", "additionalProperties": { "type": ["string", "null"] } }, { "type": "null" }],
+          "description": "Optional SMTP parameters (e.g. BODY, SIZE)."
+        }
+      },
+      "required": ["email"],
+      "additionalProperties": false
+    },
+
+    "Envelope": {
+      "type": "object",
+      "description": "SMTP envelope for an email submission (RFC 8621 §7).",
+      "properties": {
+        "mailFrom": { "$ref": "#/$defs/AddressWithParameters", "description": "SMTP MAIL FROM address." },
+        "rcptTo":   { "type": "array", "items": { "$ref": "#/$defs/AddressWithParameters" }, "description": "SMTP RCPT TO addresses." }
+      },
+      "required": ["mailFrom", "rcptTo"],
+      "additionalProperties": false
+    },
+
+    "DeliveryStatus": {
+      "type": "object",
+      "description": "Per-recipient delivery status for an EmailSubmission (RFC 8621 §7).",
+      "properties": {
+        "smtpReply": { "type": "string", "description": "The SMTP reply from the server, if received." },
+        "delivered": { "type": "string", "enum": ["queued", "yes", "no", "unknown"], "description": "Whether the message has been delivered to the recipient's incoming mail server." },
+        "displayed": { "type": "string", "enum": ["unknown", "yes"], "description": "Whether the recipient's client has displayed it (from an MDN)." }
+      },
+      "required": ["delivered", "displayed"],
+      "additionalProperties": false
+    },
+
+    "EmailSubmission": {
+      "type": "object",
+      "description": "A JMAP EmailSubmission object (RFC 8621 §7). Records the submission of an Email for delivery.",
+      "properties": {
+        "id":               { "$ref": "#/$defs/SubmissionId", "description": "The submission id." },
+        "identityId":       { "$ref": "#/$defs/IdentityId", "description": "The identity used to send the email." },
+        "emailId":          { "$ref": "#/$defs/EmailId", "description": "The email being submitted." },
+        "threadId":         { "$ref": "#/$defs/ThreadId", "description": "The thread the email belongs to (server-set)." },
+        "envelope":         { "anyOf": [{ "$ref": "#/$defs/Envelope" }, { "type": "null" }], "description": "SMTP envelope. Null means the server generated it from the email headers." },
+        "sendAt":           { "$ref": "#/$defs/JmapDate", "description": "The date/time the email was/will be submitted (server-set)." },
+        "undoStatus":       { "type": "string", "enum": ["pending", "final", "canceled"], "description": "Whether the submission can still be cancelled." },
+        "deliveryStatus":   { "anyOf": [{ "type": "object", "additionalProperties": { "$ref": "#/$defs/DeliveryStatus" } }, { "type": "null" }], "description": "Map of recipient email → DeliveryStatus (server-set)." },
+        "dsnBlobIds":       { "type": "array", "items": { "$ref": "#/$defs/BlobId" }, "description": "Blob ids of received DSN messages (server-set)." },
+        "mdnBlobIds":       { "type": "array", "items": { "$ref": "#/$defs/BlobId" }, "description": "Blob ids of received MDN messages (server-set)." }
+      },
+      "required": ["id", "identityId", "emailId", "threadId", "sendAt", "undoStatus"],
+      "additionalProperties": false
+    },
+
+    "EmailSubmissionCreate": {
+      "type": "object",
+      "description": "Client-settable fields when creating an EmailSubmission (RFC 8621 §7.5).",
+      "properties": {
+        "identityId": { "$ref": "#/$defs/IdentityId", "description": "The identity to send from. Required." },
+        "emailId":    { "$ref": "#/$defs/EmailId", "description": "The email to submit. Required." },
+        "envelope":   { "anyOf": [{ "$ref": "#/$defs/Envelope" }, { "type": "null" }], "description": "SMTP envelope. If null the server generates it from the email headers." },
+        "sendAt":     { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "Scheduled send time. If null send immediately." }
+      },
+      "required": ["identityId", "emailId"],
+      "additionalProperties": false
+    },
+
+    "Identity": {
+      "type": "object",
+      "description": "A JMAP Identity object (RFC 8621 §6). Represents a From address the user may send from.",
+      "properties": {
+        "id":            { "$ref": "#/$defs/IdentityId", "description": "The identity id (server-set)." },
+        "name":          { "type": "string", "description": "Display name shown in the From header." },
+        "email":         { "type": "string", "description": "The email address. Server-set and immutable." },
+        "replyTo":       { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Reply-To header addresses, or null for none." },
+        "bcc":           { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Bcc header addresses added to all outgoing emails, or null for none." },
+        "textSignature": { "type": "string", "description": "Plain-text signature appended to outgoing emails." },
+        "htmlSignature": { "type": "string", "description": "HTML signature appended to outgoing emails." },
+        "mayDelete":     { "type": "boolean", "description": "Whether the user may delete this identity (server-set)." }
+      },
+      "required": ["id", "name", "email", "textSignature", "htmlSignature", "mayDelete"],
+      "additionalProperties": false
+    },
+
+    "IdentityUpdate": {
+      "type": "object",
+      "description": "Client-settable fields when updating an Identity (RFC 8621 §6.2). Users cannot change email, id, or mayDelete.",
+      "properties": {
+        "name":          { "type": "string", "description": "Display name shown in the From header." },
+        "replyTo":       { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Reply-To header addresses, or null to remove." },
+        "bcc":           { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Bcc addresses added to all outgoing emails, or null to remove." },
+        "textSignature": { "type": "string", "description": "Plain-text signature appended to outgoing emails." },
+        "htmlSignature": { "type": "string", "description": "HTML signature appended to outgoing emails." }
+      },
+      "additionalProperties": false
+    },
+
+    "MailboxCreate": {
+      "type": "object",
+      "description": "Client-settable fields when creating a Mailbox (RFC 8621 §3.5).",
+      "properties": {
+        "name":      { "type": "string", "minLength": 1, "description": "User-visible name." },
+        "parentId":  { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }], "description": "Parent mailbox id, or null for top-level." },
+        "role":      { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "System role (inbox, trash, etc.), or null." },
+        "sortOrder": { "type": "integer", "minimum": 0, "description": "Sort order hint for display." }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+
+    "MailboxUpdate": {
+      "type": "object",
+      "description": "Client-settable fields when updating a Mailbox (RFC 8621 §3.5). Delivered as a PatchObject in practice.",
+      "properties": {
+        "name":      { "type": "string", "minLength": 1, "description": "New user-visible name for the mailbox." },
+        "parentId":  { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }], "description": "New parent mailbox id, or null to move to top-level." },
+        "sortOrder": { "type": "integer", "minimum": 0, "description": "New client sort-order hint." }
+      },
+      "additionalProperties": false
+    },
+
+    "ImportEmailObject": {
+      "type": "object",
+      "description": "A single email to import via Email/import (RFC 8621 §5.4).",
+      "properties": {
+        "blobId":     { "$ref": "#/$defs/BlobId", "description": "Blob id of the raw RFC 5322 message to import." },
+        "mailboxIds": { "type": "array", "items": { "$ref": "#/$defs/MailboxId" }, "minItems": 1, "description": "Mailboxes to place the imported email in." },
+        "keywords":   { "$ref": "#/$defs/Keywords", "description": "Initial keywords to set on the email." },
+        "receivedAt": { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "Override for the receivedAt date. If null the server uses the current time." }
+      },
+      "required": ["blobId", "mailboxIds"],
+      "additionalProperties": false
     }
   }
 }

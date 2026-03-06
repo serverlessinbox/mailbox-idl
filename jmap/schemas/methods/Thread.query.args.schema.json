@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Thread.query.args.schema.json",
+  "title": "Thread/query args",
+  "description": "Arguments for Thread/query (RFC 8621 §2.3 / RFC 8620 §5.5). Returns a sorted, filtered list of Thread ids.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "filter": {
+      "type": ["object", "null"],
+      "description": "Conditions to filter threads. See RFC 8621 for filter conditions.",
+      "additionalProperties": true
+    },
+    "sort": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "property": { "type": "string" },
+          "isAscending": { "type": "boolean" },
+          "collation": { "type": "string" }
+        },
+        "required": ["property"],
+        "additionalProperties": false
+      },
+      "description": "List of Comparator objects specifying sort order."
+    },
+    "position": { "type": ["integer", "null"], "description": "Zero-based index of first result to return." },
+    "anchor": { "$ref": "../core/types.schema.json#/$defs/Id", "description": "Id of an item to anchor the result window on." },
+    "anchorOffset": { "type": ["integer", "null"], "description": "Offset relative to the anchor." },
+    "limit": { "type": ["integer", "null"], "minimum": 0, "description": "Maximum number of ids to return." },
+    "calculateTotal": { "type": ["boolean", "null"], "description": "If true, return total count of results." }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

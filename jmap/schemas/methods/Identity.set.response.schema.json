@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Identity.set.response.schema.json",
+  "title": "Identity/set response",
+  "description": "Response for Identity/set (RFC 8621 §6.3 / RFC 8620 §5.3).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "oldState": { "type": ["string", "null"] },
+    "newState": { "type": "string" },
+    "created": {
+      "type": ["object", "null"],
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/Identity" }
+    },
+    "updated": {
+      "type": ["object", "null"],
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "additionalProperties": {
+        "oneOf": [
+          { "$ref": "../core/types.schema.json#/$defs/Identity" },
+          { "type": "null" }
+        ]
+      }
+    },
+    "destroyed": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" }
+    },
+    "notCreated": {
+      "type": ["object", "null"],
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    },
+    "notUpdated": {
+      "type": ["object", "null"],
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    },
+    "notDestroyed": {
+      "type": ["object", "null"],
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    }
+  },
+  "required": ["accountId", "oldState", "newState"],
+  "additionalProperties": false
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/EmailSubmission.set.args.schema.json",
+  "title": "EmailSubmission/set args",
+  "description": "Arguments for EmailSubmission/set (RFC 8621 §7.5). Creates, updates, and destroys EmailSubmission objects.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard on EmailSubmission state." },
+    "create": {
+      "type": ["object", "null"],
+      "description": "Map of creation id to EmailSubmissionCreate objects.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/EmailSubmissionCreate" }
+    },
+    "update": {
+      "type": ["object", "null"],
+      "description": "Map of submission id to patch objects (RFC 8620 §5.3 patch).",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PatchObject" }
+    },
+    "destroy": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "Ids of EmailSubmission objects to destroy."
+    },
+    "onSuccessUpdateEmail": {
+      "type": ["object", "null"],
+      "description": "Map of submission id (or creation id reference) to Email patch applied on successful send.",
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PatchObject" }
+    },
+    "onSuccessDestroyEmail": {
+      "type": ["array", "null"],
+      "items": { "type": "string" },
+      "description": "List of submission ids (or creation id references) whose associated Emails should be destroyed on successful send."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

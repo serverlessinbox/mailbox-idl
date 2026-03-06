@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Email.parse.response.schema.json",
+  "title": "Email/parse response",
+  "description": "Response for Email/parse (RFC 8621 §5.5).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "parsed": {
+      "type": ["object", "null"],
+      "description": "Map of blob id to parsed Email object.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/BlobId" },
+      "additionalProperties": { "type": "object", "description": "A parsed Email object (same shape as Email/get result)." }
+    },
+    "notParsable": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/BlobId" },
+      "description": "Blob ids that could not be parsed as RFC 5322 messages."
+    },
+    "notFound": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/BlobId" },
+      "description": "Blob ids not found in the account."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

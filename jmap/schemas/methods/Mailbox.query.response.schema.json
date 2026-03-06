@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Mailbox.query.response.schema.json",
+  "title": "Mailbox/query response",
+  "description": "Response from Mailbox/query (RFC 8621 §3.3 / RFC 8620 §5.5).",
+  "type": "object",
+  "properties": {
+    "accountId":           { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the query ran against." },
+    "queryState":          { "type": "string", "description": "Opaque state string. Pass to Mailbox/queryChanges to detect future changes." },
+    "canCalculateChanges": { "type": "boolean", "description": "Whether Mailbox/queryChanges can be used with this query." },
+    "position":            { "type": "integer", "minimum": 0, "description": "0-based index of the first id in the ids array." },
+    "ids":                 { "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/MailboxId" }, "description": "The matching MailboxIds in the requested order." },
+    "total":               { "type": "integer", "minimum": 0, "description": "Total number of matching mailboxes. Only present if calculateTotal was true." },
+    "limit":               { "type": "integer", "minimum": 0, "description": "The limit applied. Only present if a limit was applied." }
+  },
+  "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"],
+  "additionalProperties": false
+}

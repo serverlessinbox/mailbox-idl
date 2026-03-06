@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/EmailSubmission.queryChanges.args.schema.json",
+  "title": "EmailSubmission/queryChanges args",
+  "description": "Arguments for EmailSubmission/queryChanges (RFC 8621 §7.3 / RFC 8620 §5.6).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "filter": {
+      "type": ["object", "null"],
+      "description": "Must match the filter used in the original query.",
+      "additionalProperties": true
+    },
+    "sort": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "property": { "type": "string" },
+          "isAscending": { "type": "boolean" }
+        },
+        "required": ["property"],
+        "additionalProperties": false
+      }
+    },
+    "sinceQueryState": { "type": "string", "description": "The queryState to get changes since." },
+    "maxChanges": { "type": ["integer", "null"], "minimum": 1 },
+    "upToId": { "$ref": "../core/types.schema.json#/$defs/Id", "description": "Stop reporting changes after this id." },
+    "calculateTotal": { "type": ["boolean", "null"] }
+  },
+  "required": ["accountId", "sinceQueryState"],
+  "additionalProperties": false
+}

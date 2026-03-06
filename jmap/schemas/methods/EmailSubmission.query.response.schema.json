@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/EmailSubmission.query.response.schema.json",
+  "title": "EmailSubmission/query response",
+  "description": "Response for EmailSubmission/query (RFC 8621 §7.2 / RFC 8620 §5.5).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "queryState": { "type": "string" },
+    "canCalculateChanges": { "type": "boolean" },
+    "position": { "type": "integer", "minimum": 0 },
+    "ids": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" }
+    },
+    "total": { "type": ["integer", "null"], "minimum": 0 },
+    "limit": { "type": ["integer", "null"], "minimum": 0 }
+  },
+  "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"],
+  "additionalProperties": false
+}

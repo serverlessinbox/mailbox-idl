@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Thread.changes.response.schema.json",
+  "title": "Thread/changes response",
+  "description": "Response for Thread/changes (RFC 8621 §2.2 / RFC 8620 §5.2).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "oldState": { "type": "string" },
+    "newState": { "type": "string" },
+    "hasMoreChanges": { "type": "boolean", "description": "If true, more changes exist beyond maxChanges." },
+    "created": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "Thread ids created since sinceState."
+    },
+    "updated": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "Thread ids updated since sinceState."
+    },
+    "destroyed": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "Thread ids destroyed since sinceState."
+    }
+  },
+  "required": ["accountId", "oldState", "newState", "hasMoreChanges", "created", "updated", "destroyed"],
+  "additionalProperties": false
+}

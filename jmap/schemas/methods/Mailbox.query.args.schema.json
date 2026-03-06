@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Mailbox.query.args.schema.json",
+  "title": "Mailbox/query args",
+  "description": "Arguments for Mailbox/query (RFC 8621 §3.3). Returns an ordered list of Mailbox ids matching a filter.",
+  "type": "object",
+  "properties": {
+    "accountId":      { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to query mailboxes from." },
+    "filter": {
+      "type": "object",
+      "description": "Filter conditions. Supported properties: parentId (MailboxId|null), name (String), role (String|null), hasAnyRole (Boolean), isSubscribed (Boolean).",
+      "additionalProperties": true
+    },
+    "sort": {
+      "type": ["array", "null"],
+      "description": "Sort criteria. Each Comparator has a property (e.g. name, sortOrder) and optional isAscending (default true).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "property":    { "type": "string" },
+          "isAscending": { "type": "boolean" }
+        },
+        "required": ["property"],
+        "additionalProperties": true
+      }
+    },
+    "position":       { "type": "integer", "minimum": 0, "description": "0-based index of the first result to return." },
+    "anchor":         { "$ref": "../core/types.schema.json#/$defs/MailboxId", "description": "A MailboxId to anchor the result page at." },
+    "anchorOffset":   { "type": "integer", "description": "Offset from the anchor (may be negative)." },
+    "limit":          { "type": "integer", "minimum": 0, "description": "Maximum number of ids to return." },
+    "calculateTotal": { "type": "boolean", "description": "If true, return the total number of matching mailboxes." }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

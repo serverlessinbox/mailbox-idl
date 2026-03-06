@@ -2,6 +2,7 @@ version: 1
 capabilities:
   - urn:ietf:params:jmap:core
   - urn:ietf:params:jmap:mail
+  - urn:ietf:params:jmap:submission
 methods:
   - name: Mailbox/get
     capability: urn:ietf:params:jmap:mail
@@ -50,3 +51,77 @@ methods:
     capability: urn:ietf:params:jmap:mail
     argsSchema: schemas/methods/Thread.get.args.schema.json
     responseSchema: schemas/methods/Thread.get.response.schema.json
+  - name: Mailbox/set
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Mailbox.set.args.schema.json
+    responseSchema: schemas/methods/Mailbox.set.response.schema.json
+
+  - name: Mailbox/query
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Mailbox.query.args.schema.json
+    responseSchema: schemas/methods/Mailbox.query.response.schema.json
+
+  - name: Email/import
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Email.import.args.schema.json
+    responseSchema: schemas/methods/Email.import.response.schema.json
+
+  - name: Email/copy
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Email.copy.args.schema.json
+    responseSchema: schemas/methods/Email.copy.response.schema.json
+
+  - name: Email/parse
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Email.parse.args.schema.json
+    responseSchema: schemas/methods/Email.parse.response.schema.json
+
+  - name: Thread/query
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Thread.query.args.schema.json
+    responseSchema: schemas/methods/Thread.query.response.schema.json
+
+  - name: Thread/changes
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Thread.changes.args.schema.json
+    responseSchema: schemas/methods/Thread.changes.response.schema.json
+
+  - name: EmailSubmission/get
+    capability: urn:ietf:params:jmap:submission
+    argsSchema: schemas/methods/EmailSubmission.get.args.schema.json
+    responseSchema: schemas/methods/EmailSubmission.get.response.schema.json
+
+  - name: EmailSubmission/set
+    capability: urn:ietf:params:jmap:submission
+    argsSchema: schemas/methods/EmailSubmission.set.args.schema.json
+    responseSchema: schemas/methods/EmailSubmission.set.response.schema.json
+
+  - name: EmailSubmission/query
+    capability: urn:ietf:params:jmap:submission
+    argsSchema: schemas/methods/EmailSubmission.query.args.schema.json
+    responseSchema: schemas/methods/EmailSubmission.query.response.schema.json
+
+  - name: EmailSubmission/queryChanges
+    capability: urn:ietf:params:jmap:submission
+    argsSchema: schemas/methods/EmailSubmission.queryChanges.args.schema.json
+    responseSchema: schemas/methods/EmailSubmission.queryChanges.response.schema.json
+
+  - name: EmailSubmission/changes
+    capability: urn:ietf:params:jmap:submission
+    argsSchema: schemas/methods/EmailSubmission.changes.args.schema.json
+    responseSchema: schemas/methods/EmailSubmission.changes.response.schema.json
+
+  - name: Identity/get
+    capability: urn:ietf:params:jmap:submission
+    argsSchema: schemas/methods/Identity.get.args.schema.json
+    responseSchema: schemas/methods/Identity.get.response.schema.json
+
+  - name: Identity/set
+    capability: urn:ietf:params:jmap:submission
+    argsSchema: schemas/methods/Identity.set.args.schema.json
+    responseSchema: schemas/methods/Identity.set.response.schema.json
+
+  - name: Identity/changes
+    capability: urn:ietf:params:jmap:submission
+    argsSchema: schemas/methods/Identity.changes.args.schema.json
+    responseSchema: schemas/methods/Identity.changes.response.schema.json

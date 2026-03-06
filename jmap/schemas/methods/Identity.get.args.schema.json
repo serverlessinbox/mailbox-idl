@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Identity.get.args.schema.json",
+  "title": "Identity/get args",
+  "description": "Arguments for Identity/get (RFC 8621 §6.1 / RFC 8620 §5.1). Fetches Identity objects.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "ids": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "Identity ids to fetch. If null, returns all identities."
+    },
+    "properties": {
+      "type": ["array", "null"],
+      "items": { "type": "string" },
+      "description": "Identity properties to return. Defaults to all properties."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

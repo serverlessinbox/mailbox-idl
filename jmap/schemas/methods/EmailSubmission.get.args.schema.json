@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/EmailSubmission.get.args.schema.json",
+  "title": "EmailSubmission/get args",
+  "description": "Arguments for EmailSubmission/get (RFC 8621 §7.1 / RFC 8620 §5.1). Fetches EmailSubmission objects.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "ids": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "Submission ids to fetch. If null, returns all."
+    },
+    "properties": {
+      "type": ["array", "null"],
+      "items": { "type": "string" },
+      "description": "EmailSubmission properties to return. Defaults to all properties."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

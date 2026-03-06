@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Mailbox.set.args.schema.json",
+  "title": "Mailbox/set args",
+  "description": "Arguments for Mailbox/set (RFC 8621 §3.5). Creates, updates, or destroys Mailbox objects.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to apply changes to." },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard. The call fails with stateMismatch if the Mailbox state differs." },
+    "create": {
+      "type": ["object", "null"],
+      "description": "Map of client-assigned creation ids to Mailbox objects to create.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/MailboxCreate" }
+    },
+    "update": {
+      "type": ["object", "null"],
+      "description": "Map of MailboxId to PatchObject. Only explicitly listed properties are changed.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/MailboxId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PatchObject" }
+    },
+    "destroy": {
+      "type": ["array", "null"],
+      "description": "MailboxIds to delete.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/MailboxId" }
+    },
+    "onDestroyRemoveEmails": {
+      "type": "boolean",
+      "description": "If true, also destroy all emails in the mailbox. Default false; destroying a non-empty mailbox without this flag results in a mailboxHasChild or mailboxHasEmail error."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}
