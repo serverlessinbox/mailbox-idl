@@ -5,8 +5,8 @@
   "description": "Response for Identity/get (RFC 8621 §6.1 / RFC 8620 §5.1).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "state": { "type": "string", "description": "Current Identity state." },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the Identity objects belong to." },
+    "state": { "type": "string", "description": "Current Identity state, used in subsequent /changes calls." },
     "list": {
       "type": "array",
       "items": { "$ref": "../core/types.schema.json#/$defs/Identity" },

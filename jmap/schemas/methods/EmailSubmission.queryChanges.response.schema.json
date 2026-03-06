@@ -5,10 +5,10 @@
   "description": "Response for EmailSubmission/queryChanges (RFC 8621 §7.3 / RFC 8620 §5.6).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "oldQueryState": { "type": "string" },
-    "newQueryState": { "type": "string" },
-    "total": { "type": ["integer", "null"], "minimum": 0 },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the query changes are for." },
+    "oldQueryState": { "type": "string", "description": "The sinceQueryState value passed in the request." },
+    "newQueryState": { "type": "string", "description": "The current query state after these changes." },
+    "total": { "type": ["integer", "null"], "minimum": 0, "description": "New total number of results (if calculateTotal was true)." },
     "removed": {
       "type": "array",
       "items": { "$ref": "../core/types.schema.json#/$defs/Id" },

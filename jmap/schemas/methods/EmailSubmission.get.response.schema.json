@@ -5,8 +5,8 @@
   "description": "Response for EmailSubmission/get (RFC 8621 §7.1 / RFC 8620 §5.1).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "state": { "type": "string", "description": "Current EmailSubmission state." },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the EmailSubmission objects belong to." },
+    "state": { "type": "string", "description": "Current EmailSubmission state, used in subsequent /changes calls." },
     "list": {
       "type": "array",
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailSubmission" },

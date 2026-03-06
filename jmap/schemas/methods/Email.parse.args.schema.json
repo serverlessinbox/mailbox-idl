@@ -5,7 +5,7 @@
   "description": "Arguments for Email/parse (RFC 8621 §5.5). Parses blobs as RFC 5322 messages without importing them.",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account whose blob store to parse from." },
     "blobIds": {
       "type": "array",
       "items": { "$ref": "../core/types.schema.json#/$defs/BlobId" },

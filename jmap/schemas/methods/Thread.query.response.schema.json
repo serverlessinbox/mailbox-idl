@@ -5,7 +5,7 @@
   "description": "Response for Thread/query (RFC 8621 §2.3 / RFC 8620 §5.5).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the query was run against." },
     "queryState": { "type": "string", "description": "Server state string for this query result." },
     "canCalculateChanges": { "type": "boolean", "description": "Whether the server can calculate query changes." },
     "position": { "type": "integer", "minimum": 0, "description": "Zero-based index of the first result in ids." },

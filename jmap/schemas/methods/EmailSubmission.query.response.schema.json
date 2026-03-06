@@ -5,16 +5,17 @@
   "description": "Response for EmailSubmission/query (RFC 8621 §7.2 / RFC 8620 §5.5).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "queryState": { "type": "string" },
-    "canCalculateChanges": { "type": "boolean" },
-    "position": { "type": "integer", "minimum": 0 },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the query was run against." },
+    "queryState": { "type": "string", "description": "Server state string for this query result." },
+    "canCalculateChanges": { "type": "boolean", "description": "Whether the server can calculate query changes." },
+    "position": { "type": "integer", "minimum": 0, "description": "Zero-based index of the first result in ids." },
     "ids": {
       "type": "array",
-      "items": { "$ref": "../core/types.schema.json#/$defs/Id" }
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "The EmailSubmission ids in the requested window."
     },
-    "total": { "type": ["integer", "null"], "minimum": 0 },
-    "limit": { "type": ["integer", "null"], "minimum": 0 }
+    "total": { "type": ["integer", "null"], "minimum": 0, "description": "Total number of results (if calculateTotal was true)." },
+    "limit": { "type": ["integer", "null"], "minimum": 0, "description": "The limit applied to this query." }
   },
   "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"],
   "additionalProperties": false

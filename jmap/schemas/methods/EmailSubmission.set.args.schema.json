@@ -5,7 +5,7 @@
   "description": "Arguments for EmailSubmission/set (RFC 8621 §7.5). Creates, updates, and destroys EmailSubmission objects.",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to create, update, or destroy EmailSubmission objects in." },
     "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard on EmailSubmission state." },
     "create": {
       "type": ["object", "null"],

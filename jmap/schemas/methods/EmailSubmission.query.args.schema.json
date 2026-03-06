@@ -5,7 +5,7 @@
   "description": "Arguments for EmailSubmission/query (RFC 8621 §7.2 / RFC 8620 §5.5).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to query EmailSubmission objects in." },
     "filter": {
       "type": ["object", "null"],
       "description": "Conditions to filter EmailSubmission objects.",
@@ -13,6 +13,7 @@
     },
     "sort": {
       "type": ["array", "null"],
+      "description": "List of Comparator objects specifying the sort order.",
       "items": {
         "type": "object",
         "properties": {
@@ -23,11 +24,11 @@
         "additionalProperties": false
       }
     },
-    "position": { "type": ["integer", "null"] },
-    "anchor": { "$ref": "../core/types.schema.json#/$defs/Id" },
-    "anchorOffset": { "type": ["integer", "null"] },
-    "limit": { "type": ["integer", "null"], "minimum": 0 },
-    "calculateTotal": { "type": ["boolean", "null"] }
+    "position": { "type": ["integer", "null"], "description": "Zero-based index of the first result to return." },
+    "anchor": { "$ref": "../core/types.schema.json#/$defs/Id", "description": "Id of an item to anchor the result window on." },
+    "anchorOffset": { "type": ["integer", "null"], "description": "Offset relative to the anchor." },
+    "limit": { "type": ["integer", "null"], "minimum": 0, "description": "Maximum number of ids to return." },
+    "calculateTotal": { "type": ["boolean", "null"], "description": "If true, return the total count of results." }
   },
   "required": ["accountId"],
   "additionalProperties": false

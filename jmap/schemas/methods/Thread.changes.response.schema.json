@@ -5,10 +5,10 @@
   "description": "Response for Thread/changes (RFC 8621 §2.2 / RFC 8620 §5.2).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "oldState": { "type": "string" },
-    "newState": { "type": "string" },
-    "hasMoreChanges": { "type": "boolean", "description": "If true, more changes exist beyond maxChanges." },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account these changes are for." },
+    "oldState": { "type": "string", "description": "The sinceState value passed in the request." },
+    "newState": { "type": "string", "description": "The current Thread state after these changes." },
+    "hasMoreChanges": { "type": "boolean", "description": "If true, more changes exist beyond maxChanges; make another call with newState as sinceState." },
     "created": {
       "type": "array",
       "items": { "$ref": "../core/types.schema.json#/$defs/Id" },

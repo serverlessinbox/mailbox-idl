@@ -5,7 +5,7 @@
   "description": "Arguments for Thread/changes (RFC 8621 §2.2 / RFC 8620 §5.2). Returns thread ids changed since a given state.",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to get Thread changes for." },
     "sinceState": { "type": "string", "description": "The state to get changes since." },
     "maxChanges": { "type": ["integer", "null"], "minimum": 1, "description": "Maximum number of changes to return." }
   },

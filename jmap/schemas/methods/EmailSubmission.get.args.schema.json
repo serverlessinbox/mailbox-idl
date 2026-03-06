@@ -5,7 +5,7 @@
   "description": "Arguments for EmailSubmission/get (RFC 8621 §7.1 / RFC 8620 §5.1). Fetches EmailSubmission objects.",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch EmailSubmission objects from." },
     "ids": {
       "type": ["array", "null"],
       "items": { "$ref": "../core/types.schema.json#/$defs/Id" },

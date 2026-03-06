@@ -5,10 +5,10 @@
   "description": "Response for Email/copy (RFC 8621 §5.7 / RFC 8620 §5.4).",
   "type": "object",
   "properties": {
-    "fromAccountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "oldState": { "type": ["string", "null"] },
-    "newState": { "type": "string" },
+    "fromAccountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the emails were copied from." },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the emails were copied into." },
+    "oldState": { "type": ["string", "null"], "description": "The Email state before the copy, or null if the destination account had no prior state." },
+    "newState": { "type": "string", "description": "The Email state after the copy." },
     "created": {
       "type": ["object", "null"],
       "description": "Map of creation id to created Email object (subset: id, blobId, threadId, size).",

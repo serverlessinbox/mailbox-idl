@@ -5,9 +5,9 @@
   "description": "Arguments for EmailSubmission/changes (RFC 8621 §7.4 / RFC 8620 §5.2).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "sinceState": { "type": "string" },
-    "maxChanges": { "type": ["integer", "null"], "minimum": 1 }
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to get EmailSubmission changes for." },
+    "sinceState": { "type": "string", "description": "The state to get changes since." },
+    "maxChanges": { "type": ["integer", "null"], "minimum": 1, "description": "Maximum number of changes to return." }
   },
   "required": ["accountId", "sinceState"],
   "additionalProperties": false

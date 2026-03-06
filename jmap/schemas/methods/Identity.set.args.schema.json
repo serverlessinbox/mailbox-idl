@@ -5,7 +5,7 @@
   "description": "Arguments for Identity/set (RFC 8621 §6.3). Clients may only update identities; create and destroy are server-controlled.",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to update Identity objects in." },
     "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard on Identity state." },
     "create": {
       "type": ["object", "null"],

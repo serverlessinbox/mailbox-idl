@@ -5,7 +5,7 @@
   "description": "Response for Email/import (RFC 8621 §5.4).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the emails were imported into." },
     "oldState": { "type": ["string", "null"], "description": "The state before the import." },
     "newState": { "type": "string", "description": "The state after the import." },
     "created": {

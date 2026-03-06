@@ -5,16 +5,18 @@
   "description": "Response for EmailSubmission/set (RFC 8621 §7.5 / RFC 8620 §5.3).",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
-    "oldState": { "type": ["string", "null"] },
-    "newState": { "type": "string" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the set operation was performed on." },
+    "oldState": { "type": ["string", "null"], "description": "The EmailSubmission state before this call, or null if no prior state existed." },
+    "newState": { "type": "string", "description": "The EmailSubmission state after this call." },
     "created": {
       "type": ["object", "null"],
+      "description": "Map of creation id to the created EmailSubmission object.",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
       "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/EmailSubmission" }
     },
     "updated": {
       "type": ["object", "null"],
+      "description": "Map of id to the updated EmailSubmission object (or null if unchanged properties were not returned).",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
       "additionalProperties": {
         "oneOf": [
@@ -25,20 +27,24 @@
     },
     "destroyed": {
       "type": ["array", "null"],
+      "description": "Ids of EmailSubmission objects that were successfully destroyed.",
       "items": { "$ref": "../core/types.schema.json#/$defs/Id" }
     },
     "notCreated": {
       "type": ["object", "null"],
+      "description": "Map of creation id to SetError for each failed create.",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
       "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
     },
     "notUpdated": {
       "type": ["object", "null"],
+      "description": "Map of id to SetError for each failed update.",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
       "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
     },
     "notDestroyed": {
       "type": ["object", "null"],
+      "description": "Map of id to SetError for each failed destroy.",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
       "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
     }

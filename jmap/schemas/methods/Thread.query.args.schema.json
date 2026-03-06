@@ -5,7 +5,7 @@
   "description": "Arguments for Thread/query (RFC 8621 §2.3 / RFC 8620 §5.5). Returns a sorted, filtered list of Thread ids.",
   "type": "object",
   "properties": {
-    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId" },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to query threads in." },
     "filter": {
       "type": ["object", "null"],
       "description": "Conditions to filter threads. See RFC 8621 for filter conditions.",
