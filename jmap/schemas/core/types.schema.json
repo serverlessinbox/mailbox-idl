@@ -12,6 +12,17 @@
 
     "JmapDate": { "type": "string", "format": "date-time", "description": "An ISO 8601 date-time string in UTC (RFC 8620 §1.4)." },
 
+    "EmailHeader": {
+      "type": "object",
+      "description": "A single raw message header field (RFC 8621 §4.1.3). Ordering is preserved.",
+      "properties": {
+        "name":  { "type": "string", "description": "Header field name (case-insensitive per RFC 5322)." },
+        "value": { "type": "string", "description": "Header field value (decoded, with folding whitespace collapsed)." }
+      },
+      "required": ["name", "value"],
+      "additionalProperties": false
+    },
+
     "Keywords": {
       "type": "object",
       "description": "Map of IMAP keyword → true. The presence of a key means the keyword is set (RFC 8621 §4.1.1).",
@@ -77,14 +88,24 @@
         "id":            { "$ref": "#/$defs/EmailId", "description": "The email id (server-set, immutable)." },
         "blobId":        { "$ref": "#/$defs/BlobId", "description": "Blob id of the raw RFC 5322 message (server-set)." },
         "threadId":      { "$ref": "#/$defs/ThreadId", "description": "Thread this email belongs to (server-set)." },
-        "mailboxIds":    { "type": "array", "items": { "$ref": "#/$defs/MailboxId" }, "description": "Mailboxes this email is in." },
+        "mailboxIds":    { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Id[Boolean] map — MailboxId → true means the email is in that mailbox (RFC 8621 §4.1.1)." },
         "keywords":      { "$ref": "#/$defs/Keywords", "description": "IMAP keywords set on this email." },
         "size":          { "type": "integer", "minimum": 0, "description": "Size in bytes of the raw RFC 5322 message (server-set)." },
         "receivedAt":    { "$ref": "#/$defs/JmapDate", "description": "Date/time the message was received by the server." },
-        "subject":       { "type": "string", "description": "Decoded Subject header value." },
+        "sentAt":        { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "Date/time from the Date header (RFC 8621 §4.1.3)." },
+        "subject":       { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Decoded Subject header value, or null if absent." },
+        "messageId":     { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Array of Message-ID values (RFC 8621 §4.1.3), or null if absent." },
+        "inReplyTo":     { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Array of In-Reply-To values (RFC 8621 §4.1.3), or null if absent." },
+        "references":    { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Array of References values (RFC 8621 §4.1.3), or null if absent." },
+        "sender":        { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Sender header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "from":          { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "From header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "to":            { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "To header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "cc":            { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Cc header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "bcc":           { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Bcc header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "replyTo":       { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Reply-To header addresses (RFC 8621 §4.1.2.3), or null if absent." },
         "preview":       { "type": "string", "description": "Plain-text excerpt of the message body (at most 256 characters, server-set)." },
         "hasAttachment": { "type": "boolean", "description": "True if the message has at least one attachment (server-set)." },
-        "headers":       { "type": "object", "additionalProperties": { "type": "string" }, "description": "Raw header field name → value map." }
+        "headers":       { "type": "array", "items": { "$ref": "#/$defs/EmailHeader" }, "description": "Ordered list of all raw message header fields (RFC 8621 §4.1.3)." }
       },
       "required": ["id"],
       "additionalProperties": false
@@ -97,14 +118,24 @@
         "id":            { "$ref": "#/$defs/EmailId", "description": "The email id (server-set, immutable)." },
         "blobId":        { "$ref": "#/$defs/BlobId", "description": "Blob id of the raw RFC 5322 message (server-set)." },
         "threadId":      { "$ref": "#/$defs/ThreadId", "description": "Thread this email belongs to (server-set)." },
-        "mailboxIds":    { "type": "array", "items": { "$ref": "#/$defs/MailboxId" }, "description": "Mailboxes this email is in." },
+        "mailboxIds":    { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Id[Boolean] map — MailboxId → true means the email is in that mailbox (RFC 8621 §4.1.1)." },
         "keywords":      { "$ref": "#/$defs/Keywords", "description": "IMAP keywords set on this email." },
         "size":          { "type": "integer", "minimum": 0, "description": "Size in bytes of the raw RFC 5322 message (server-set)." },
         "receivedAt":    { "$ref": "#/$defs/JmapDate", "description": "Date/time the message was received by the server." },
-        "subject":       { "type": "string", "description": "Decoded Subject header value." },
+        "sentAt":        { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "Date/time from the Date header (RFC 8621 §4.1.3)." },
+        "subject":       { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Decoded Subject header value, or null if absent." },
+        "messageId":     { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Array of Message-ID values (RFC 8621 §4.1.3), or null if absent." },
+        "inReplyTo":     { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Array of In-Reply-To values (RFC 8621 §4.1.3), or null if absent." },
+        "references":    { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Array of References values (RFC 8621 §4.1.3), or null if absent." },
+        "sender":        { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Sender header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "from":          { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "From header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "to":            { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "To header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "cc":            { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Cc header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "bcc":           { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Bcc header addresses (RFC 8621 §4.1.2.3), or null if absent." },
+        "replyTo":       { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Reply-To header addresses (RFC 8621 §4.1.2.3), or null if absent." },
         "preview":       { "type": "string", "description": "Plain-text excerpt of the message body (at most 256 characters, server-set)." },
         "hasAttachment": { "type": "boolean", "description": "True if the message has at least one attachment (server-set)." },
-        "headers":       { "type": "object", "additionalProperties": { "type": "string" }, "description": "Raw header field name → value map." }
+        "headers":       { "type": "array", "items": { "$ref": "#/$defs/EmailHeader" }, "description": "Ordered list of all raw message header fields (RFC 8621 §4.1.3)." }
       },
       "required": ["id"]
     },
@@ -296,7 +327,7 @@
       "description": "A single email to import via Email/import (RFC 8621 §5.4).",
       "properties": {
         "blobId":     { "$ref": "#/$defs/BlobId", "description": "Blob id of the raw RFC 5322 message to import." },
-        "mailboxIds": { "type": "array", "items": { "$ref": "#/$defs/MailboxId" }, "minItems": 1, "description": "Mailboxes to place the imported email in." },
+        "mailboxIds": { "type": "object", "additionalProperties": { "type": "boolean" }, "minProperties": 1, "description": "Id[Boolean] map — MailboxId → true. At least one entry required (RFC 8621 §4.8)." },
         "keywords":   { "$ref": "#/$defs/Keywords", "description": "Initial keywords to set on the email." },
         "receivedAt": { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "Override for the receivedAt date. If null the server uses the current time." }
       },
