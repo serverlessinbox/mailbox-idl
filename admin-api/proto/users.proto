@@ -27,6 +27,12 @@ service UsersService {
 
   // GetUserOverview returns a UI-friendly, flattened view of a user and their primary mailbox context.
   rpc GetUserOverview(GetUserOverviewRequest) returns (GetUserOverviewResponse);
+
+  // PutUserAccountMember links a user to a shared/group account with the given role (creates or updates the ACL entry).
+  rpc PutUserAccountMember(PutUserAccountMemberRequest) returns (PutUserAccountMemberResponse);
+
+  // DeleteUserAccountMember removes a user's access to a shared/group account.
+  rpc DeleteUserAccountMember(DeleteUserAccountMemberRequest) returns (DeleteUserAccountMemberResponse);
 }
 
 message User {
@@ -143,6 +149,35 @@ message GetUserOverviewResponse {
   // Aliases for the primary_account (admin view may include invisible/system aliases).
   repeated aliases.v1.Alias primary_account_aliases = 3;
 
-  // Accounts owned by this user (current model); future membership/shared access can extend this.
+  // All accounts accessible to this user: owned accounts plus shared/group accounts via membership.
   repeated accounts.v1.Account accounts = 4;
 }
+
+message PutUserAccountMemberRequest {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+  string account_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  accounts.v1.AccountRole role = 3 [(validate.rules).enum = {defined_only: true, not_in: 0}];
+}
+
+message PutUserAccountMemberResponse {
+  accounts.v1.AccountMember member = 1;
+}
+
+message DeleteUserAccountMemberRequest {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+  string account_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message DeleteUserAccountMemberResponse {}
