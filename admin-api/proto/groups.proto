@@ -1,0 +1,212 @@
+syntax = "proto3";
+
+package groups.v1;
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/groups;groupsv1";
+
+// GroupsService manages group principals and their associated accounts.
+// A group principal owns a shared account that can be accessed by multiple users via JMAP ObjectGrants.
+service GroupsService {
+  // CreateGroupPrincipal provisions a new group principal + its account with the given capabilities.
+  rpc CreateGroupPrincipal(CreateGroupPrincipalRequest) returns (CreateGroupPrincipalResponse);
+
+  // GetGroupPrincipal retrieves a group principal and its account.
+  rpc GetGroupPrincipal(GetGroupPrincipalRequest) returns (GetGroupPrincipalResponse);
+
+  // ListGroupPrincipals lists all group principals for the tenant.
+  rpc ListGroupPrincipals(ListGroupPrincipalsRequest) returns (ListGroupPrincipalsResponse);
+
+  // UpdateGroupPrincipal renames a group principal.
+  rpc UpdateGroupPrincipal(UpdateGroupPrincipalRequest) returns (UpdateGroupPrincipalResponse);
+
+  // DeleteGroupPrincipal removes the group principal and its account (cascade delete).
+  rpc DeleteGroupPrincipal(DeleteGroupPrincipalRequest) returns (DeleteGroupPrincipalResponse);
+
+  // TransferGroupAccountOwnership transfers administrative ownership of a group account to a new user principal.
+  rpc TransferGroupAccountOwnership(TransferGroupAccountOwnershipRequest) returns (TransferGroupAccountOwnershipResponse);
+
+  // AddGroupAccountCapability idempotently adds a new JMAP capability to a group account and provisions the required resources.
+  rpc AddGroupAccountCapability(AddGroupAccountCapabilityRequest) returns (AddGroupAccountCapabilityResponse);
+
+  // AddGroupMember adds a user principal as a member of a group.
+  rpc AddGroupMember(AddGroupMemberRequest) returns (AddGroupMemberResponse);
+
+  // RemoveGroupMember removes a user principal from a group.
+  rpc RemoveGroupMember(RemoveGroupMemberRequest) returns (RemoveGroupMemberResponse);
+
+  // ListGroupMembers lists all user principals that are members of a group.
+  rpc ListGroupMembers(ListGroupMembersRequest) returns (ListGroupMembersResponse);
+}
+
+// GroupPrincipal is the combined view of a group principal and its associated account.
+message GroupPrincipal {
+  // group_id: The principal ID for this group (grp_ prefix).
+  string group_id = 1;
+  // name: Display name for the group.
+  string name = 2;
+  // owner_principal_id: The user principal (user_ prefix) who administers this group.
+  string owner_principal_id = 3;
+  // account: The account provisioned for this group.
+  common.v1.Account account = 4;
+}
+
+message CreateGroupPrincipalRequest {
+  // name: Display name for the group principal.
+  string name = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // owner_principal_id: The user principal who will own/administer this group.
+  string owner_principal_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+  // capabilities: JMAP capability URIs to provision for the group account.
+  repeated string capabilities = 3 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 10
+    items: {string: {min_len: 1, max_len: 100}}
+  }];
+  // local_part: Email local part for the primary alias (required when capabilities includes mail).
+  optional string local_part = 4 [(validate.rules).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$"
+  }];
+  // domain_id: Domain for the primary alias (required when capabilities includes mail).
+  optional string domain_id = 5 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message CreateGroupPrincipalResponse {
+  GroupPrincipal group = 1;
+}
+
+message GetGroupPrincipalRequest {
+  string group_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message GetGroupPrincipalResponse {
+  GroupPrincipal group = 1;
+}
+
+message ListGroupPrincipalsRequest {}
+
+message ListGroupPrincipalsResponse {
+  repeated GroupPrincipal groups = 1;
+}
+
+message UpdateGroupPrincipalRequest {
+  string group_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
+  }];
+  // name: New display name for the group.
+  string name = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+message UpdateGroupPrincipalResponse {
+  GroupPrincipal group = 1;
+}
+
+message DeleteGroupPrincipalRequest {
+  string group_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message DeleteGroupPrincipalResponse {}
+
+message TransferGroupAccountOwnershipRequest {
+  string group_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
+  }];
+  // new_owner_principal_id: The user principal who will become the new owner.
+  string new_owner_principal_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message TransferGroupAccountOwnershipResponse {
+  GroupPrincipal group = 1;
+}
+
+message AddGroupAccountCapabilityRequest {
+  string group_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
+  }];
+  // capability: The JMAP capability URI to add (e.g. "urn:ietf:params:jmap:mail").
+  string capability = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+}
+
+message AddGroupAccountCapabilityResponse {
+  GroupPrincipal group = 1;
+}
+
+// GroupMember represents a user principal that is a member of a group.
+message GroupMember {
+  // user_id: The user principal ID (usr_* prefix).
+  string user_id = 1;
+  // added_by: The principal ID that added this member.
+  string added_by = 2;
+  // added_at: When this membership was created.
+  google.protobuf.Timestamp added_at = 3;
+}
+
+message AddGroupMemberRequest {
+  string group_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
+  }];
+  // user_id: The user principal ID to add as a member.
+  string user_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message AddGroupMemberResponse {}
+
+message RemoveGroupMemberRequest {
+  string group_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
+  }];
+  // user_id: The user principal ID to remove from the group.
+  string user_id = 2 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message RemoveGroupMemberResponse {}
+
+message ListGroupMembersRequest {
+  string group_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message ListGroupMembersResponse {
+  repeated GroupMember members = 1;
+}

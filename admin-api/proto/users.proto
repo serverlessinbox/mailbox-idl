@@ -2,37 +2,25 @@ syntax = "proto3";
 
 package users.v1;
 
-import "accounts.proto";
 import "aliases.proto";
+import "common.proto";
 import "validate/validate.proto";
 
 option go_package = "admin-api/generated/users;usersv1";
 
-// UsersService provides operations for managing users.
+// UsersService provides operations for managing users and their primary accounts.
 service UsersService {
   // ListUsers retrieves all users with pagination.
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
 
-  // GetUser retrieves a specific user by ID.
+  // GetUser retrieves a specific user together with their primary account context.
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
 
-  // UpdateUser updates user properties (IsActive, IsAdmin, DisplayName).
+  // UpdateUser updates user properties. Optionally renames the user's primary account.
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
 
-  // DeleteUser soft-deletes a user (sets IsDeleted=true).
+  // DeleteUser soft-deletes a user. Set purge_data=true to also destroy the primary account and all mailbox data.
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
-
-  // ListUserAccounts lists all accounts owned by a user.
-  rpc ListUserAccounts(ListUserAccountsRequest) returns (ListUserAccountsResponse);
-
-  // GetUserOverview returns a UI-friendly, flattened view of a user and their primary mailbox context.
-  rpc GetUserOverview(GetUserOverviewRequest) returns (GetUserOverviewResponse);
-
-  // PutUserAccountMember links a user to a shared/group account with the given role (creates or updates the ACL entry).
-  rpc PutUserAccountMember(PutUserAccountMemberRequest) returns (PutUserAccountMemberResponse);
-
-  // DeleteUserAccountMember removes a user's access to a shared/group account.
-  rpc DeleteUserAccountMember(DeleteUserAccountMemberRequest) returns (DeleteUserAccountMemberResponse);
 }
 
 message User {
@@ -97,6 +85,12 @@ message GetUserRequest {
 
 message GetUserResponse {
   User user = 1;
+
+  // Present when the user has a primary_account_id.
+  optional common.v1.Account primary_account = 2;
+
+  // Aliases for the primary account (admin view includes invisible/system aliases).
+  repeated aliases.v1.Alias primary_account_aliases = 3;
 }
 
 message UpdateUserRequest {
@@ -107,6 +101,11 @@ message UpdateUserRequest {
   optional string display_name = 2 [(validate.rules).string.max_len = 100];
   optional bool is_active = 4;
   optional bool is_admin = 5;
+  // account_name: When set, renames the user's primary account.
+  optional string account_name = 6 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
 }
 
 message UpdateUserResponse {
@@ -118,66 +117,9 @@ message DeleteUserRequest {
     min_len: 1
     pattern: "^user_[a-zA-Z0-9_-]{21}$"
   }];
+  // purge_data: When true, also deletes the user's primary account and all mailbox data.
+  // Use with caution — this is irreversible.
+  bool purge_data = 2;
 }
 
 message DeleteUserResponse {}
-
-message ListUserAccountsRequest {
-  string user_id = 1 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^user_[a-zA-Z0-9_-]{21}$"
-  }];
-}
-
-message ListUserAccountsResponse {
-  repeated accounts.v1.Account accounts = 1;
-}
-
-message GetUserOverviewRequest {
-  string user_id = 1 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^user_[a-zA-Z0-9_-]{21}$"
-  }];
-}
-
-message GetUserOverviewResponse {
-  User user = 1;
-
-  // Present when the user has a primary_account_id.
-  accounts.v1.Account primary_account = 2;
-
-  // Aliases for the primary_account (admin view may include invisible/system aliases).
-  repeated aliases.v1.Alias primary_account_aliases = 3;
-
-  // All accounts accessible to this user: owned accounts plus shared/group accounts via membership.
-  repeated accounts.v1.Account accounts = 4;
-}
-
-message PutUserAccountMemberRequest {
-  string user_id = 1 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^user_[a-zA-Z0-9_-]{21}$"
-  }];
-  string account_id = 2 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
-  }];
-  accounts.v1.AccountRole role = 3 [(validate.rules).enum = {defined_only: true, not_in: 0}];
-}
-
-message PutUserAccountMemberResponse {
-  accounts.v1.AccountMember member = 1;
-}
-
-message DeleteUserAccountMemberRequest {
-  string user_id = 1 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^user_[a-zA-Z0-9_-]{21}$"
-  }];
-  string account_id = 2 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
-  }];
-}
-
-message DeleteUserAccountMemberResponse {}

@@ -31,3 +31,17 @@ enum MessageClass {
   MESSAGE_CLASS_MAILING_LIST = 2;   // Mailing list emails
   MESSAGE_CLASS_BULK = 3;           // Bulk/marketing emails
 }
+
+// Account is the shared account representation used across admin API services.
+message Account {
+  // account_id: Unique account identifier (acc_ prefix).
+  string account_id = 1;
+  // name: Human-readable display name / local-part of the primary email.
+  string name = 2;
+  // email: Primary email address derived from the account's primary alias.
+  string email = 3;
+  // capabilities: JMAP capability URIs provisioned for this account.
+  repeated string capabilities = 4;
+  // owner_principal_id: The principal (user_ or grp_) that owns this account.
+  string owner_principal_id = 5;
+}
