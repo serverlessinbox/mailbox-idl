@@ -65,11 +65,12 @@ message CreateGroupPrincipalRequest {
     min_len: 1
     pattern: "^user_[a-zA-Z0-9_-]{21}$"
   }];
-  // capabilities: JMAP capability URIs to provision for the group account.
-  repeated string capabilities = 3 [(validate.rules).repeated = {
+  // capabilities: JMAP capabilities to provision for the group account.
+  // Must contain at least one value. See common.v1.AccountCapability for valid values.
+  repeated common.v1.AccountCapability capabilities = 3 [(validate.rules).repeated = {
     min_items: 1
     max_items: 10
-    items: {string: {min_len: 1, max_len: 100}}
+    items: {enum: {defined_only: true}}
   }];
   // local_part: Email local part for the primary alias (required when capabilities includes mail).
   optional string local_part = 4 [(validate.rules).string = {
@@ -85,10 +86,12 @@ message CreateGroupPrincipalRequest {
 }
 
 message CreateGroupPrincipalResponse {
+  // group: The newly created group principal and its provisioned account.
   GroupPrincipal group = 1;
 }
 
 message GetGroupPrincipalRequest {
+  // group_id: The group principal ID to retrieve (grp_ prefix).
   string group_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^grp_[a-zA-Z0-9_-]{21}$"
@@ -96,12 +99,14 @@ message GetGroupPrincipalRequest {
 }
 
 message GetGroupPrincipalResponse {
+  // group: The requested group principal.
   GroupPrincipal group = 1;
 }
 
 message ListGroupPrincipalsRequest {}
 
 message ListGroupPrincipalsResponse {
+  // groups: All group principals for the tenant, in arbitrary order.
   repeated GroupPrincipal groups = 1;
 }
 
@@ -118,6 +123,7 @@ message UpdateGroupPrincipalRequest {
 }
 
 message UpdateGroupPrincipalResponse {
+  // group: The updated group principal.
   GroupPrincipal group = 1;
 }
 
@@ -151,14 +157,12 @@ message AddGroupAccountCapabilityRequest {
     min_len: 1
     pattern: "^grp_[a-zA-Z0-9_-]{21}$"
   }];
-  // capability: The JMAP capability URI to add (e.g. "urn:ietf:params:jmap:mail").
-  string capability = 2 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  // capability: The JMAP capability to add. See common.v1.AccountCapability for valid values.
+  common.v1.AccountCapability capability = 2 [(validate.rules).enum.defined_only = true];
 }
 
 message AddGroupAccountCapabilityResponse {
+  // group: The updated group principal with the new capability reflected in its account.
   GroupPrincipal group = 1;
 }
 
@@ -173,34 +177,37 @@ message GroupMember {
 }
 
 message AddGroupMemberRequest {
+  // group_id: The group to add the member to.
   string group_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^grp_[a-zA-Z0-9_-]{21}$"
   }];
-  // user_id: The user principal ID to add as a member.
+  // user_id: The user principal ID to add as a member (user_ prefix).
   string user_id = 2 [(validate.rules).string = {
     min_len: 1
-    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
   }];
 }
 
 message AddGroupMemberResponse {}
 
 message RemoveGroupMemberRequest {
+  // group_id: The group to remove the member from.
   string group_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^grp_[a-zA-Z0-9_-]{21}$"
   }];
-  // user_id: The user principal ID to remove from the group.
+  // user_id: The user principal ID to remove from the group (user_ prefix).
   string user_id = 2 [(validate.rules).string = {
     min_len: 1
-    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
+    pattern: "^user_[a-zA-Z0-9_-]{21}$"
   }];
 }
 
 message RemoveGroupMemberResponse {}
 
 message ListGroupMembersRequest {
+  // group_id: The group whose members to list.
   string group_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^grp_[a-zA-Z0-9_-]{21}$"
@@ -208,5 +215,6 @@ message ListGroupMembersRequest {
 }
 
 message ListGroupMembersResponse {
+  // members: All user principals that are currently members of the group.
   repeated GroupMember members = 1;
 }

@@ -124,18 +124,26 @@ message LambdaConcurrencyIncreasePayload {
 }
 
 message ChangeRequest {
+  // request_id: Unique identifier for this change request.
   string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  // type: The kind of quota/capacity increase being requested.
   ChangeRequestType type = 2;
+  // status: Current lifecycle status of the request.
   ChangeRequestStatus status = 3;
 
+  // created_at: When the request was first created.
   google.protobuf.Timestamp created_at = 4;
+  // updated_at: When the request was last updated.
   optional google.protobuf.Timestamp updated_at = 5;
+  // closed_at: When the request reached a terminal status (succeeded/rejected/failed/canceled).
   optional google.protobuf.Timestamp closed_at = 6;
 
+  // aws_reference: AWS Service Quotas reference details (populated when a quota request has been submitted).
   optional AwsQuotaRequestReference aws_reference = 7;
 
-  // Human readable summary of current state.
+  // summary: Human-readable one-line summary of current state for UI display.
   optional string summary = 8 [(validate.rules).string = {max_len: 512}];
+  // last_error: The most recent error message, if status is FAILED.
   optional string last_error = 9 [(validate.rules).string = {max_len: 2048}];
 
   oneof payload {
@@ -161,16 +169,20 @@ enum ChangeRequestEventKind {
 }
 
 message ChangeRequestEvent {
+  // event_id: Unique identifier for this event.
   string event_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  // request_id: The change request this event belongs to.
   string request_id = 2 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  // at: When this event occurred.
   google.protobuf.Timestamp at = 3;
 
+  // kind: The type of event (created, submitted, action required, etc.).
   ChangeRequestEventKind kind = 4;
 
-  // One-line message for timeline rendering.
+  // message: One-line message suitable for timeline rendering in the UI.
   optional string message = 5 [(validate.rules).string = {max_len: 512}];
 
-  // Optional AWS reference when discovered later.
+  // aws_reference: Optional AWS reference when first discovered at this event.
   optional AwsQuotaRequestReference aws_reference = 6;
 
   reserved 7;
@@ -218,12 +230,14 @@ message CommentDetails {
 }
 
 message CreateChangeRequestRequest {
+  // type: The kind of change/quota increase to request.
   ChangeRequestType type = 1;
 
-  // Safe retry key for button-click retries.
+  // idempotency_key: Optional safe retry key for button-click retries (e.g. a UUID from the UI).
   optional string idempotency_key = 2 [(validate.rules).string = {max_len: 128}];
 
-  // Default should be RETURN_EXISTING_OPEN.
+  // conflict_behavior: What to do when an open request of the same type already exists.
+  // Default is RETURN_EXISTING_OPEN (idempotent / safe for UI retries).
   optional ConflictBehavior conflict_behavior = 3;
 
   oneof payload {
@@ -233,44 +247,58 @@ message CreateChangeRequestRequest {
 }
 
 message CreateChangeRequestResponse {
+  // request: The newly created (or returned existing) change request.
   ChangeRequest request = 1;
+  // reused_existing_open: True when an existing open request was returned instead of creating a new one.
   bool reused_existing_open = 2;
 }
 
 message GetChangeRequestRequest {
+  // request_id: The change request to retrieve.
   string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
 }
 
 message GetChangeRequestResponse {
+  // request: The requested change request.
   ChangeRequest request = 1;
 }
 
 message ListChangeRequestsRequest {
-  // Return newest-first.
+  // page_size: Maximum number of results per page (default: 20, max: 200). Results are newest-first.
   optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 200}];
+  // page_token: Token from previous response to retrieve the next page.
   optional string page_token = 2 [(validate.rules).string = {max_len: 512}];
-
+  // type: Filter to a specific request type. Omit to return all types.
   optional ChangeRequestType type = 3;
+  // status: Filter to specific statuses. Omit to return all statuses.
   repeated ChangeRequestStatus status = 4;
 }
 
 message ListChangeRequestsResponse {
+  // requests: Change requests for this page, newest-first.
   repeated ChangeRequest requests = 1;
+  // next_page_token: Token for the next page. Empty when no more results.
   optional string next_page_token = 2 [(validate.rules).string = {max_len: 512}];
 }
 
 message ListChangeRequestEventsRequest {
+  // request_id: The change request whose event history to retrieve.
   string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  // page_size: Maximum number of events per page (default: 50, max: 500).
   optional int32 page_size = 2 [(validate.rules).int32 = {gte: 1, lte: 500}];
+  // page_token: Token from previous response to retrieve the next page.
   optional string page_token = 3 [(validate.rules).string = {max_len: 512}];
 }
 
 message ListChangeRequestEventsResponse {
+  // events: Events for this page, oldest-first.
   repeated ChangeRequestEvent events = 1;
+  // next_page_token: Token for the next page. Empty when no more results.
   optional string next_page_token = 2 [(validate.rules).string = {max_len: 512}];
 }
 
 message ProvideChangeRequestInfoRequest {
+  // request_id: The change request to provide follow-up information for.
   string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
 
   reserved 2;
@@ -305,24 +333,36 @@ message ProvideChangeRequestComment {
 }
 
 message ProvideChangeRequestInfoResponse {
+  // request: The updated change request after the info was provided.
   ChangeRequest request = 1;
 }
 
 message CancelChangeRequestRequest {
+  // request_id: The change request to cancel.
   string request_id = 1 [(validate.rules).string = {min_len: 1, max_len: 128}];
+  // reason: Optional cancellation reason for the audit trail.
   optional string reason = 2 [(validate.rules).string = {max_len: 512}];
 }
 
 message CancelChangeRequestResponse {
+  // request: The updated change request with CANCELED status.
   ChangeRequest request = 1;
 }
 
+// ChangeRequestsService manages long-running operational requests such as quota increases.
+// Requests may take minutes to days to complete and may involve external provider workflows.
 service ChangeRequestsService {
+  // CreateChangeRequest creates a new change request (or returns an existing open one).
   rpc CreateChangeRequest(CreateChangeRequestRequest) returns (CreateChangeRequestResponse);
+  // GetChangeRequest retrieves a specific change request by ID.
   rpc GetChangeRequest(GetChangeRequestRequest) returns (GetChangeRequestResponse);
+  // ListChangeRequests lists all change requests for the tenant, newest-first.
   rpc ListChangeRequests(ListChangeRequestsRequest) returns (ListChangeRequestsResponse);
+  // ListChangeRequestEvents returns the append-only event history for a specific request.
   rpc ListChangeRequestEvents(ListChangeRequestEventsRequest) returns (ListChangeRequestEventsResponse);
 
+  // ProvideChangeRequestInfo submits follow-up information for a request in ACTION_REQUIRED status.
   rpc ProvideChangeRequestInfo(ProvideChangeRequestInfoRequest) returns (ProvideChangeRequestInfoResponse);
+  // CancelChangeRequest cancels an open request.
   rpc CancelChangeRequest(CancelChangeRequestRequest) returns (CancelChangeRequestResponse);
 }

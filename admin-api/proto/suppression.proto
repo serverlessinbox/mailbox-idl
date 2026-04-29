@@ -41,30 +41,45 @@ enum ComplaintLevel {
 
 // BounceInfo tracks bounce statistics for a recipient
 message BounceInfo {
+  // level: Current bounce suppression level for this recipient.
   BounceLevel level = 1;
+  // count: Total number of hard bounce events recorded.
   int32 count = 2;
+  // first_occurrence: Timestamp of the first bounce event.
   optional google.protobuf.Timestamp first_occurrence = 3;
+  // last_occurrence: Timestamp of the most recent bounce event.
   optional google.protobuf.Timestamp last_occurrence = 4;
-  
-  // Enhanced tracking for intelligent retry logic
-  int32 soft_bounce_count = 5;        // Track soft bounces separately
+
+  // soft_bounce_count: Number of soft bounces within the current tracking window.
+  int32 soft_bounce_count = 5;
+  // soft_bounce_window_start: Start of the current soft-bounce counting window.
   optional google.protobuf.Timestamp soft_bounce_window_start = 6;
-  string last_bounce_type = 7;         // "Permanent" or "Transient" or "Undetermined"
-  string last_bounce_sub_type = 8;     // Detailed reason (e.g., "General", "NoEmail", "Suppressed")
-  string last_diagnostic_code = 9;     // SMTP status code
+  // last_bounce_type: SES diagnostic type ("Permanent", "Transient", or "Undetermined").
+  string last_bounce_type = 7;
+  // last_bounce_sub_type: SES diagnostic sub-type (e.g. "General", "NoEmail", "Suppressed").
+  string last_bounce_sub_type = 8;
+  // last_diagnostic_code: SMTP diagnostic status code from the last bounce.
+  string last_diagnostic_code = 9;
+  // reenable_after: If set, bounce suppression should not be auto-cleared before this time.
   optional google.protobuf.Timestamp reenable_after = 10;
 }
 
 // ComplaintInfo tracks complaint statistics for a specific message class
 message ComplaintInfo {
+  // level: Current complaint suppression level for this message class.
   ComplaintLevel level = 1;
+  // count: Total number of complaint events recorded for this message class.
   int32 count = 2;
+  // first_occurrence: Timestamp of the first complaint event.
   optional google.protobuf.Timestamp first_occurrence = 3;
+  // last_occurrence: Timestamp of the most recent complaint event.
   optional google.protobuf.Timestamp last_occurrence = 4;
-  
-  // Enhanced tracking for reputation monitoring
-  string last_complaint_type = 5; // FeedbackType from SES
-  string last_identity_id = 6;    // Which sender identity triggered complaint
+
+  // last_complaint_type: SES FeedbackType string from the most recent complaint (e.g. "abuse", "fraud").
+  string last_complaint_type = 5;
+  // last_identity_id: The sender identity (e.g. SES verified identity ID) that triggered the last complaint.
+  string last_identity_id = 6;
+  // reenable_after: If set, complaint suppression should not be auto-cleared before this time.
   optional google.protobuf.Timestamp reenable_after = 7;
 }
 
@@ -77,8 +92,11 @@ message Complaints {
 
 // Suppression represents a recipient suppression record
 message Suppression {
+  // recipient: The email address for which suppression is tracked.
   string recipient = 1 [(validate.rules).string.email = true];
+  // bounce: Bounce suppression details for this recipient.
   BounceInfo bounce = 2;
+  // complaints: Complaint suppression details broken down by message class.
   Complaints complaints = 3;
 }
 

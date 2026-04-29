@@ -8,6 +8,22 @@ option go_package = "admin-api/generated/common;commonv1";
 // Shared Enums
 // ============================================
 
+// AccountCapability enumerates the JMAP capability URIs that can be provisioned for an account.
+// These map to the standard JMAP capability identifiers used in session/account responses.
+//
+// URI mappings:
+//   - ACCOUNT_CAPABILITY_MAIL      → "urn:ietf:params:jmap:mail"      (RFC 8621)
+//   - ACCOUNT_CAPABILITY_CONTACTS  → "urn:ietf:params:jmap:contacts"  (RFC 9610)
+//   - ACCOUNT_CAPABILITY_CALENDARS → "urn:ietf:params:jmap:calendars"
+//
+// Use AccountCapability values wherever a JMAP capability URI is required.
+enum AccountCapability {
+  ACCOUNT_CAPABILITY_UNSPECIFIED = 0;
+  ACCOUNT_CAPABILITY_MAIL = 1;       // Enables JMAP mail, mailbox and email submission methods.
+  ACCOUNT_CAPABILITY_CONTACTS = 2;   // Enables JMAP contacts (AddressBook + ContactCard) methods.
+  ACCOUNT_CAPABILITY_CALENDARS = 3;  // Enables JMAP calendar methods (reserved for future use).
+}
+
 // VerificationStatus indicates the verification state of a domain or email identity.
 // Used across multiple services to represent email verification progress.
 //
@@ -41,6 +57,7 @@ message Account {
   // email: Primary email address derived from the account's primary alias.
   string email = 3;
   // capabilities: JMAP capability URIs provisioned for this account.
+  // Values correspond to AccountCapability enum URIs (e.g. "urn:ietf:params:jmap:mail").
   repeated string capabilities = 4;
   // owner_principal_id: The principal (user_ or grp_) that owns this account.
   string owner_principal_id = 5;

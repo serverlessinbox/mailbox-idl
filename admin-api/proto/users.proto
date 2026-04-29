@@ -24,28 +24,36 @@ service UsersService {
 }
 
 message User {
+  // user_id: Unique user identifier (user_ prefix).
   string user_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^user_[a-zA-Z0-9_-]{21}$"
   }];
+  // name: Canonical username (typically the email local-part or IDP username).
   string name = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100
   }];
+  // display_name: Optional human-readable display name shown in the UI.
   string display_name = 3 [(validate.rules).string.max_len = 100];
+  // primary_email: The user's primary email address (from their primary account alias).
   optional string primary_email = 4 [(validate.rules).string = {
     email: true
     max_len: 255
   }];
+  // primary_account_id: The ID of the user's primary JMAP account (acc_ prefix).
   optional string primary_account_id = 5 [(validate.rules).string = {
     min_len: 1
     pattern: "^acc_[a-zA-Z0-9_-]{21}$"
   }];
+  // is_active: When false, the user cannot authenticate or access the system.
   bool is_active = 6;
+  // is_admin: When true, the user has administrative privileges in the admin UI.
   bool is_admin = 7;
+  // is_deleted: When true, the user has been soft-deleted and should be treated as non-existent.
   bool is_deleted = 8;
 
-  // Persisted IDP identity information (best-effort, may be stale).
+  // idp_identities: Persisted IDP identity information (best-effort, may be stale).
   repeated IdpIdentity idp_identities = 9;
 }
 
@@ -67,16 +75,21 @@ message IdpIdentity {
 }
 
 message ListUsersRequest {
+  // page_size: Maximum number of users to return per page (default: 50, max: 1000).
   optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 1000}];
+  // page_token: Token from previous response to retrieve the next page.
   optional string page_token = 2 [(validate.rules).string.max_len = 512];
 }
 
 message ListUsersResponse {
+  // users: The list of users for this page.
   repeated User users = 1;
+  // next_page_token: Token to pass to the next ListUsersRequest. Empty when no more results.
   string next_page_token = 2;
 }
 
 message GetUserRequest {
+  // user_id: The user to retrieve (user_ prefix).
   string user_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^user_[a-zA-Z0-9_-]{21}$"
@@ -84,22 +97,27 @@ message GetUserRequest {
 }
 
 message GetUserResponse {
+  // user: The requested user.
   User user = 1;
 
-  // Present when the user has a primary_account_id.
+  // primary_account: Present when the user has a primary_account_id.
   optional common.v1.Account primary_account = 2;
 
-  // Aliases for the primary account (admin view includes invisible/system aliases).
+  // primary_account_aliases: Aliases for the primary account (admin view includes invisible/system aliases).
   repeated aliases.v1.Alias primary_account_aliases = 3;
 }
 
 message UpdateUserRequest {
+  // user_id: The user to update (user_ prefix).
   string user_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^user_[a-zA-Z0-9_-]{21}$"
   }];
+  // display_name: New display name for the user. Omit to leave unchanged.
   optional string display_name = 2 [(validate.rules).string.max_len = 100];
+  // is_active: Set to false to suspend the user's access.
   optional bool is_active = 4;
+  // is_admin: Set to true to grant or revoke administrative privileges.
   optional bool is_admin = 5;
   // account_name: When set, renames the user's primary account.
   optional string account_name = 6 [(validate.rules).string = {
@@ -109,6 +127,7 @@ message UpdateUserRequest {
 }
 
 message UpdateUserResponse {
+  // user: The updated user.
   User user = 1;
 }
 
