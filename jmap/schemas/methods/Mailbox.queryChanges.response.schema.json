@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Mailbox.queryChanges.response.schema.json",
+  "title": "Mailbox/queryChanges response",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account these query changes belong to." },
+    "oldQueryState": { "type": "string", "minLength": 1, "description": "The queryState this response starts from (matches sinceQueryState from request)." },
+    "newQueryState": { "type": "string", "minLength": 1, "description": "The current queryState. Pass to the next Mailbox/queryChanges call." },
+    "hasMoreChanges": { "type": "boolean", "description": "If true, more changes exist beyond maxChanges. Call again with newQueryState." },
+    "removed": {
+      "type": "array",
+      "description": "MailboxIds that are no longer in the query result set.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/MailboxId" }
+    },
+    "added": {
+      "type": "array",
+      "description": "Mailboxes that are now in the result set, with their new positions.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "../core/types.schema.json#/$defs/MailboxId" },
+          "index": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["id", "index"],
+        "additionalProperties": false
+      }
+    },
+    "total": { "type": "integer", "minimum": 0, "description": "Updated total count of results (if calculateTotal was true in the original query)." },
+    "upToId": { "$ref": "../core/types.schema.json#/$defs/MailboxId", "description": "Echoes the upToId from the request, if provided." }
+  },
+  "required": ["accountId", "oldQueryState", "newQueryState", "hasMoreChanges", "removed", "added"],
+  "additionalProperties": false
+}

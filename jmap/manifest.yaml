@@ -3,6 +3,8 @@ capabilities:
   - urn:ietf:params:jmap:core
   - urn:ietf:params:jmap:mail
   - urn:ietf:params:jmap:submission
+  - urn:ietf:params:jmap:contacts
+  - urn:ietf:params:jmap:principals
 methods:
   - name: Mailbox/get
     capability: urn:ietf:params:jmap:mail
@@ -125,3 +127,118 @@ methods:
     capability: urn:ietf:params:jmap:submission
     argsSchema: schemas/methods/Identity.changes.args.schema.json
     responseSchema: schemas/methods/Identity.changes.response.schema.json
+
+  - name: Mailbox/queryChanges
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Mailbox.queryChanges.args.schema.json
+    responseSchema: schemas/methods/Mailbox.queryChanges.response.schema.json
+
+  - name: Thread/queryChanges
+    capability: urn:ietf:params:jmap:mail
+    argsSchema: schemas/methods/Thread.queryChanges.args.schema.json
+    responseSchema: schemas/methods/Thread.queryChanges.response.schema.json
+
+  - name: AddressBook/get
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/AddressBook.get.args.schema.json
+    responseSchema: schemas/methods/AddressBook.get.response.schema.json
+
+  - name: AddressBook/set
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/AddressBook.set.args.schema.json
+    responseSchema: schemas/methods/AddressBook.set.response.schema.json
+
+  - name: AddressBook/query
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/AddressBook.query.args.schema.json
+    responseSchema: schemas/methods/AddressBook.query.response.schema.json
+
+  - name: AddressBook/queryChanges
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/AddressBook.queryChanges.args.schema.json
+    responseSchema: schemas/methods/AddressBook.queryChanges.response.schema.json
+
+  - name: AddressBook/changes
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/AddressBook.changes.args.schema.json
+    responseSchema: schemas/methods/AddressBook.changes.response.schema.json
+
+  - name: ContactCard/get
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/ContactCard.get.args.schema.json
+    responseSchema: schemas/methods/ContactCard.get.response.schema.json
+
+  - name: ContactCard/set
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/ContactCard.set.args.schema.json
+    responseSchema: schemas/methods/ContactCard.set.response.schema.json
+
+  - name: ContactCard/query
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/ContactCard.query.args.schema.json
+    responseSchema: schemas/methods/ContactCard.query.response.schema.json
+
+  - name: ContactCard/queryChanges
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/ContactCard.queryChanges.args.schema.json
+    responseSchema: schemas/methods/ContactCard.queryChanges.response.schema.json
+
+  - name: ContactCard/changes
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/ContactCard.changes.args.schema.json
+    responseSchema: schemas/methods/ContactCard.changes.response.schema.json
+
+  - name: ContactCard/copy
+    capability: urn:ietf:params:jmap:contacts
+    argsSchema: schemas/methods/ContactCard.copy.args.schema.json
+    responseSchema: schemas/methods/ContactCard.copy.response.schema.json
+
+  - name: Principal/get
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/Principal.get.args.schema.json
+    responseSchema: schemas/methods/Principal.get.response.schema.json
+
+  - name: Principal/set
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/Principal.set.args.schema.json
+    responseSchema: schemas/methods/Principal.set.response.schema.json
+
+  - name: Principal/query
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/Principal.query.args.schema.json
+    responseSchema: schemas/methods/Principal.query.response.schema.json
+
+  - name: Principal/queryChanges
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/Principal.queryChanges.args.schema.json
+    responseSchema: schemas/methods/Principal.queryChanges.response.schema.json
+
+  - name: Principal/changes
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/Principal.changes.args.schema.json
+    responseSchema: schemas/methods/Principal.changes.response.schema.json
+
+  - name: ShareNotification/get
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/ShareNotification.get.args.schema.json
+    responseSchema: schemas/methods/ShareNotification.get.response.schema.json
+
+  - name: ShareNotification/set
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/ShareNotification.set.args.schema.json
+    responseSchema: schemas/methods/ShareNotification.set.response.schema.json
+
+  - name: ShareNotification/query
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/ShareNotification.query.args.schema.json
+    responseSchema: schemas/methods/ShareNotification.query.response.schema.json
+
+  - name: ShareNotification/queryChanges
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/ShareNotification.queryChanges.args.schema.json
+    responseSchema: schemas/methods/ShareNotification.queryChanges.response.schema.json
+
+  - name: ShareNotification/changes
+    capability: urn:ietf:params:jmap:principals
+    argsSchema: schemas/methods/ShareNotification.changes.args.schema.json
+    responseSchema: schemas/methods/ShareNotification.changes.response.schema.json

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ContactCard.get.args.schema.json",
+  "title": "ContactCard/get args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch contact cards from." },
+    "ids": {
+      "anyOf": [
+        { "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/ContactCardId" } },
+        { "type": "null" }
+      ],
+      "description": "IDs of specific contact cards to fetch. Null or omitted to fetch all contact cards."
+    },
+    "properties": {
+      "anyOf": [
+        { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        { "type": "null" }
+      ],
+      "description": "ContactCard properties to include in the response. Null or omitted for all properties."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

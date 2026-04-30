@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ContactCard.copy.response.schema.json",
+  "title": "ContactCard/copy response",
+  "description": "Response from ContactCard/copy (RFC 9610 §6.6).",
+  "type": "object",
+  "properties": {
+    "fromAccountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The source account." },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The destination account." },
+    "oldState": { "type": ["string", "null"], "description": "The ContactCard state in the destination account before this operation." },
+    "newState": { "type": ["string", "null"], "description": "The ContactCard state in the destination account after this operation." },
+    "created": {
+      "type": ["object", "null"],
+      "description": "Successfully copied contact cards, keyed by client creation id.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/ContactCard" }
+    },
+    "notCreated": {
+      "type": ["object", "null"],
+      "description": "Creation ids that failed, with a SetError.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    }
+  },
+  "required": ["fromAccountId", "accountId"],
+  "additionalProperties": false
+}

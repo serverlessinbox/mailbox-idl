@@ -333,6 +333,324 @@
       },
       "required": ["blobId", "mailboxIds"],
       "additionalProperties": false
+    },
+
+    "AddressBookId": { "type": "string", "minLength": 1, "description": "Identifies an AddressBook object (RFC 9610)." },
+    "ContactCardId": { "type": "string", "minLength": 1, "description": "Identifies a ContactCard object (RFC 9610)." },
+    "PrincipalId": { "type": "string", "minLength": 1, "description": "Identifies a Principal object (RFC 9670)." },
+    "ShareNotificationId": { "type": "string", "minLength": 1, "description": "Identifies a ShareNotification object (RFC 9670)." },
+
+    "AddressBookRights": {
+      "type": "object",
+      "description": "Access rights a principal has on an address book (RFC 9610 §5.2).",
+      "properties": {
+        "mayRead":   { "type": "boolean", "description": "The principal may read the address book contents." },
+        "mayWrite":  { "type": "boolean", "description": "The principal may create, modify, and destroy contacts in this address book." },
+        "mayShare":  { "type": "boolean", "description": "The principal may modify the shareWith property of this address book." },
+        "mayDelete": { "type": "boolean", "description": "The principal may delete this address book entirely." }
+      },
+      "required": ["mayRead", "mayWrite", "mayShare", "mayDelete"],
+      "additionalProperties": false
+    },
+
+    "AddressBook": {
+      "type": "object",
+      "description": "A JMAP AddressBook object (RFC 9610 §5). Groups ContactCard objects.",
+      "properties": {
+        "id":           { "$ref": "#/$defs/AddressBookId", "description": "The address book id (server-set, immutable)." },
+        "name":         { "type": "string", "description": "User-visible name of the address book." },
+        "description":  { "type": "string", "description": "Optional human-readable description." },
+        "sortOrder":    { "type": "integer", "minimum": 0, "description": "Client sort-order hint; lower values sort first." },
+        "isDefault":    { "type": "boolean", "description": "Whether this is the default address book for new contacts." },
+        "isSubscribed": { "type": "boolean", "description": "Whether the user is subscribed to this address book." },
+        "shareWith":    { "type": "object", "additionalProperties": { "$ref": "#/$defs/AddressBookRights" }, "description": "PrincipalId → AddressBookRights map of shared access (server-set for non-owners)." },
+        "myRights":     { "$ref": "#/$defs/AddressBookRights", "description": "The rights the current user has on this address book (server-set)." }
+      },
+      "required": ["id", "name", "sortOrder", "isDefault", "isSubscribed", "myRights"],
+      "additionalProperties": false
+    },
+
+    "AddressBookCreate": {
+      "type": "object",
+      "description": "Fields for creating a new AddressBook.",
+      "properties": {
+        "name":        { "type": "string", "description": "User-visible name of the address book." },
+        "description": { "type": "string", "description": "Optional human-readable description." },
+        "sortOrder":   { "type": "integer", "minimum": 0, "description": "Client sort-order hint." },
+        "isDefault":   { "type": "boolean", "description": "Whether this should be the default address book for new contacts." },
+        "shareWith":   { "type": "object", "additionalProperties": { "$ref": "#/$defs/AddressBookRights" }, "description": "Initial PrincipalId → AddressBookRights sharing map." }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+
+    "AddressBookUpdate": {
+      "type": "object",
+      "description": "Fields that may be patched on an AddressBook. All properties are optional.",
+      "properties": {
+        "name":         { "type": "string", "description": "New name for the address book." },
+        "description":  { "type": "string", "description": "New description." },
+        "sortOrder":    { "type": "integer", "minimum": 0, "description": "New sort-order hint." },
+        "isDefault":    { "type": "boolean", "description": "Set to true to make this the default address book." },
+        "isSubscribed": { "type": "boolean", "description": "Set subscription status." },
+        "shareWith":    { "type": "object", "additionalProperties": { "$ref": "#/$defs/AddressBookRights" }, "description": "Replacement PrincipalId → AddressBookRights sharing map." }
+      },
+      "additionalProperties": false
+    },
+
+    "NameComponent": {
+      "type": "object",
+      "description": "A single component of a JSContact name (RFC 9553 §2.2.1.2).",
+      "properties": {
+        "kind":  { "type": "string", "description": "Component kind: title, given, given2, surname, surname2, credential, generation, separator." },
+        "value": { "type": "string", "description": "The text value of this component." }
+      },
+      "required": ["kind", "value"],
+      "additionalProperties": false
+    },
+
+    "ContactCardName": {
+      "type": "object",
+      "description": "Structured name for a ContactCard (RFC 9553 §2.2.1).",
+      "properties": {
+        "components": { "type": "array", "items": { "$ref": "#/$defs/NameComponent" }, "description": "Ordered name components." },
+        "full":       { "type": "string", "description": "Full name as a single string." },
+        "isOrdered":  { "type": "boolean", "description": "Whether the components are in display order." }
+      },
+      "additionalProperties": false
+    },
+
+    "ContactCardEmail": {
+      "type": "object",
+      "description": "A single email address entry on a ContactCard (RFC 9553 §2.3.1).",
+      "properties": {
+        "address":  { "type": "string", "description": "The email address." },
+        "label":    { "type": "string", "description": "Optional UI label." },
+        "contexts": { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Usage contexts (e.g. work, private)." },
+        "pref":     { "type": "integer", "minimum": 1, "maximum": 100, "description": "Preference value; lower is more preferred." }
+      },
+      "required": ["address"],
+      "additionalProperties": false
+    },
+
+    "ContactCardPhone": {
+      "type": "object",
+      "description": "A single phone number entry on a ContactCard (RFC 9553 §2.3.3).",
+      "properties": {
+        "number":   { "type": "string", "description": "The phone number string." },
+        "label":    { "type": "string", "description": "Optional UI label." },
+        "contexts": { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Usage contexts (e.g. work, private)." },
+        "features": { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Phone features (e.g. voice, fax, cell, video)." },
+        "pref":     { "type": "integer", "minimum": 1, "maximum": 100, "description": "Preference value; lower is more preferred." }
+      },
+      "required": ["number"],
+      "additionalProperties": false
+    },
+
+    "AddressComponent": {
+      "type": "object",
+      "description": "A single component of a structured postal address (RFC 9553 §2.5.1.2).",
+      "properties": {
+        "kind":  { "type": "string", "description": "Component kind: room, apartment, floor, building, number, name, block, subdistrict, district, locality, region, postcode, country, direction, landmark, postOfficeBox, separator." },
+        "value": { "type": "string", "description": "The text value of this component." }
+      },
+      "required": ["kind", "value"],
+      "additionalProperties": false
+    },
+
+    "ContactCardAddress": {
+      "type": "object",
+      "description": "A structured postal address entry on a ContactCard (RFC 9553 §2.5.1).",
+      "properties": {
+        "components":  { "type": "array", "items": { "$ref": "#/$defs/AddressComponent" }, "description": "Ordered address components." },
+        "full":        { "type": "string", "description": "Full address as a single string." },
+        "countryCode": { "type": "string", "description": "ISO 3166-1 alpha-2 country code." },
+        "isOrdered":   { "type": "boolean", "description": "Whether the components are in display order." },
+        "contexts":    { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Usage contexts." },
+        "pref":        { "type": "integer", "minimum": 1, "maximum": 100, "description": "Preference value; lower is more preferred." }
+      },
+      "additionalProperties": false
+    },
+
+    "OrgUnit": {
+      "type": "object",
+      "description": "An organizational unit within an organization entry (RFC 9553 §2.2.3).",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the organizational unit." }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+
+    "ContactCardOrganization": {
+      "type": "object",
+      "description": "An organization entry on a ContactCard (RFC 9553 §2.2.3).",
+      "properties": {
+        "name":     { "type": "string", "description": "Name of the organization." },
+        "units":    { "type": "array", "items": { "$ref": "#/$defs/OrgUnit" }, "description": "Organizational units." },
+        "contexts": { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Usage contexts." }
+      },
+      "additionalProperties": false
+    },
+
+    "ContactCardTitle": {
+      "type": "object",
+      "description": "A job title or role entry on a ContactCard (RFC 9553 §2.2.5). Kind: title (default) or role.",
+      "properties": {
+        "name": { "type": "string", "description": "Title or role text." },
+        "kind": { "type": "string", "description": "\"title\" or \"role\"." }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+
+    "ContactCardNote": {
+      "type": "object",
+      "description": "A free-text note on a ContactCard (RFC 9553 §2.8.3).",
+      "properties": {
+        "note": { "type": "string", "description": "Note text." }
+      },
+      "required": ["note"],
+      "additionalProperties": false
+    },
+
+    "PartialDate": {
+      "type": "object",
+      "description": "A complete or partial calendar date (RFC 9553 §2.8.1).",
+      "properties": {
+        "year":  { "type": "integer", "minimum": 1, "description": "4-digit year. Omit if unknown." },
+        "month": { "type": "integer", "minimum": 1, "maximum": 12, "description": "Month (1-12). Omit if unknown." },
+        "day":   { "type": "integer", "minimum": 1, "maximum": 31, "description": "Day of month (1-31). Omit if unknown." }
+      },
+      "additionalProperties": false
+    },
+
+    "ContactCardAnniversary": {
+      "type": "object",
+      "description": "A named date such as a birthday on a ContactCard (RFC 9553 §2.8.1). Kind: birth, death, wedding.",
+      "properties": {
+        "kind": { "type": "string", "description": "Anniversary kind: birth, death, wedding." },
+        "date": { "$ref": "#/$defs/PartialDate", "description": "The date (partial dates supported)." }
+      },
+      "required": ["kind", "date"],
+      "additionalProperties": false
+    },
+
+    "ContactCardMedia": {
+      "type": "object",
+      "description": "A media entry (photo, sound, logo) on a ContactCard (RFC 9553 §2.6.4, RFC 9610 blobId extension).",
+      "properties": {
+        "kind":      { "type": "string", "description": "Media kind: photo, sound, logo." },
+        "uri":       { "type": "string", "description": "URI to an external resource. Mutually exclusive with blobId." },
+        "blobId":    { "$ref": "#/$defs/BlobId", "description": "BlobId of a hosted media blob. On input: an UploadBlobID; on output: a permanent ContactBlobID (cnt: prefix)." },
+        "mediaType": { "type": "string", "description": "MIME type (e.g. image/jpeg)." }
+      },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+
+    "ContactCard": {
+      "type": "object",
+      "description": "A JMAP ContactCard object (RFC 9610 / JSContact RFC 9553).",
+      "properties": {
+        "id":             { "$ref": "#/$defs/ContactCardId", "description": "The contact card id (server-set, immutable)." },
+        "addressBookIds": { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "AddressBookId → true map indicating which address books contain this card (server-set)." },
+        "created":        { "$ref": "#/$defs/JmapDate", "description": "UTC date-time the card was first created (server-set, RFC 9553 §2.1.3)." },
+        "updated":        { "$ref": "#/$defs/JmapDate", "description": "UTC date-time of the last modification (server-set, RFC 9553 §2.1.10)." },
+        "name":           { "$ref": "#/$defs/ContactCardName", "description": "Structured name (RFC 9553 §2.2.1)." },
+        "emails":         { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardEmail" }, "description": "String-keyed map of email address entries." },
+        "phones":         { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardPhone" }, "description": "String-keyed map of phone number entries." },
+        "addresses":      { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardAddress" }, "description": "String-keyed map of postal address entries." },
+        "organizations":  { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardOrganization" }, "description": "String-keyed map of organization entries." },
+        "titles":         { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardTitle" }, "description": "String-keyed map of title/role entries." },
+        "notes":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardNote" }, "description": "String-keyed map of free-text note entries." },
+        "anniversaries":  { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardAnniversary" }, "description": "String-keyed map of anniversary entries." },
+        "media":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardMedia" }, "description": "String-keyed map of media entries (photos, logos, sounds)." }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+
+    "ContactCardCreate": {
+      "type": "object",
+      "description": "Fields for creating a new ContactCard. addressBookIds is required.",
+      "properties": {
+        "addressBookIds": { "type": "object", "additionalProperties": { "type": "boolean" }, "minProperties": 1, "description": "AddressBookId → true map. Exactly one entry required." },
+        "name":           { "$ref": "#/$defs/ContactCardName" },
+        "emails":         { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardEmail" } },
+        "phones":         { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardPhone" } },
+        "addresses":      { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardAddress" } },
+        "organizations":  { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardOrganization" } },
+        "titles":         { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardTitle" } },
+        "notes":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardNote" } },
+        "anniversaries":  { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardAnniversary" } },
+        "media":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardMedia" } }
+      },
+      "required": ["addressBookIds"],
+      "additionalProperties": false
+    },
+
+    "ContactCardUpdate": {
+      "type": "object",
+      "description": "Fields that may be patched on a ContactCard. All properties are optional.",
+      "properties": {
+        "addressBookIds": { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Replacement AddressBookId → true map." },
+        "name":           { "$ref": "#/$defs/ContactCardName" },
+        "emails":         { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardEmail" } },
+        "phones":         { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardPhone" } },
+        "addresses":      { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardAddress" } },
+        "organizations":  { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardOrganization" } },
+        "titles":         { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardTitle" } },
+        "notes":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardNote" } },
+        "anniversaries":  { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardAnniversary" } },
+        "media":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardMedia" } }
+      },
+      "additionalProperties": false
+    },
+
+    "Principal": {
+      "type": "object",
+      "description": "A JMAP Principal object representing a user, group, or resource (RFC 9670 §4).",
+      "properties": {
+        "id":          { "$ref": "#/$defs/PrincipalId", "description": "The principal id (server-set, immutable)." },
+        "type":        { "type": "string", "enum": ["individual", "group", "resource", "location", "other"], "description": "Principal type (RFC 9670 §4)." },
+        "name":        { "type": "string", "description": "Human-readable display name for this principal." },
+        "description": { "type": "string", "description": "Optional free-text description." },
+        "email":       { "anyOf": [{ "$ref": "#/$defs/EmailAddress" }, { "type": "null" }], "description": "Primary email address for this principal, if any." },
+        "timeZone":    { "type": "string", "description": "IANA time zone identifier for this principal." },
+        "picture":     { "anyOf": [{ "$ref": "#/$defs/BlobId" }, { "type": "null" }], "description": "BlobId of a profile picture, or null if none." }
+      },
+      "required": ["id", "type", "name"],
+      "additionalProperties": false
+    },
+
+    "ShareNotificationBy": {
+      "type": "object",
+      "description": "Describes who made a sharing change (RFC 9670 §5).",
+      "properties": {
+        "type":        { "type": "string", "description": "Type of actor, e.g. \"principal\" or \"system\"." },
+        "name":        { "type": "string", "description": "Display name of the actor." },
+        "principalId": { "anyOf": [{ "$ref": "#/$defs/PrincipalId" }, { "type": "null" }], "description": "Id of the actor principal, if applicable." }
+      },
+      "required": ["type", "name"],
+      "additionalProperties": false
+    },
+
+    "ShareNotification": {
+      "type": "object",
+      "description": "A JMAP ShareNotification object recording a sharing change (RFC 9670 §5).",
+      "properties": {
+        "id":              { "$ref": "#/$defs/ShareNotificationId", "description": "The notification id (server-set, immutable)." },
+        "created":         { "$ref": "#/$defs/JmapDate", "description": "UTC date-time the notification was created (server-set)." },
+        "changedBy":       { "$ref": "#/$defs/ShareNotificationBy", "description": "Who made the sharing change." },
+        "objectType":      { "type": "string", "description": "The data type that was shared (e.g. \"AddressBook\")." },
+        "objectAccountId": { "$ref": "#/$defs/AccountId", "description": "The account that owns the shared object." },
+        "objectId":        { "type": "string", "description": "The id of the shared object." },
+        "oldRights":       { "anyOf": [{ "type": "object", "additionalProperties": { "type": "boolean" } }, { "type": "null" }], "description": "Rights before the change. Null if the principal was newly added." },
+        "newRights":       { "anyOf": [{ "type": "object", "additionalProperties": { "type": "boolean" } }, { "type": "null" }], "description": "Rights after the change. Null if the principal was removed." }
+      },
+      "required": ["id", "created", "changedBy", "objectType", "objectAccountId", "objectId"],
+      "additionalProperties": false
     }
   }
 }

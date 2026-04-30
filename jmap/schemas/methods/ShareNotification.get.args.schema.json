@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ShareNotification.get.args.schema.json",
+  "title": "ShareNotification/get args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch share notifications from." },
+    "ids": {
+      "anyOf": [
+        { "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" } },
+        { "type": "null" }
+      ],
+      "description": "IDs of specific share notifications to fetch. Null or omitted to fetch all share notifications."
+    },
+    "properties": {
+      "anyOf": [
+        { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        { "type": "null" }
+      ],
+      "description": "ShareNotification properties to include in the response. Null or omitted for all properties."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

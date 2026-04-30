@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/AddressBook.get.args.schema.json",
+  "title": "AddressBook/get args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch address books from." },
+    "ids": {
+      "anyOf": [
+        { "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/AddressBookId" } },
+        { "type": "null" }
+      ],
+      "description": "IDs of specific address books to fetch. Null or omitted to fetch all address books."
+    },
+    "properties": {
+      "anyOf": [
+        { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        { "type": "null" }
+      ],
+      "description": "AddressBook properties to include in the response. Null or omitted for all properties."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

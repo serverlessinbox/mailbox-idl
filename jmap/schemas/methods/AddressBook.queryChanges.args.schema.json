@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/AddressBook.queryChanges.args.schema.json",
+  "title": "AddressBook/queryChanges args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to check for query changes." },
+    "filter": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "Must match the filter used in the original AddressBook/query call."
+    },
+    "sort": {
+      "type": ["array", "null"],
+      "description": "Must match the sort used in the original AddressBook/query call.",
+      "items": { "type": "object", "additionalProperties": true }
+    },
+    "sinceQueryState": { "type": "string", "minLength": 1, "description": "The queryState from the previous AddressBook/query or AddressBook/queryChanges response." },
+    "maxChanges": { "type": "integer", "minimum": 0, "description": "Maximum number of changes to return. If exceeded, hasMoreChanges will be true." },
+    "upToId": { "$ref": "../core/types.schema.json#/$defs/AddressBookId", "description": "Return changes only up to and including this AddressBookId." },
+    "calculateTotal": { "type": "boolean", "description": "If true, return the updated total count of results." }
+  },
+  "required": ["accountId", "sinceQueryState"],
+  "additionalProperties": false
+}

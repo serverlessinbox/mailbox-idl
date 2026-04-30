@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Principal.set.args.schema.json",
+  "title": "Principal/set args",
+  "description": "Arguments for Principal/set (RFC 9670 §3.3). Only self-updates are allowed; create and destroy are not permitted for most principals.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to apply changes to." },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard. Fails with stateMismatch if the Principal state differs." },
+    "create": {
+      "type": ["object", "null"],
+      "description": "Always results in notCreated for server-managed principals.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": true
+    },
+    "update": {
+      "type": ["object", "null"],
+      "description": "Map of PrincipalId to PatchObject. Only the calling user's own principal may be updated.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/PrincipalId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PatchObject" }
+    },
+    "destroy": {
+      "type": ["array", "null"],
+      "description": "Always results in notDestroyed for server-managed principals.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/PrincipalId" }
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

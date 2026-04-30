@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ShareNotification.queryChanges.args.schema.json",
+  "title": "ShareNotification/queryChanges args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to check for query changes." },
+    "sort": {
+      "type": ["array", "null"],
+      "description": "Must match the sort used in the original ShareNotification/query call.",
+      "items": { "type": "object", "additionalProperties": true }
+    },
+    "sinceQueryState": { "type": "string", "minLength": 1, "description": "The queryState from the previous ShareNotification/query or ShareNotification/queryChanges response." },
+    "maxChanges": { "type": "integer", "minimum": 0, "description": "Maximum number of changes to return. If exceeded, hasMoreChanges will be true." },
+    "upToId": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId", "description": "Return changes only up to and including this ShareNotificationId." },
+    "calculateTotal": { "type": "boolean", "description": "If true, return the updated total count of results." }
+  },
+  "required": ["accountId", "sinceQueryState"],
+  "additionalProperties": false
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ContactCard.get.response.schema.json",
+  "title": "ContactCard/get response",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the contact cards belong to." },
+    "state": { "type": "string", "description": "The current state of the ContactCard type. Pass to ContactCard/changes to detect future changes." },
+    "list": {
+      "type": "array",
+      "description": "The list of ContactCard objects that were found.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/ContactCard" }
+    },
+    "notFound": {
+      "type": "array",
+      "description": "IDs from the request that could not be found.",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["accountId", "state", "list", "notFound"],
+  "additionalProperties": false
+}

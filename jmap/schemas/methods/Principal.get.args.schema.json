@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Principal.get.args.schema.json",
+  "title": "Principal/get args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch principals from." },
+    "ids": {
+      "anyOf": [
+        { "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/PrincipalId" } },
+        { "type": "null" }
+      ],
+      "description": "IDs of specific principals to fetch. Null or omitted to fetch all principals."
+    },
+    "properties": {
+      "anyOf": [
+        { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        { "type": "null" }
+      ],
+      "description": "Principal properties to include in the response. Null or omitted for all properties."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

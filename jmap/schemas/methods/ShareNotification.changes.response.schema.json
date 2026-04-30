@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ShareNotification.changes.response.schema.json",
+  "title": "ShareNotification/changes response",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account these share notification changes belong to." },
+    "oldState": { "type": "string", "minLength": 1, "description": "The state this response starts from." },
+    "newState": { "type": "string", "minLength": 1, "description": "The current state after all listed changes; pass to the next call." },
+    "hasMoreChanges": { "type": "boolean", "description": "If true, additional changes exist beyond maxChanges. Call again with newState." },
+    "created": {
+      "type": "array",
+      "description": "IDs of share notifications created since sinceState.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" }
+    },
+    "updated": {
+      "type": "array",
+      "description": "IDs of share notifications whose properties changed since sinceState.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" }
+    },
+    "destroyed": {
+      "type": "array",
+      "description": "IDs of share notifications destroyed since sinceState.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" }
+    }
+  },
+  "required": ["accountId", "oldState", "newState", "hasMoreChanges", "created", "updated", "destroyed"],
+  "additionalProperties": false
+}

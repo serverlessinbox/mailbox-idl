@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Principal.changes.args.schema.json",
+  "title": "Principal/changes args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch principal changes for." },
+    "sinceState": { "type": "string", "minLength": 1, "description": "The state string from the last Principal/get or Principal/changes response." },
+    "maxChanges": { "type": "integer", "minimum": 0, "description": "Maximum number of change records to return. If exceeded, hasMoreChanges will be true." }
+  },
+  "required": ["accountId", "sinceState"],
+  "additionalProperties": false
+}

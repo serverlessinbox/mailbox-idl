@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ContactCard.copy.args.schema.json",
+  "title": "ContactCard/copy args",
+  "description": "Arguments for ContactCard/copy (RFC 9610 §6.6). Copies contact cards between accounts.",
+  "type": "object",
+  "properties": {
+    "fromAccountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to copy contact cards from." },
+    "ifFromInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard on the source ContactCard state." },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to copy contact cards into." },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard on the destination ContactCard state." },
+    "create": {
+      "type": "object",
+      "description": "Map of client-assigned creation ids to objects describing the copy.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "../core/types.schema.json#/$defs/ContactCardId", "description": "The id of the ContactCard in the source account." },
+          "addressBookId": { "$ref": "../core/types.schema.json#/$defs/AddressBookId", "description": "The AddressBook to place the copy in." }
+        },
+        "required": ["id", "addressBookId"],
+        "additionalProperties": false
+      }
+    },
+    "onSuccessDestroyOriginal": {
+      "type": ["boolean", "null"],
+      "description": "If true, destroy original contact cards on success. Default: false."
+    },
+    "destroyFromIfInState": {
+      "type": ["string", "null"],
+      "description": "Guard on source state when destroying originals."
+    }
+  },
+  "required": ["fromAccountId", "accountId", "create"],
+  "additionalProperties": false
+}

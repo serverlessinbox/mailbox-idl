@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ShareNotification.set.args.schema.json",
+  "title": "ShareNotification/set args",
+  "description": "Arguments for ShareNotification/set (RFC 9670 §4.3). Destroy-only: create and update are not supported.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to apply changes to." },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard. Fails with stateMismatch if the ShareNotification state differs." },
+    "create": {
+      "type": ["object", "null"],
+      "description": "Always results in notCreated — share notifications are created by the server.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": true
+    },
+    "update": {
+      "type": ["object", "null"],
+      "description": "Always results in notUpdated — share notifications are immutable.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" },
+      "additionalProperties": true
+    },
+    "destroy": {
+      "type": ["array", "null"],
+      "description": "ShareNotificationIds to dismiss (destroy).",
+      "items": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" }
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

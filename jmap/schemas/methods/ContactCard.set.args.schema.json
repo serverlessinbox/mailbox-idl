@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ContactCard.set.args.schema.json",
+  "title": "ContactCard/set args",
+  "description": "Arguments for ContactCard/set (RFC 9610 §6.3). Creates, updates, or destroys ContactCard objects.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to apply changes to." },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard. Fails with stateMismatch if the ContactCard state differs." },
+    "create": {
+      "type": ["object", "null"],
+      "description": "Map of client-assigned creation ids to ContactCardCreate objects.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/ContactCardCreate" }
+    },
+    "update": {
+      "type": ["object", "null"],
+      "description": "Map of ContactCardId to PatchObject. Only explicitly listed properties are changed.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/ContactCardId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PatchObject" }
+    },
+    "destroy": {
+      "type": ["array", "null"],
+      "description": "ContactCardIds to delete.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/ContactCardId" }
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Mailbox.queryChanges.args.schema.json",
+  "title": "Mailbox/queryChanges args",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to check for query changes." },
+    "filter": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "Must match the filter used in the original Mailbox/query call."
+    },
+    "sort": {
+      "type": ["array", "null"],
+      "description": "Must match the sort used in the original Mailbox/query call.",
+      "items": { "type": "object", "additionalProperties": true }
+    },
+    "sinceQueryState": { "type": "string", "minLength": 1, "description": "The queryState from the previous Mailbox/query or Mailbox/queryChanges response." },
+    "maxChanges": { "type": "integer", "minimum": 0, "description": "Maximum number of changes to return. If exceeded, hasMoreChanges will be true." },
+    "upToId": { "$ref": "../core/types.schema.json#/$defs/MailboxId", "description": "Return changes only up to and including this MailboxId." },
+    "calculateTotal": { "type": "boolean", "description": "If true, return the updated total count of results." }
+  },
+  "required": ["accountId", "sinceQueryState"],
+  "additionalProperties": false
+}

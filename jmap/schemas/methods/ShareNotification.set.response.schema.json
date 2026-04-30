@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/ShareNotification.set.response.schema.json",
+  "title": "ShareNotification/set response",
+  "description": "Response from ShareNotification/set (RFC 9670 §4.3).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the changes were applied to." },
+    "oldState": { "type": ["string", "null"], "description": "The ShareNotification state before this set, or null if the server cannot calculate it." },
+    "newState": { "type": "string", "minLength": 1, "description": "The ShareNotification state after this set." },
+    "created": {
+      "type": ["object", "null"],
+      "description": "Typically empty — share notifications are created by the server.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/ShareNotification" }
+    },
+    "updated": {
+      "type": ["object", "null"],
+      "description": "Typically empty — share notifications are immutable.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" },
+      "additionalProperties": { "anyOf": [{ "$ref": "../core/types.schema.json#/$defs/ShareNotification" }, { "type": "null" }] }
+    },
+    "destroyed": {
+      "anyOf": [{ "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" } }, { "type": "null" }],
+      "description": "ShareNotificationIds that were successfully dismissed."
+    },
+    "notCreated": {
+      "type": ["object", "null"],
+      "description": "Creation ids that failed, with a SetError.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    },
+    "notUpdated": {
+      "type": ["object", "null"],
+      "description": "ShareNotificationIds that failed to update, with a SetError.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    },
+    "notDestroyed": {
+      "type": ["object", "null"],
+      "description": "ShareNotificationIds that failed to destroy, with a SetError.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    }
+  },
+  "required": ["accountId", "newState"],
+  "additionalProperties": false
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/AddressBook.set.args.schema.json",
+  "title": "AddressBook/set args",
+  "description": "Arguments for AddressBook/set (RFC 9610 §5.3). Creates, updates, or destroys AddressBook objects.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to apply changes to." },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard. Fails with stateMismatch if the AddressBook state differs." },
+    "create": {
+      "type": ["object", "null"],
+      "description": "Map of client-assigned creation ids to AddressBookCreate objects.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/AddressBookCreate" }
+    },
+    "update": {
+      "type": ["object", "null"],
+      "description": "Map of AddressBookId to PatchObject. Only explicitly listed properties are changed.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/AddressBookId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PatchObject" }
+    },
+    "destroy": {
+      "type": ["array", "null"],
+      "description": "AddressBookIds to delete.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/AddressBookId" }
+    },
+    "onDestroyRemoveContents": {
+      "type": "boolean",
+      "description": "If true, also destroy all ContactCards in the address book. Default false."
+    }
+  },
+  "required": ["accountId"],
+  "additionalProperties": false
+}
