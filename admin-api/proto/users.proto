@@ -24,10 +24,10 @@ service UsersService {
 }
 
 message User {
-  // user_id: Unique user identifier (user_ prefix).
+  // user_id: Unique user identifier (user_ or usr_ prefix).
   string user_id = 1 [(validate.rules).string = {
     min_len: 1
-    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+    pattern: "^(user_|usr_)[a-zA-Z0-9_-]{21}$"
   }];
   // name: Canonical username (typically the email local-part or IDP username).
   string name = 2 [(validate.rules).string = {
@@ -89,10 +89,10 @@ message ListUsersResponse {
 }
 
 message GetUserRequest {
-  // user_id: The user to retrieve (user_ prefix).
+  // user_id: The user to retrieve (user_ or usr_ prefix).
   string user_id = 1 [(validate.rules).string = {
     min_len: 1
-    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+    pattern: "^(user_|usr_)[a-zA-Z0-9_-]{21}$"
   }];
 }
 
@@ -108,10 +108,10 @@ message GetUserResponse {
 }
 
 message UpdateUserRequest {
-  // user_id: The user to update (user_ prefix).
+  // user_id: The user to update (user_ or usr_ prefix).
   string user_id = 1 [(validate.rules).string = {
     min_len: 1
-    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+    pattern: "^(user_|usr_)[a-zA-Z0-9_-]{21}$"
   }];
   // display_name: New display name for the user. Omit to leave unchanged.
   optional string display_name = 2 [(validate.rules).string.max_len = 100];
@@ -132,9 +132,10 @@ message UpdateUserResponse {
 }
 
 message DeleteUserRequest {
+  // user_id: The user to delete (user_ or usr_ prefix).
   string user_id = 1 [(validate.rules).string = {
     min_len: 1
-    pattern: "^user_[a-zA-Z0-9_-]{21}$"
+    pattern: "^(user_|usr_)[a-zA-Z0-9_-]{21}$"
   }];
   // purge_data: When true, also deletes the user's primary account and all mailbox data.
   // Use with caution — this is irreversible.
