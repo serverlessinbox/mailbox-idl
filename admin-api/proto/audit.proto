@@ -35,7 +35,7 @@ service AuditService {
 // Actor represents who performed an action
 message Actor {
   string user_id = 1 [(validate.rules).string = {
-    pattern: "^((user_|usr_)[a-zA-Z0-9_-]{21})?$"
+    pattern: "^(usr_[a-zA-Z0-9_-]{21})?$"
   }];        // User ID from JWT (empty for system actors)
   string actor_id = 2 [(validate.rules).string.max_len = 255];       // System actor ID (e.g., "bootstrap-lambda-v1")
   string username = 3 [(validate.rules).string.max_len = 100];       // User's username or name

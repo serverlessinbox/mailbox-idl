@@ -63,7 +63,7 @@ message CreateGroupPrincipalRequest {
   // owner_principal_id: The user principal who will own/administer this group.
   string owner_principal_id = 2 [(validate.rules).string = {
     min_len: 1
-    pattern: "^(user_|usr_)[a-zA-Z0-9_-]{21}$"
+    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
   }];
   // capabilities: JMAP capabilities to provision for the group account.
   // Must contain at least one value. See common.v1.AccountCapability for valid values.
@@ -144,7 +144,7 @@ message TransferGroupAccountOwnershipRequest {
   // new_owner_principal_id: The user principal who will become the new owner.
   string new_owner_principal_id = 2 [(validate.rules).string = {
     min_len: 1
-    pattern: "^(user_|usr_)[a-zA-Z0-9_-]{21}$"
+    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
   }];
 }
 
@@ -168,7 +168,7 @@ message AddGroupAccountCapabilityResponse {
 
 // GroupMember represents a user principal that is a member of a group.
 message GroupMember {
-  // member_id: The member principal ID (user_* or usr_* prefix).
+  // member_id: The member principal ID (usr_* prefix).
   string member_id = 1;
   // added_by: The principal ID that added this member.
   string added_by = 2;
@@ -182,10 +182,10 @@ message AddGroupMemberRequest {
     min_len: 1
     pattern: "^grp_[a-zA-Z0-9_-]{21}$"
   }];
-  // member_id: The principal ID to add as a member (user_* or usr_* prefix).
+  // member_id: The principal ID to add as a member (usr_* prefix).
   string member_id = 2 [(validate.rules).string = {
     min_len: 1
-    pattern: "^(user_|usr_)[a-zA-Z0-9_-]{21}$"
+    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
   }];
 }
 
@@ -197,10 +197,10 @@ message RemoveGroupMemberRequest {
     min_len: 1
     pattern: "^grp_[a-zA-Z0-9_-]{21}$"
   }];
-  // member_id: The principal ID to remove from the group (user_* or usr_* prefix).
+  // member_id: The principal ID to remove from the group (usr_* prefix).
   string member_id = 2 [(validate.rules).string = {
     min_len: 1
-    pattern: "^(user_|usr_)[a-zA-Z0-9_-]{21}$"
+    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
   }];
 }
 

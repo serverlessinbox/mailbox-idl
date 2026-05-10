@@ -64,7 +64,7 @@ message MailFeedback {
   }];                         // Account ID
   string user_id = 8 [(validate.rules).string = {
     min_len: 1
-    pattern: "^(user_|usr_)[a-zA-Z0-9_-]{21}$"
+    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
   }];                            // User ID
   string submission_id = 9 [(validate.rules).string = {
     min_len: 1
