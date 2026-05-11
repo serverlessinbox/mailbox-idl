@@ -16,8 +16,9 @@
     "anchorOffset": { "type": "integer", "description": "Offset in results relative to the anchor. Negative values move backwards." },
     "limit": { "type": "integer", "minimum": 0, "description": "Maximum number of EmailIds to return. Defaults to server maximum." },
     "calculateTotal": { "type": "boolean", "description": "If true, compute the total number of matching emails (may be slower)." },
-    "collapseThreads": { "type": "boolean", "description": "If true, return only the latest email per thread, de-duplicating results." }
+    "collapseThreads": { "type": "boolean", "description": "If true, return only the latest email per thread, de-duplicating results." },
+    "pageToken": { "type": ["string", "null"], "description": "Opaque cursor returned by a previous Email/query response. Pass to retrieve the next page of results. Mutually exclusive with position and anchor. See https://specs.serverlessinbox.com/page-token" }
   },
   "required": ["accountId"],
-  "additionalProperties": false
+  "additionalProperties": true
 }

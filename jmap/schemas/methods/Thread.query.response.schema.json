@@ -15,8 +15,9 @@
       "description": "The Thread ids in the requested window."
     },
     "total": { "type": ["integer", "null"], "minimum": 0, "description": "Total number of results (if calculateTotal was true)." },
-    "limit": { "type": ["integer", "null"], "minimum": 0, "description": "The limit applied to this query." }
+    "limit": { "type": ["integer", "null"], "minimum": 0, "description": "The limit applied to this query." },
+    "pageToken": { "type": ["string", "null"], "description": "Opaque cursor for the next page of results. null or absent means this is the last page. See https://specs.serverlessinbox.com/page-token" }
   },
   "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"],
-  "additionalProperties": false
+  "additionalProperties": true
 }

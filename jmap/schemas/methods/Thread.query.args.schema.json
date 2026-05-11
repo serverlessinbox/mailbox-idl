@@ -29,8 +29,9 @@
     "anchor": { "$ref": "../core/types.schema.json#/$defs/Id", "description": "Id of an item to anchor the result window on." },
     "anchorOffset": { "type": ["integer", "null"], "description": "Offset relative to the anchor." },
     "limit": { "type": ["integer", "null"], "minimum": 0, "description": "Maximum number of ids to return." },
-    "calculateTotal": { "type": ["boolean", "null"], "description": "If true, return total count of results." }
+    "calculateTotal": { "type": ["boolean", "null"], "description": "If true, return total count of results." },
+    "pageToken": { "type": ["string", "null"], "description": "Opaque cursor returned by a previous Thread/query response. Pass to retrieve the next page of results. Mutually exclusive with position and anchor. See https://specs.serverlessinbox.com/page-token" }
   },
   "required": ["accountId"],
-  "additionalProperties": false
+  "additionalProperties": true
 }

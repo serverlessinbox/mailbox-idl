@@ -5,6 +5,8 @@ capabilities:
   - urn:ietf:params:jmap:submission
   - urn:ietf:params:jmap:contacts
   - urn:ietf:params:jmap:principals
+  - https://specs.serverlessinbox.com/page-token
+  - https://specs.serverlessinbox.com/websocket
 methods:
   - name: Mailbox/get
     capability: urn:ietf:params:jmap:mail
