@@ -1,0 +1,214 @@
+syntax = "proto3";
+
+package shared_mailboxes.v1;
+
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/shared_mailboxes;sharedmailboxesv1";
+
+// SharedMailboxesService manages shared mailbox principals and their delegates.
+// A shared mailbox is a resource mailbox (mailbox, room, or equipment) that can be
+// accessed by multiple users via delegation.
+service SharedMailboxesService {
+  // CreateSharedMailbox provisions a new shared mailbox with the given identity.
+  rpc CreateSharedMailbox(CreateSharedMailboxRequest) returns (CreateSharedMailboxResponse);
+
+  // GetSharedMailbox retrieves a shared mailbox by ID.
+  rpc GetSharedMailbox(GetSharedMailboxRequest) returns (GetSharedMailboxResponse);
+
+  // ListSharedMailboxes lists all shared mailboxes for the tenant.
+  rpc ListSharedMailboxes(ListSharedMailboxesRequest) returns (ListSharedMailboxesResponse);
+
+  // UpdateSharedMailbox updates shared mailbox properties.
+  rpc UpdateSharedMailbox(UpdateSharedMailboxRequest) returns (UpdateSharedMailboxResponse);
+
+  // DeleteSharedMailbox removes the shared mailbox and its account.
+  rpc DeleteSharedMailbox(DeleteSharedMailboxRequest) returns (DeleteSharedMailboxResponse);
+
+  // AddDelegate grants a principal delegate access to a shared mailbox account.
+  rpc AddDelegate(AddDelegateRequest) returns (AddDelegateResponse);
+
+  // RemoveDelegate revokes delegate access from a principal.
+  rpc RemoveDelegate(RemoveDelegateRequest) returns (RemoveDelegateResponse);
+
+  // ListDelegates lists all delegates for a shared mailbox account.
+  rpc ListDelegates(ListDelegatesRequest) returns (ListDelegatesResponse);
+}
+
+// ============================================
+// Enums
+// ============================================
+
+// ResourceKind categorizes the type of shared mailbox resource.
+enum ResourceKind {
+  RESOURCE_KIND_UNSPECIFIED = 0;
+  RESOURCE_KIND_MAILBOX = 1;    // Standard shared mailbox
+  RESOURCE_KIND_ROOM = 2;       // Meeting room resource
+  RESOURCE_KIND_EQUIPMENT = 3;  // Equipment resource
+}
+
+// DelegateAccessLevel defines the level of access granted to a delegate.
+enum DelegateAccessLevel {
+  DELEGATE_ACCESS_LEVEL_UNSPECIFIED = 0;
+  DELEGATE_ACCESS_LEVEL_READ_ONLY = 1;   // Read-only access to mailbox contents
+  DELEGATE_ACCESS_LEVEL_READ_WRITE = 2;  // Full read/write access to mailbox contents
+}
+
+// ============================================
+// Messages (Data Types)
+// ============================================
+
+// SharedMailbox represents a shared mailbox resource.
+message SharedMailbox {
+  // id: Unique shared mailbox identifier (smb_ prefix).
+  string id = 1;
+  // name: Internal name for the shared mailbox (used in system references).
+  string name = 2;
+  // display_name: Human-readable display name shown to users.
+  string display_name = 3;
+  // email: Primary email address for this shared mailbox.
+  string email = 4;
+  // resource_kind: Type of resource this mailbox represents.
+  ResourceKind resource_kind = 5;
+  // account_id: The JMAP account provisioned for this shared mailbox (acc_ prefix).
+  string account_id = 6;
+  // status: Current provisioning/lifecycle status (e.g. "active", "provisioning", "suspended").
+  string status = 7;
+}
+
+// Delegate represents a principal's access grant to a shared mailbox account.
+message Delegate {
+  // principal_id: The principal (usr_ or grp_ prefix) granted access.
+  string principal_id = 1;
+  // principal_type: Type of the principal ("user" or "group").
+  string principal_type = 2;
+  // display_name: Display name of the principal.
+  string display_name = 3;
+  // access_level: The level of access granted.
+  DelegateAccessLevel access_level = 4;
+}
+
+// ============================================
+// Request/Response messages
+// ============================================
+
+message CreateSharedMailboxRequest {
+  // name: Internal name for the shared mailbox.
+  string name = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // display_name: Human-readable display name.
+  string display_name = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // local_part: Email local part for the primary address (e.g. "boardroom" for boardroom@example.com).
+  string local_part = 3 [(validate.rules).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$"
+  }];
+  // domain_id: Domain for the primary email address (dom_ prefix).
+  string domain_id = 4 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];
+  // resource_kind: Type of resource this mailbox represents.
+  ResourceKind resource_kind = 5;
+}
+
+message CreateSharedMailboxResponse {
+  SharedMailbox shared_mailbox = 1;
+}
+
+message GetSharedMailboxRequest {
+  // id: The shared mailbox ID to retrieve (smb_ prefix).
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^smb_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message GetSharedMailboxResponse {
+  SharedMailbox shared_mailbox = 1;
+}
+
+message ListSharedMailboxesRequest {}
+
+message ListSharedMailboxesResponse {
+  repeated SharedMailbox shared_mailboxes = 1;
+}
+
+message UpdateSharedMailboxRequest {
+  // id: The shared mailbox to update (smb_ prefix).
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^smb_[a-zA-Z0-9_-]{21}$"
+  }];
+  // display_name: New display name for the shared mailbox.
+  optional string display_name = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+message UpdateSharedMailboxResponse {
+  SharedMailbox shared_mailbox = 1;
+}
+
+message DeleteSharedMailboxRequest {
+  // id: The shared mailbox to delete (smb_ prefix).
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^smb_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message DeleteSharedMailboxResponse {}
+
+message AddDelegateRequest {
+  // account_id: The shared mailbox account to grant access to (acc_ prefix).
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  // principal_id: The principal to grant delegate access to (usr_ or grp_ prefix).
+  string principal_id = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  // access_level: The level of access to grant.
+  DelegateAccessLevel access_level = 3;
+}
+
+message AddDelegateResponse {
+  Delegate delegate = 1;
+}
+
+message RemoveDelegateRequest {
+  // account_id: The shared mailbox account to revoke access from (acc_ prefix).
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+  // principal_id: The principal to revoke delegate access from.
+  string principal_id = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 64
+  }];
+}
+
+message RemoveDelegateResponse {}
+
+message ListDelegatesRequest {
+  // account_id: The shared mailbox account to list delegates for (acc_ prefix).
+  string account_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^acc_[a-zA-Z0-9_-]{21}$"
+  }];
+}
+
+message ListDelegatesResponse {
+  repeated Delegate delegates = 1;
+}
