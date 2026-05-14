@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package shared_mailboxes.v1;
 
+import "common.proto";
 import "validate/validate.proto";
 
 option go_package = "admin-api/generated/shared_mailboxes;sharedmailboxesv1";
@@ -33,6 +34,9 @@ service SharedMailboxesService {
 
   // ListDelegates lists all delegates for a shared mailbox account.
   rpc ListDelegates(ListDelegatesRequest) returns (ListDelegatesResponse);
+
+  // AddSharedMailboxAccountCapability idempotently adds a new JMAP capability to a shared mailbox account and provisions the required resources.
+  rpc AddSharedMailboxAccountCapability(AddSharedMailboxAccountCapabilityRequest) returns (AddSharedMailboxAccountCapabilityResponse);
 }
 
 // ============================================
@@ -211,4 +215,19 @@ message ListDelegatesRequest {
 
 message ListDelegatesResponse {
   repeated Delegate delegates = 1;
+}
+
+message AddSharedMailboxAccountCapabilityRequest {
+  // id: The shared mailbox ID (smb_ prefix).
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^smb_[a-zA-Z0-9_-]{21}$"
+  }];
+  // capability: The JMAP capability to add. See common.v1.AccountCapability for valid values.
+  common.v1.AccountCapability capability = 2 [(validate.rules).enum.defined_only = true];
+}
+
+message AddSharedMailboxAccountCapabilityResponse {
+  // shared_mailbox: The updated shared mailbox with the new capability reflected in its account.
+  SharedMailbox shared_mailbox = 1;
 }

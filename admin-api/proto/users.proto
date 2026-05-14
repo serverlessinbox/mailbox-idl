@@ -21,6 +21,9 @@ service UsersService {
 
   // DeleteUser soft-deletes a user. Set purge_data=true to also destroy the primary account and all mailbox data.
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+
+  // AddUserAccountCapability idempotently adds a new JMAP capability to the user's primary account and provisions the required resources.
+  rpc AddUserAccountCapability(AddUserAccountCapabilityRequest) returns (AddUserAccountCapabilityResponse);
 }
 
 message User {
@@ -143,3 +146,17 @@ message DeleteUserRequest {
 }
 
 message DeleteUserResponse {}
+
+message AddUserAccountCapabilityRequest {
+  string user_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
+  }];
+  // capability: The JMAP capability to add. See common.v1.AccountCapability for valid values.
+  common.v1.AccountCapability capability = 2 [(validate.rules).enum.defined_only = true];
+}
+
+message AddUserAccountCapabilityResponse {
+  // user: The updated user with the new capability reflected in their primary account.
+  User user = 1;
+}
