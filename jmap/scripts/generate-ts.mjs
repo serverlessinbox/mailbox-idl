@@ -159,7 +159,22 @@ for (const m of methods) {
   );
 }
 
+// Collect response schemas for runtime validation
+const coreTypesSchemaJson = JSON.parse(
+  await fs.readFile(path.join(repoDir, 'schemas', 'core', 'types.schema.json'), 'utf8'),
+);
+const responseSchemasByMethod = [];
+for (const m of methods) {
+  const name = m?.name;
+  const responseSchemaRelPath = m?.responseSchema;
+  if (!name || !responseSchemaRelPath) continue;
+  const schemaPath = path.join(repoDir, responseSchemaRelPath);
+  const schema = JSON.parse(await fs.readFile(schemaPath, 'utf8'));
+  responseSchemasByMethod.push({ name, schema });
+}
+
 const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT. */\n\n` +
+`import { validateJmapResponse } from './responseValidators';\n\n` +
 `export type MethodCall = [name: string, args: unknown, callId: string];\n` +
 `export type MethodResponse = [name: string, response: unknown, callId: string];\n\n` +
 `export interface JmapRequestBody {\n` +
@@ -201,6 +216,7 @@ const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT.
 `    const res = await this.post(body);\n` +
 `    const match = res.methodResponses.find((r) => r[2] === callId);\n` +
 `    if (!match) throw new Error('Missing JMAP response for callId ' + callId);\n` +
+`    validateJmapResponse(name, match[1]);\n` +
 `    return match[1] as M[K]['response'];\n` +
 `  }\n\n` +
 `  async batch(calls: Array<{ name: keyof M & string; args: unknown }>): Promise<JmapResponseBody> {\n` +
@@ -220,6 +236,31 @@ const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT.
 `}\n`;
 
 await fs.writeFile(path.join(outDir, 'client.ts'), clientTs, 'utf8');
+
+const validatorsTs =
+  `/* Code generated from mailbox-idl/jmap JSON Schema. DO NOT EDIT. */\n\n` +
+  `import Ajv from 'ajv/dist/2020';\n` +
+  `import type { ValidateFunction } from 'ajv';\n\n` +
+  `const ajv = new Ajv({ strict: false });\n\n` +
+  `// Core types referenced by all method schemas\n` +
+  `ajv.addSchema(${JSON.stringify(coreTypesSchemaJson)});\n\n` +
+  `const validators: Record<string, ValidateFunction> = {\n` +
+  responseSchemasByMethod
+    .map(({ name, schema }) => `  ${JSON.stringify(name)}: ajv.compile(${JSON.stringify(schema)}),\n`)
+    .join('') +
+  `};\n\n` +
+  `export function validateJmapResponse(methodName: string, data: unknown): void {\n` +
+  `  const validate = validators[methodName];\n` +
+  `  if (!validate) return;\n` +
+  `  if (!validate(data)) {\n` +
+  `    const errors = validate.errors\n` +
+  `      ?.map((e) => (e.instancePath || '/') + ' ' + e.message)\n` +
+  `      .join('; ') ?? 'unknown error';\n` +
+  `    throw new Error('JMAP ' + methodName + ' response validation failed: ' + errors);\n` +
+  `  }\n` +
+  `}\n`;
+
+await fs.writeFile(path.join(outDir, 'responseValidators.ts'), validatorsTs, 'utf8');
 
 const sessionTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT. */\n\n` +
   `export type JmapCapabilityName = string;\n\n` +

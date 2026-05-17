@@ -616,7 +616,7 @@
         "type":        { "type": "string", "enum": ["individual", "group", "resource", "location", "other"], "description": "Principal type (RFC 9670 §4)." },
         "name":        { "type": "string", "description": "Human-readable display name for this principal." },
         "description": { "type": "string", "description": "Optional free-text description." },
-        "email":       { "anyOf": [{ "$ref": "#/$defs/EmailAddress" }, { "type": "null" }], "description": "Primary email address for this principal, if any." },
+        "email":       { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Primary email address for this principal, if any. Must conform to addr-spec syntax (RFC 5322 §3.4.1) (RFC 9670 §2)." },
         "timeZone":    { "type": "string", "description": "IANA time zone identifier for this principal." },
         "picture":     { "anyOf": [{ "$ref": "#/$defs/BlobId" }, { "type": "null" }], "description": "BlobId of a profile picture, or null if none." }
       },
