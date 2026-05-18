@@ -3,6 +3,8 @@ import path from 'node:path';
 import fg from 'fast-glob';
 import { compileFromFile } from 'json-schema-to-typescript';
 import YAML from 'yaml';
+import Ajv from 'ajv/dist/2020.js';
+import standalone from 'ajv/dist/standalone/index.js';
 
 const outDir = process.env.OUTPUT_DIR;
 if (!outDir) {
@@ -31,13 +33,16 @@ for (const schemaFile of schemaFiles) {
   const base = path.basename(schemaFile).replace(/\.schema\.json$/, '');
   const outFile = path.join(outDir, `${base}.ts`);
 
-  const ts = await compileFromFile(schemaFile, {
+  let ts = await compileFromFile(schemaFile, {
     bannerComment: '/* Code generated from mailbox-idl/jmap JSON Schema. DO NOT EDIT. */',
     style: {
       singleQuote: true,
     },
     additionalProperties: false,
   });
+  if (base.endsWith('.args')) {
+    ts = ts.replace(/: string\[\]/g, ': readonly string[]');
+  }
 
   await fs.writeFile(outFile, ts, 'utf8');
   // Export only the primary top-level type to avoid name collisions between
@@ -170,11 +175,11 @@ for (const m of methods) {
   if (!name || !responseSchemaRelPath) continue;
   const schemaPath = path.join(repoDir, responseSchemaRelPath);
   const schema = JSON.parse(await fs.readFile(schemaPath, 'utf8'));
-  responseSchemasByMethod.push({ name, schema });
+  const respBase = schemaBaseFromPath(responseSchemaRelPath);
+  responseSchemasByMethod.push({ name, schema, respBase });
 }
 
 const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT. */\n\n` +
-`import { validateJmapResponse } from './responseValidators';\n\n` +
 `export type MethodCall = [name: string, args: unknown, callId: string];\n` +
 `export type MethodResponse = [name: string, response: unknown, callId: string];\n\n` +
 `export interface JmapRequestBody {\n` +
@@ -216,7 +221,6 @@ const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT.
 `    const res = await this.post(body);\n` +
 `    const match = res.methodResponses.find((r) => r[2] === callId);\n` +
 `    if (!match) throw new Error('Missing JMAP response for callId ' + callId);\n` +
-`    validateJmapResponse(name, match[1]);\n` +
 `    return match[1] as M[K]['response'];\n` +
 `  }\n\n` +
 `  async batch(calls: Array<{ name: keyof M & string; args: unknown }>): Promise<JmapResponseBody> {\n` +
@@ -237,30 +241,64 @@ const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT.
 
 await fs.writeFile(path.join(outDir, 'client.ts'), clientTs, 'utf8');
 
-const validatorsTs =
-  `/* Code generated from mailbox-idl/jmap JSON Schema. DO NOT EDIT. */\n\n` +
-  `import Ajv from 'ajv/dist/2020';\n` +
-  `import type { ValidateFunction } from 'ajv';\n\n` +
-  `const ajv = new Ajv({ strict: false });\n\n` +
-  `// Core types referenced by all method schemas\n` +
-  `ajv.addSchema(${JSON.stringify(coreTypesSchemaJson)});\n\n` +
-  `const validators: Record<string, ValidateFunction> = {\n` +
-  responseSchemasByMethod
-    .map(({ name, schema }) => `  ${JSON.stringify(name)}: ajv.compile(${JSON.stringify(schema)}),\n`)
-    .join('') +
-  `};\n\n` +
-  `export function validateJmapResponse(methodName: string, data: unknown): void {\n` +
-  `  const validate = validators[methodName];\n` +
-  `  if (!validate) return;\n` +
-  `  if (!validate(data)) {\n` +
-  `    const errors = validate.errors\n` +
-  `      ?.map((e) => (e.instancePath || '/') + ' ' + e.message)\n` +
-  `      .join('; ') ?? 'unknown error';\n` +
-  `    throw new Error('JMAP ' + methodName + ' response validation failed: ' + errors);\n` +
-  `  }\n` +
-  `}\n`;
+// Generate AJV standalone validator files (compiled at codegen time — no runtime AJV dep)
+const validatorImports = [];
+const validatorMapEntries = [];
 
-await fs.writeFile(path.join(outDir, 'responseValidators.ts'), validatorsTs, 'utf8');
+for (const { name, schema, respBase } of responseSchemasByMethod) {
+  const ajvInstance = new Ajv({ code: { source: true, esm: true }, strict: false, unicode: false });
+  ajvInstance.addSchema(coreTypesSchemaJson);
+  const validateFn = ajvInstance.compile(schema);
+  let standaloneCode = standalone(ajvInstance, validateFn);
+
+  // Find the generated function name and strip its export declarations.
+  // AJV v8.20+ emits: "export const validate = validate0;export default validate0;"
+  // Older AJV emitted:  "export default function validate0(...)"
+  let generatedFnName = null;
+
+  const fnMatchDecl = standaloneCode.match(/export default function (\w+)/);
+  if (fnMatchDecl) {
+    generatedFnName = fnMatchDecl[1];
+    standaloneCode = standaloneCode.replace(
+      'export default function ' + generatedFnName,
+      'function ' + generatedFnName,
+    );
+  } else {
+    const fnMatchRef = standaloneCode.match(/export default (\w+);/);
+    if (fnMatchRef) {
+      generatedFnName = fnMatchRef[1];
+      // Remove both re-export lines so the function stays a plain local binding
+      standaloneCode = standaloneCode.replace(/export const validate = \w+;/, '');
+      standaloneCode = standaloneCode.replace('export default ' + generatedFnName + ';', '');
+    }
+  }
+
+  const validatorFile = path.join(outDir, `${respBase}.validator.ts`);
+  const validatorContent =
+    `/* Code generated from mailbox-idl/jmap JSON Schema. DO NOT EDIT. */\n` +
+    `/* eslint-disable */\n` +
+    `// @ts-nocheck\n` +
+    `// AJV standalone validator — compiled at code generation time, no runtime AJV dependency.\n\n` +
+    standaloneCode + '\n\n' +
+    (generatedFnName
+      ? `export function validateResponse(data: unknown): boolean { return ${generatedFnName}(data); }\n`
+      : `export function validateResponse(_data: unknown): boolean { return true; }\n`);
+
+  await fs.writeFile(validatorFile, validatorContent, 'utf8');
+
+  const importAlias = `validate${pascalCase(name.replace('/', '_'))}Response`;
+  validatorImports.push(`import { validateResponse as ${importAlias} } from './${respBase}.validator';`);
+  validatorMapEntries.push(`  ${JSON.stringify(name)}: ${importAlias}`);
+}
+
+const aggregatedValidatorsTs =
+  `/* Code generated from mailbox-idl/jmap JSON Schema. DO NOT EDIT. */\n\n` +
+  validatorImports.join('\n') + '\n\n' +
+  `export const responseValidators: Record<string, (data: unknown) => boolean> = {\n` +
+  validatorMapEntries.join(',\n') + '\n' +
+  `};\n`;
+
+await fs.writeFile(path.join(outDir, 'validators.ts'), aggregatedValidatorsTs, 'utf8');
 
 const sessionTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT. */\n\n` +
   `export type JmapCapabilityName = string;\n\n` +
@@ -389,7 +427,9 @@ await fs.writeFile(path.join(outDir, 'methods.ts'), methodsTs, 'utf8');
 const batchTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT. */\n\n` +
   `import type { MethodCall, MethodResponse, JmapResponseBody, JmapClient } from './client';\n` +
   `import type { Methods, DxProvidePathsByMethod } from './methods';\n` +
-  `import type { ResultRef } from './refs';\n\n` +
+  `import type { ResultRef } from './refs';\n` +
+  `import { responseValidators } from './validators';\n` +
+  `import { onValidationFailure } from '../validationHandler';\n\n` +
   `export type CallHandle<K extends keyof Methods & string> = Readonly<{\n` +
   `  name: K;\n` +
   `  callId: string;\n` +
@@ -414,6 +454,10 @@ const batchTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT. 
   `    if (!row) return { ok: false, error: { type: 'missingMethodResponse', description: 'Missing response for callId ' + handle.callId } };\n` +
   `    const [name, payload] = row;\n` +
   `    if (name === 'error') return { ok: false, error: payload as JmapMethodError };\n` +
+  `    const validator = responseValidators[handle.name];\n` +
+  `    if (validator && !validator(payload)) {\n` +
+  `      onValidationFailure(handle.name, (validator as { errors?: unknown }).errors);\n` +
+  `    }\n` +
   `    return { ok: true, value: payload as Methods[K]['response'] };\n` +
   `  }\n` +
   `}\n\n` +
