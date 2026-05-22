@@ -24,17 +24,24 @@ tasks:
         OUTPUT_DIR="{{.OUTPUT_DIR}}" yarn --cwd "{{.TASKFILE_DIR}}" node ./scripts/generate-ts.mjs
 
   generate:go:
-    desc: Generate Go types from JMAP JSON Schemas (optional)
+    desc: Generate Go types from JMAP JSON Schemas
     vars:
       OUTPUT_DIR: '{{.OUTPUT_DIR}}'
-      PACKAGE: '{{default "jmaptypes" .PACKAGE}}'
+      PACKAGE: '{{default "jmapsdk" .PACKAGE}}'
     cmds:
       - |
         set -euo pipefail
         if [ -z "{{.OUTPUT_DIR}}" ]; then
-          echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
-          exit 2
+          echo "ERROR: OUTPUT_DIR is required" >&2; exit 2
         fi
-        echo "NOTE: Go generation is intentionally optional; quicktype output may need manual cleanup." >&2
-        mkdir -p "{{.OUTPUT_DIR}}"
-        yarn --cwd "{{.TASKFILE_DIR}}" dlx quicktype -s schema "{{.TASKFILE_DIR}}/schemas/methods/Email.get.response.schema.json" -o "{{.OUTPUT_DIR}}/email_get_response.go" --package "{{.PACKAGE}}"
+        yarn --cwd "{{.TASKFILE_DIR}}" install --immutable
+        OUTPUT_DIR="{{.OUTPUT_DIR}}" PACKAGE="{{.PACKAGE}}" \
+          yarn --cwd "{{.TASKFILE_DIR}}" node ./scripts/generate-go.mjs
+
+  generate:go:inplace:
+    desc: Generate Go types directly into go/ (for in-repo development)
+    cmds:
+      - task: generate:go
+        vars:
+          OUTPUT_DIR: '{{.TASKFILE_DIR}}/go'
+          PACKAGE: jmapsdk
