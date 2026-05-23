@@ -6,7 +6,7 @@ package jmapsdk
 type ShareNotificationSetArgs struct {
 	AccountID string `json:"accountId"` // The account to apply changes to.
 	IfInState *string `json:"ifInState,omitempty"` // Optimistic concurrency guard. Fails with stateMismatch if the ShareNotification state differs.
-	Create map[string]interface{} `json:"create,omitempty"` // Always results in notCreated — share notifications are created by the server.
-	Update map[string]interface{} `json:"update,omitempty"` // Always results in notUpdated — share notifications are immutable.
+	Create map[string]any `json:"create,omitempty"` // Always results in notCreated — share notifications are created by the server.
+	Update map[string]any `json:"update,omitempty"` // Always results in notUpdated — share notifications are immutable.
 	Destroy []string `json:"destroy,omitempty"` // ShareNotificationIds to dismiss (destroy).
 }

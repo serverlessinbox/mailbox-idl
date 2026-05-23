@@ -7,6 +7,7 @@ import (
 	"reflect"
 )
 
+
 // Batch is a builder for multi-call JMAP requests with result-reference support.
 // Use TypedBatch for a strongly-typed wrapper.
 type Batch struct {
@@ -23,7 +24,7 @@ func NewBatch(using ...string) *Batch {
 // Add appends a method call to the batch and returns the assigned callID
 // (e.g. "c0", "c1"). The args value is serialized via marshalArgs, which
 // handles result-reference key renaming per RFC 8620 §3.7.
-func (b *Batch) Add(method string, args interface{}) (callID string) {
+func (b *Batch) Add(method string, args any) (callID string) {
 	callID = fmt.Sprintf("c%d", b.seq)
 	b.seq++
 
@@ -110,16 +111,17 @@ func (tb *TypedBatch) Execute(ctx context.Context, c Client) (*BatchResult, erro
 	return result, nil
 }
 
-// marshalArgs serializes args to JSON, renaming any field whose runtime value
-// is *ResultRef from "key" to "#key" per RFC 8620 §3.7.
+// marshalArgs serializes args to JSON, renaming any StringOrRef field whose
+// ref is non-nil from "key" to "#key" per RFC 8620 §3.7.
 //
 // The approach:
 //  1. Marshal args normally to get a map[string]json.RawMessage.
-//  2. Reflect on the original struct to find *ResultRef fields.
+//  2. Reflect on the original struct to find StringOrRef fields with a ref set.
 //  3. For each such field: delete the plain key, insert "#key" with the
 //     ResultRef value.
 //  4. Re-marshal the modified map.
-func marshalArgs(args interface{}) (json.RawMessage, error) {
+
+func marshalArgs(args any) (json.RawMessage, error) {
 	if args == nil {
 		return json.RawMessage("null"), nil
 	}
@@ -137,7 +139,7 @@ func marshalArgs(args interface{}) (json.RawMessage, error) {
 		return data, nil
 	}
 
-	// Reflect on the original value to locate *ResultRef fields.
+	// Reflect on the original value to locate StringOrRef fields whose ref is set.
 	v := reflect.ValueOf(args)
 	for v.Kind() == reflect.Ptr {
 		if v.IsNil() {
@@ -149,23 +151,16 @@ func marshalArgs(args interface{}) (json.RawMessage, error) {
 		return data, nil
 	}
 
-	resultRefType := reflect.TypeOf((*ResultRef)(nil))
+	stringOrRefType := reflect.TypeOf(StringOrRef{})
 	t := v.Type()
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-		fv := v.Field(i)
-
-		// Dereference interface values.
-		if fv.Kind() == reflect.Interface && !fv.IsNil() {
-			fv = fv.Elem()
-		}
-
-		// Check if the concrete value is *ResultRef.
-		if !fv.IsValid() || !fv.Type().AssignableTo(resultRefType) {
+		if field.Type != stringOrRefType {
 			continue
 		}
-		if fv.IsNil() {
+		sor := v.Field(i).Interface().(StringOrRef)
+		if !sor.isRef() {
 			continue
 		}
 
@@ -175,12 +170,10 @@ func marshalArgs(args interface{}) (json.RawMessage, error) {
 			jsonKey = field.Name
 		} else {
 			// Strip options like ",omitempty".
-			if idx := len(jsonKey); idx > 0 {
-				for k, c := range jsonKey {
-					if c == ',' {
-						jsonKey = jsonKey[:k]
-						break
-					}
+			for k, c := range jsonKey {
+				if c == ',' {
+					jsonKey = jsonKey[:k]
+					break
 				}
 			}
 		}
@@ -189,7 +182,7 @@ func marshalArgs(args interface{}) (json.RawMessage, error) {
 		}
 
 		// Marshal the ResultRef value.
-		refData, err := json.Marshal(fv.Interface())
+		refData, err := json.Marshal(sor.ref)
 		if err != nil {
 			return nil, fmt.Errorf("jmapsdk: marshalArgs ResultRef for %q: %w", jsonKey, err)
 		}
@@ -205,3 +198,4 @@ func marshalArgs(args interface{}) (json.RawMessage, error) {
 	}
 	return out, nil
 }
+

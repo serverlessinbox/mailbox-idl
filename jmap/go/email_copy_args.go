@@ -8,7 +8,7 @@ type EmailCopyArgs struct {
 	IfFromInState *string `json:"ifFromInState,omitempty"` // Optimistic concurrency guard on the source Email state.
 	AccountID string `json:"accountId"` // The account to copy emails into.
 	IfInState *string `json:"ifInState,omitempty"` // Optimistic concurrency guard on the destination Email state.
-	Create map[string]map[string]interface{} `json:"create"` // Map of client-assigned creation ids to objects describing the copy.
+	Create map[string]map[string]any `json:"create"` // Map of client-assigned creation ids to objects describing the copy.
 	OnSuccessDestroyOriginal *bool `json:"onSuccessDestroyOriginal,omitempty"` // If true, destroy original emails on success. Default: false.
 	DestroyFromIfInState *string `json:"destroyFromIfInState,omitempty"` // Guard on source state when destroying originals.
 }

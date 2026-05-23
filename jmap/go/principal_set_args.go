@@ -6,7 +6,7 @@ package jmapsdk
 type PrincipalSetArgs struct {
 	AccountID string `json:"accountId"` // The account to apply changes to.
 	IfInState *string `json:"ifInState,omitempty"` // Optimistic concurrency guard. Fails with stateMismatch if the Principal state differs.
-	Create map[string]interface{} `json:"create,omitempty"` // Always results in notCreated for server-managed principals.
+	Create map[string]any `json:"create,omitempty"` // Always results in notCreated for server-managed principals.
 	Update map[string]PatchObject `json:"update,omitempty"` // Map of PrincipalId to PatchObject. Only the calling user's own principal may be updated.
 	Destroy []string `json:"destroy,omitempty"` // Always results in notDestroyed for server-managed principals.
 }

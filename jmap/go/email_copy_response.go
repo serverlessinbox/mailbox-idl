@@ -8,6 +8,6 @@ type EmailCopyResponse struct {
 	AccountID string `json:"accountId"` // The account the emails were copied into.
 	OldState *string `json:"oldState"` // The Email state before the copy, or null if the destination account had no prior state.
 	NewState string `json:"newState"` // The Email state after the copy.
-	Created map[string]map[string]interface{} `json:"created,omitempty"` // Map of creation id to created Email object (subset: id, blobId, threadId, size).
+	Created map[string]map[string]any `json:"created,omitempty"` // Map of creation id to created Email object (subset: id, blobId, threadId, size).
 	NotCreated map[string]SetError `json:"notCreated,omitempty"` // Map of creation id to SetError for failed copies.
 }

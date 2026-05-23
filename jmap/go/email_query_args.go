@@ -5,8 +5,8 @@ package jmapsdk
 // EmailQueryArgs Email/query args
 type EmailQueryArgs struct {
 	AccountID string `json:"accountId"` // The account to query.
-	Filter map[string]interface{} `json:"filter,omitempty"` // Optional filter conditions to narrow results (e.g. inMailbox, from, subject).
-	Sort []map[string]interface{} `json:"sort,omitempty"` // Sort criteria. Each object has a property name and isAscending flag. Defaults to date descending.
+	Filter map[string]any `json:"filter,omitempty"` // Optional filter conditions to narrow results (e.g. inMailbox, from, subject).
+	Sort []map[string]any `json:"sort,omitempty"` // Sort criteria. Each object has a property name and isAscending flag. Defaults to date descending.
 	Position *int64 `json:"position,omitempty"` // Zero-based index of the first result to return. Cannot be combined with anchor.
 	Anchor *string `json:"anchor,omitempty"` // EmailId to use as the anchor for pagination. The page starts at this email.
 	AnchorOffset *int64 `json:"anchorOffset,omitempty"` // Offset in results relative to the anchor. Negative values move backwards.

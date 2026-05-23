@@ -5,7 +5,7 @@ package jmapsdk
 // EmailGetArgs Email/get args
 type EmailGetArgs struct {
 	AccountID string `json:"accountId"` // The account to fetch emails from.
-	IDs any `json:"ids,omitempty"` // []string or *ResultRef — set one, leave the other nil.
+	IDs StringOrRef `json:"ids,omitempty"` // StringIDs(...) for a literal list, Ref(handle, path) for a result reference.
 	Properties []string `json:"properties,omitempty"` // Email properties to include in the response. Omit for all properties.
 	BodyProperties []string `json:"bodyProperties,omitempty"` // Properties to include for each body part object. Defaults to a standard set.
 	FetchTextBodyValues *bool `json:"fetchTextBodyValues,omitempty"` // If true, fetch the value of text/plain body parts.

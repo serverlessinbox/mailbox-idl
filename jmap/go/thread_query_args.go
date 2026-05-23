@@ -5,8 +5,8 @@ package jmapsdk
 // ThreadQueryArgs Arguments for Thread/query (RFC 8621 §2.3 / RFC 8620 §5.5). Returns a sorted, filtered list of Thread ids.
 type ThreadQueryArgs struct {
 	AccountID string `json:"accountId"` // The account to query threads in.
-	Filter map[string]interface{} `json:"filter,omitempty"` // Conditions to filter threads. See RFC 8621 for filter conditions.
-	Sort []map[string]interface{} `json:"sort,omitempty"` // List of Comparator objects specifying sort order.
+	Filter map[string]any `json:"filter,omitempty"` // Conditions to filter threads. See RFC 8621 for filter conditions.
+	Sort []map[string]any `json:"sort,omitempty"` // List of Comparator objects specifying sort order.
 	Position *int64 `json:"position,omitempty"` // Zero-based index of first result to return.
 	Anchor *string `json:"anchor,omitempty"` // Id of an item to anchor the result window on.
 	AnchorOffset *int64 `json:"anchorOffset,omitempty"` // Offset relative to the anchor.

@@ -9,5 +9,5 @@ type EmailSubmissionQueryChangesResponse struct {
 	NewQueryState string `json:"newQueryState"` // The current query state after these changes.
 	Total *int64 `json:"total,omitempty"` // New total number of results (if calculateTotal was true).
 	Removed []string `json:"removed"` // Ids removed from the query results.
-	Added []map[string]interface{} `json:"added"` // Items added to the query results with their new index.
+	Added []map[string]any `json:"added"` // Items added to the query results with their new index.
 }

@@ -8,7 +8,7 @@ type IdentitySetResponse struct {
 	OldState *string `json:"oldState"` // The Identity state before this call, or null if no prior state existed.
 	NewState string `json:"newState"` // The Identity state after this call.
 	Created map[string]Identity `json:"created,omitempty"` // Map of creation id to the created Identity object (server-initiated only).
-	Updated map[string]interface{} `json:"updated,omitempty"` // Map of id to the updated Identity object (or null if unchanged properties were not returned).
+	Updated map[string]any `json:"updated,omitempty"` // Map of id to the updated Identity object (or null if unchanged properties were not returned).
 	Destroyed []string `json:"destroyed,omitempty"` // Ids of Identity objects that were successfully destroyed (server-initiated only).
 	NotCreated map[string]SetError `json:"notCreated,omitempty"` // Map of creation id to SetError for each failed create.
 	NotUpdated map[string]SetError `json:"notUpdated,omitempty"` // Map of id to SetError for each failed update.

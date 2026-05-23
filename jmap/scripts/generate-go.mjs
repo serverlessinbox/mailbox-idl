@@ -154,12 +154,12 @@ function jsonKeyToFieldName(key) {
  * @returns {string} Go type string
  */
 function schemaToGoType(schema, required, localDefs, localDefsPrefix) {
-  if (!schema) return 'interface{}';
+  if (!schema) return 'any';
 
   // Handle $ref
   if (schema.$ref) {
     const defName = resolveRef(schema.$ref);
-    if (!defName) return 'interface{}';
+    if (!defName) return 'any';
 
     // Check local defs first — but only use the prefixed local name if the def
     // is genuinely local (not a redeclaration of a global/core type).
@@ -191,7 +191,7 @@ function schemaToGoType(schema, required, localDefs, localDefsPrefix) {
     const nonNull = schema.anyOf.filter((s) => s.type !== 'null' && !(s.$ref === undefined && Object.keys(s).length === 0));
     const hasNull = schema.anyOf.some((s) => s.type === 'null');
 
-    if (nonNull.length === 0) return 'interface{}';
+    if (nonNull.length === 0) return 'any';
     if (nonNull.length === 1) {
       const inner = schemaToGoType(nonNull[0], true, localDefs, localDefsPrefix);
       if (hasNull) {
@@ -204,7 +204,7 @@ function schemaToGoType(schema, required, localDefs, localDefsPrefix) {
       return required ? inner : (inner.startsWith('*') || inner.startsWith('map[') || inner.startsWith('[]') ? inner : '*' + inner);
     }
     // Multiple non-null types
-    return 'interface{}';
+    return 'any';
   }
 
   const t = schema.type;
@@ -218,7 +218,7 @@ function schemaToGoType(schema, required, localDefs, localDefsPrefix) {
       return '*' + inner;
     }
     // Multiple types — fallback
-    return 'interface{}';
+    return 'any';
   }
 
   switch (t) {
@@ -241,17 +241,17 @@ function schemaToGoType(schema, required, localDefs, localDefsPrefix) {
         return 'map[string]' + valType;
       }
       if (schema.additionalProperties === true || (schema.additionalProperties === undefined && !schema.properties)) {
-        return 'map[string]interface{}';
+        return 'map[string]any';
       }
       if (schema.properties) {
         // Inline object with properties — we'll need to generate an anonymous struct or map
         // For method schemas we handle this at the property level
-        return 'map[string]interface{}';
+        return 'map[string]any';
       }
-      return 'map[string]interface{}';
+      return 'map[string]any';
     }
     default:
-      return 'interface{}';
+      return 'any';
   }
 }
 
@@ -283,8 +283,8 @@ function generateStruct(typeName, schema, refFields, localDefs, localDefsPrefix)
 
     let goType;
     if (refFields && refFields.has(key)) {
-      // Result-ref capable field
-      goType = 'any';
+      // Result-ref capable field — strongly typed union
+      goType = 'StringOrRef';
     } else {
       goType = schemaToGoType(propSchema, isRequired, localDefs, localDefsPrefix);
     }
@@ -298,7 +298,7 @@ function generateStruct(typeName, schema, refFields, localDefs, localDefsPrefix)
 
     let comment = propDesc ? ` // ${propDesc}` : '';
     if (refFields && refFields.has(key)) {
-      comment = ` // []string or *ResultRef — set one, leave the other nil.`;
+      comment = ` // StringIDs(...) for a literal list, Ref(handle, path) for a result reference.`;
     }
 
     lines.push(`\t${fieldName} ${goType} ${tag}${comment}`);

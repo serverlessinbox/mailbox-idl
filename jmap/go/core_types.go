@@ -56,6 +56,32 @@ type Thread struct {
 	EmailIDs []string `json:"emailIds"` // Ordered list of email ids in this thread, oldest first.
 }
 
+// EmailBodyValue is the decoded value of an email body part (RFC 8621 §4.1.4).
+// Included only when the corresponding fetch flag is set.
+type EmailBodyValue struct {
+	Value             string `json:"value"`             // The decoded body part content as a string.
+	IsEncodingProblem bool   `json:"isEncodingProblem"` // True if there was a decoding error.
+	IsTruncated       bool   `json:"isTruncated"`       // True if the value was truncated at maxBodyValueBytes.
+}
+
+// EmailBodyPart is a single MIME body part descriptor (RFC 8621 §4.1.4).
+// Used in TextBody, HtmlBody, Attachments, and BodyStructure.
+type EmailBodyPart struct {
+	PartID      *string          `json:"partId,omitempty"`      // Part identifier, unique within the email. Present only on leaf parts.
+	BlobID      *string          `json:"blobId,omitempty"`      // Blob id for this part's content. Null for multipart/* container parts.
+	Size        *int64           `json:"size,omitempty"`        // Size of the content in octets (server-set).
+	Headers     []EmailHeader    `json:"headers,omitempty"`     // MIME headers for this part.
+	Name        *string          `json:"name,omitempty"`        // Filename from Content-Disposition or Content-Type name parameter, or null.
+	Type        string           `json:"type,omitempty"`        // MIME content type (e.g. text/plain).
+	Charset     *string          `json:"charset,omitempty"`     // Character set for text/* parts, or null.
+	Disposition *string          `json:"disposition,omitempty"` // Content-Disposition value (inline or attachment), or null.
+	CID         *string          `json:"cid,omitempty"`         // Content-ID value without angle brackets, or null.
+	Language    []string         `json:"language,omitempty"`    // Content-Language values, or null.
+	Location    *string          `json:"location,omitempty"`    // Content-Location URI, or null.
+	SubParts    []EmailBodyPart  `json:"subParts,omitempty"`    // Sub-parts for multipart/* types, or null for non-multipart parts.
+}
+
+
 // Email A JMAP Email object (RFC 8621 §4). Represents a single RFC 5322 message.
 type Email struct {
 	ID string `json:"id"` // The email id (server-set, immutable).
@@ -79,6 +105,11 @@ type Email struct {
 	Preview *string `json:"preview,omitempty"` // Plain-text excerpt of the message body (at most 256 characters, server-set).
 	HasAttachment *bool `json:"hasAttachment,omitempty"` // True if the message has at least one attachment (server-set).
 	Headers []EmailHeader `json:"headers,omitempty"` // Ordered list of all raw message header fields (RFC 8621 §4.1.3).
+	BodyStructure *EmailBodyPart `json:"bodyStructure,omitempty"` // Full MIME tree of the message as a single EmailBodyPart (RFC 8621 §4.1.4). Only present when requested via bodyProperties.
+	BodyValues map[string]EmailBodyValue `json:"bodyValues,omitempty"` // PartId → EmailBodyValue map (RFC 8621 §4.1.4). Populated only when fetchTextBodyValues, fetchHTMLBodyValues, or fetchAllBodyValues is true.
+	TextBody []EmailBodyPart `json:"textBody,omitempty"` // text/plain body parts in display order (RFC 8621 §4.1.4).
+	HtmlBody []EmailBodyPart `json:"htmlBody,omitempty"` // text/html body parts in display order (RFC 8621 §4.1.4).
+	Attachments []EmailBodyPart `json:"attachments,omitempty"` // Non-inline attachment parts (RFC 8621 §4.1.4).
 }
 
 // EmailBase Base Email shape used as the allOf anchor for EmailExt (allows vendor-prefixed properties).
@@ -104,6 +135,11 @@ type EmailBase struct {
 	Preview *string `json:"preview,omitempty"` // Plain-text excerpt of the message body (at most 256 characters, server-set).
 	HasAttachment *bool `json:"hasAttachment,omitempty"` // True if the message has at least one attachment (server-set).
 	Headers []EmailHeader `json:"headers,omitempty"` // Ordered list of all raw message header fields (RFC 8621 §4.1.3).
+	BodyStructure *EmailBodyPart `json:"bodyStructure,omitempty"` // Full MIME tree of the message as a single EmailBodyPart (RFC 8621 §4.1.4). Only present when requested via bodyProperties.
+	BodyValues map[string]EmailBodyValue `json:"bodyValues,omitempty"` // PartId → EmailBodyValue map (RFC 8621 §4.1.4). Populated only when fetchTextBodyValues, fetchHTMLBodyValues, or fetchAllBodyValues is true.
+	TextBody []EmailBodyPart `json:"textBody,omitempty"` // text/plain body parts in display order (RFC 8621 §4.1.4).
+	HtmlBody []EmailBodyPart `json:"htmlBody,omitempty"` // text/html body parts in display order (RFC 8621 §4.1.4).
+	Attachments []EmailBodyPart `json:"attachments,omitempty"` // Non-inline attachment parts (RFC 8621 §4.1.4).
 }
 
 // EmailExt extends EmailBase with vendor-prefixed properties.
@@ -391,7 +427,7 @@ type Principal struct {
 	Type string `json:"type"` // Principal type (RFC 9670 §4).
 	Name string `json:"name"` // Human-readable display name for this principal.
 	Description *string `json:"description,omitempty"` // Optional free-text description.
-	Email *EmailAddress `json:"email,omitempty"` // Primary email address for this principal, if any.
+	Email *string `json:"email,omitempty"` // Primary email address for this principal, if any. Must conform to addr-spec syntax (RFC 5322 §3.4.1) (RFC 9670 §2).
 	TimeZone *string `json:"timeZone,omitempty"` // IANA time zone identifier for this principal.
 	Picture *string `json:"picture,omitempty"` // BlobId of a profile picture, or null if none.
 }

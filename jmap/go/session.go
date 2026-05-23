@@ -14,12 +14,12 @@ type JMAPSessionAccount struct {
 	Name                string                 `json:"name"`
 	IsPersonal          bool                   `json:"isPersonal"`
 	IsReadOnly          bool                   `json:"isReadOnly"`
-	AccountCapabilities map[string]interface{} `json:"accountCapabilities"`
+	AccountCapabilities map[string]any `json:"accountCapabilities"`
 }
 
 // JMAPSession is the parsed JMAP session resource returned by /.well-known/jmap.
 type JMAPSession struct {
-	Capabilities    map[string]interface{}        `json:"capabilities"`
+	Capabilities    map[string]any        `json:"capabilities"`
 	Accounts        map[string]JMAPSessionAccount `json:"accounts"`
 	PrimaryAccounts map[string]string             `json:"primaryAccounts"`
 	Username        string                        `json:"username"`

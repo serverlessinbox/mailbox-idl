@@ -7,6 +7,6 @@ type EmailImportResponse struct {
 	AccountID string `json:"accountId"` // The account the emails were imported into.
 	OldState *string `json:"oldState"` // The state before the import.
 	NewState string `json:"newState"` // The state after the import.
-	Created map[string]map[string]interface{} `json:"created,omitempty"` // Map of creation id to created Email object (subset of properties).
+	Created map[string]map[string]any `json:"created,omitempty"` // Map of creation id to created Email object (subset of properties).
 	NotCreated map[string]SetError `json:"notCreated,omitempty"` // Map of creation id to SetError for failed imports.
 }
