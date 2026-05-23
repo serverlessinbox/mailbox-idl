@@ -169,6 +169,14 @@ methods:
     capability: urn:ietf:params:jmap:contacts
     argsSchema: schemas/methods/ContactCard.get.args.schema.json
     responseSchema: schemas/methods/ContactCard.get.response.schema.json
+    dx:
+      resultRefs:
+        accepts:
+          - argKey: "#ids"
+            targetArgPath: /ids
+            source:
+              method: ContactCard/query
+              responsePath: /ids
 
   - name: ContactCard/set
     capability: urn:ietf:params:jmap:contacts
@@ -179,6 +187,10 @@ methods:
     capability: urn:ietf:params:jmap:contacts
     argsSchema: schemas/methods/ContactCard.query.args.schema.json
     responseSchema: schemas/methods/ContactCard.query.response.schema.json
+    dx:
+      resultRefs:
+        provides:
+          - responsePath: /ids
 
   - name: ContactCard/queryChanges
     capability: urn:ietf:params:jmap:contacts
