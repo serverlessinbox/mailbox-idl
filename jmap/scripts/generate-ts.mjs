@@ -180,6 +180,7 @@ for (const m of methods) {
 }
 
 const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT. */\n\n` +
+`import { onMethodError, onHttpError } from '../validationHandler';\n\n` +
 `export type MethodCall = [name: string, args: unknown, callId: string];\n` +
 `export type MethodResponse = [name: string, response: unknown, callId: string];\n\n` +
 `export interface JmapRequestBody {\n` +
@@ -221,6 +222,7 @@ const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT.
 `    const res = await this.post(body);\n` +
 `    const match = res.methodResponses.find((r) => r[2] === callId);\n` +
 `    if (!match) throw new Error('Missing JMAP response for callId ' + callId);\n` +
+`    if (match[0] === 'error') onMethodError(name, match[1]);\n` +
 `    return match[1] as M[K]['response'];\n` +
 `  }\n\n` +
 `  async batch(calls: Array<{ name: keyof M & string; args: unknown }>): Promise<JmapResponseBody> {\n` +
@@ -233,6 +235,8 @@ const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT.
 `    const resp = await this.fetchImpl(this.apiUrl, { method: 'POST', headers, body: JSON.stringify(body) });\n` +
 `    if (!resp.ok) {\n` +
 `      const text = await resp.text().catch(() => '');\n` +
+`      const methods = body.methodCalls.map((c) => String(c[0]));\n` +
+`      onHttpError(resp.status, methods, text);\n` +
 `      throw new Error('JMAP HTTP ' + resp.status + ': ' + text);\n` +
 `    }\n` +
 `    return (await resp.json()) as JmapResponseBody;\n` +
@@ -281,7 +285,7 @@ for (const { name, schema, respBase } of responseSchemasByMethod) {
     `// AJV standalone validator — compiled at code generation time, no runtime AJV dependency.\n\n` +
     standaloneCode + '\n\n' +
     (generatedFnName
-      ? `export function validateResponse(data: unknown): boolean { return ${generatedFnName}(data); }\n`
+      ? `export function validateResponse(data: unknown): boolean { const ok = ${generatedFnName}(data); validateResponse.errors = ${generatedFnName}.errors; return ok; }\n`
       : `export function validateResponse(_data: unknown): boolean { return true; }\n`);
 
   await fs.writeFile(validatorFile, validatorContent, 'utf8');
@@ -429,7 +433,7 @@ const batchTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT. 
   `import type { Methods, DxProvidePathsByMethod } from './methods';\n` +
   `import type { ResultRef } from './refs';\n` +
   `import { responseValidators } from './validators';\n` +
-  `import { onValidationFailure } from '../validationHandler';\n\n` +
+  `import { onValidationFailure, onMethodError } from '../validationHandler';\n\n` +
   `export type CallHandle<K extends keyof Methods & string> = Readonly<{\n` +
   `  name: K;\n` +
   `  callId: string;\n` +
@@ -451,12 +455,12 @@ const batchTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT. 
   `  }\n\n` +
   `  get<K extends keyof Methods & string>(handle: CallHandle<K>): CallResult<K> {\n` +
   `    const row = this.byCallId.get(handle.callId);\n` +
-  `    if (!row) return { ok: false, error: { type: 'missingMethodResponse', description: 'Missing response for callId ' + handle.callId } };\n` +
-  `    const [name, payload] = row;\n` +
-  `    if (name === 'error') return { ok: false, error: payload as JmapMethodError };\n` +
+`    if (!row) { const err = { type: 'missingMethodResponse', description: 'Missing response for callId ' + handle.callId }; onMethodError(handle.name, err); return { ok: false, error: err }; }\n` +
+`    const [name, payload] = row;\n` +
+`    if (name === 'error') { onMethodError(handle.name, payload); return { ok: false, error: payload as JmapMethodError }; }\n` +
   `    const validator = responseValidators[handle.name];\n` +
   `    if (validator && !validator(payload)) {\n` +
-  `      onValidationFailure(handle.name, (validator as { errors?: unknown }).errors);\n` +
+  `      onValidationFailure(handle.name, { errors: (validator as { errors?: unknown }).errors, payload });\n` +
   `    }\n` +
   `    return { ok: true, value: payload as Methods[K]['response'] };\n` +
   `  }\n` +

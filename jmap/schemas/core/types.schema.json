@@ -105,7 +105,12 @@
         "replyTo":       { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Reply-To header addresses (RFC 8621 §4.1.2.3), or null if absent." },
         "preview":       { "type": "string", "description": "Plain-text excerpt of the message body (at most 256 characters, server-set)." },
         "hasAttachment": { "type": "boolean", "description": "True if the message has at least one attachment (server-set)." },
-        "headers":       { "type": "array", "items": { "$ref": "#/$defs/EmailHeader" }, "description": "Ordered list of all raw message header fields (RFC 8621 §4.1.3)." }
+        "headers":       { "type": "array", "items": { "$ref": "#/$defs/EmailHeader" }, "description": "Ordered list of all raw message header fields (RFC 8621 §4.1.3)." },
+        "bodyStructure": { "anyOf": [{ "$ref": "#/$defs/EmailBodyPart" }, { "type": "null" }], "description": "The full MIME body structure of the message (RFC 8621 §4.1.4), or null if not requested." },
+        "bodyValues":    { "anyOf": [{ "type": "object", "additionalProperties": { "$ref": "#/$defs/EmailBodyValue" } }, { "type": "null" }], "description": "Map of partId → EmailBodyValue for requested text parts (RFC 8621 §4.1.4), or null if not requested." },
+        "textBody":      { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "List of text/plain body parts for display (RFC 8621 §4.1.4). Server may return null instead of [] for absent parts (pragmatic tolerance)." },
+        "htmlBody":      { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "List of text/html body parts for display (RFC 8621 §4.1.4). Server may return null instead of [] for absent parts (pragmatic tolerance)." },
+        "attachments":   { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "List of attachment parts (RFC 8621 §4.1.4). Server may return null instead of [] for absent parts (pragmatic tolerance)." }
       },
       "required": ["id"],
       "additionalProperties": false
@@ -135,7 +140,12 @@
         "replyTo":       { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Reply-To header addresses (RFC 8621 §4.1.2.3), or null if absent." },
         "preview":       { "type": "string", "description": "Plain-text excerpt of the message body (at most 256 characters, server-set)." },
         "hasAttachment": { "type": "boolean", "description": "True if the message has at least one attachment (server-set)." },
-        "headers":       { "type": "array", "items": { "$ref": "#/$defs/EmailHeader" }, "description": "Ordered list of all raw message header fields (RFC 8621 §4.1.3)." }
+        "headers":       { "type": "array", "items": { "$ref": "#/$defs/EmailHeader" }, "description": "Ordered list of all raw message header fields (RFC 8621 §4.1.3)." },
+        "bodyStructure": { "anyOf": [{ "$ref": "#/$defs/EmailBodyPart" }, { "type": "null" }], "description": "The full MIME body structure of the message (RFC 8621 §4.1.4), or null if not requested." },
+        "bodyValues":    { "anyOf": [{ "type": "object", "additionalProperties": { "$ref": "#/$defs/EmailBodyValue" } }, { "type": "null" }], "description": "Map of partId → EmailBodyValue for requested text parts (RFC 8621 §4.1.4), or null if not requested." },
+        "textBody":      { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "List of text/plain body parts for display (RFC 8621 §4.1.4). Server may return null instead of [] for absent parts (pragmatic tolerance)." },
+        "htmlBody":      { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "List of text/html body parts for display (RFC 8621 §4.1.4). Server may return null instead of [] for absent parts (pragmatic tolerance)." },
+        "attachments":   { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "List of attachment parts (RFC 8621 §4.1.4). Server may return null instead of [] for absent parts (pragmatic tolerance)." }
       },
       "required": ["id"]
     },
@@ -186,6 +196,35 @@
       },
       "required": ["id", "emailIds"],
       "additionalProperties": false
+    },
+
+    "EmailBodyValue": {
+      "type": "object",
+      "description": "The decoded text content of a body part (RFC 8621 §4.1.4). Keys in bodyValues map to partId values.",
+      "properties": {
+        "value":              { "type": "string", "description": "The decoded body text." },
+        "isEncodingProblem": { "type": "boolean", "description": "True if decoding the charset produced errors (server-set, default false)." },
+        "isTruncated":       { "type": "boolean", "description": "True if the server truncated the value (server-set, default false)." }
+      }
+    },
+
+    "EmailBodyPart": {
+      "type": "object",
+      "description": "Describes one part of a MIME body structure (RFC 8621 §4.1.4). Servers may include extension properties beyond those listed here.",
+      "properties": {
+        "partId":      { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Identifies this part in bodyValues (RFC 8621 §4.1.4)." },
+        "blobId":      { "anyOf": [{ "$ref": "#/$defs/BlobId" }, { "type": "null" }], "description": "Blob id of this part's raw bytes, or null if not directly fetchable." },
+        "size":        { "type": "integer", "minimum": 0, "description": "Decoded size of the part in bytes (server-set)." },
+        "name":        { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Filename from Content-Disposition or Content-Type, or null." },
+        "type":        { "type": "string", "description": "MIME type of this part (lower-case), e.g. \"text/html\"." },
+        "charset":     { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Character set for text/* parts, or null." },
+        "disposition": { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Content-Disposition value (\"inline\" or \"attachment\"), or null." },
+        "cid":         { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Content-ID value (without angle brackets), or null." },
+        "language":    { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Content-Language values, or null." },
+        "location":    { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Content-Location value, or null." },
+        "subParts":    { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "Child parts for multipart/* types, or null for leaf parts." },
+        "headers":     { "type": "array", "items": { "$ref": "#/$defs/EmailHeader" }, "description": "All header fields for this part (RFC 8621 §4.1.3)." }
+      }
     },
 
     "EmailAddress": {
