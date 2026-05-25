@@ -67,20 +67,19 @@ type EmailBodyValue struct {
 // EmailBodyPart is a single MIME body part descriptor (RFC 8621 §4.1.4).
 // Used in TextBody, HtmlBody, Attachments, and BodyStructure.
 type EmailBodyPart struct {
-	PartID      *string          `json:"partId,omitempty"`      // Part identifier, unique within the email. Present only on leaf parts.
-	BlobID      *string          `json:"blobId,omitempty"`      // Blob id for this part's content. Null for multipart/* container parts.
-	Size        *int64           `json:"size,omitempty"`        // Size of the content in octets (server-set).
-	Headers     []EmailHeader    `json:"headers,omitempty"`     // MIME headers for this part.
-	Name        *string          `json:"name,omitempty"`        // Filename from Content-Disposition or Content-Type name parameter, or null.
-	Type        string           `json:"type,omitempty"`        // MIME content type (e.g. text/plain).
-	Charset     *string          `json:"charset,omitempty"`     // Character set for text/* parts, or null.
-	Disposition *string          `json:"disposition,omitempty"` // Content-Disposition value (inline or attachment), or null.
-	CID         *string          `json:"cid,omitempty"`         // Content-ID value without angle brackets, or null.
-	Language    []string         `json:"language,omitempty"`    // Content-Language values, or null.
-	Location    *string          `json:"location,omitempty"`    // Content-Location URI, or null.
-	SubParts    []EmailBodyPart  `json:"subParts,omitempty"`    // Sub-parts for multipart/* types, or null for non-multipart parts.
+	PartID      *string         `json:"partId,omitempty"`      // Part identifier, unique within the email. Present only on leaf parts.
+	BlobID      *string         `json:"blobId,omitempty"`      // Blob id for this part's content. Null for multipart/* container parts.
+	Size        *int64          `json:"size,omitempty"`        // Size of the content in octets (server-set).
+	Headers     []EmailHeader   `json:"headers,omitempty"`     // MIME headers for this part.
+	Name        *string         `json:"name,omitempty"`        // Filename from Content-Disposition or Content-Type name parameter, or null.
+	Type        string          `json:"type,omitempty"`        // MIME content type (e.g. text/plain).
+	Charset     *string         `json:"charset,omitempty"`     // Character set for text/* parts, or null.
+	Disposition *string         `json:"disposition,omitempty"` // Content-Disposition value (inline or attachment), or null.
+	CID         *string         `json:"cid,omitempty"`         // Content-ID value without angle brackets, or null.
+	Language    []string        `json:"language,omitempty"`    // Content-Language values, or null.
+	Location    *string         `json:"location,omitempty"`    // Content-Location URI, or null.
+	SubParts    []EmailBodyPart `json:"subParts,omitempty"`    // Sub-parts for multipart/* types, or null for non-multipart parts.
 }
-
 
 // Email A JMAP Email object (RFC 8621 §4). Represents a single RFC 5322 message.
 type Email struct {
@@ -378,6 +377,8 @@ type ContactCardMedia struct {
 
 // ContactCard A JMAP ContactCard object (RFC 9610 / JSContact RFC 9553).
 type ContactCard struct {
+	AtType string `json:"@type"` // Must be "Card" (RFC 9553 §2.2)
+	Version string `json:"version"` // Must be "1.0" (RFC 9553 §2.3)
 	ID string `json:"id"` // The contact card id (server-set, immutable).
 	AddressBookIDs map[string]bool `json:"addressBookIds,omitempty"` // AddressBookId → true map indicating which address books contain this card (server-set).
 	Created *string `json:"created,omitempty"` // UTC date-time the card was first created (server-set, RFC 9553 §2.1.3).
@@ -395,6 +396,8 @@ type ContactCard struct {
 
 // ContactCardCreate Fields for creating a new ContactCard. addressBookIds is required.
 type ContactCardCreate struct {
+	AtType string `json:"@type"` // Must be "Card" (RFC 9553 §2.2)
+	Version string `json:"version"` // Must be "1.0" (RFC 9553 §2.3)
 	AddressBookIDs map[string]bool `json:"addressBookIds"` // AddressBookId → true map. Exactly one entry required.
 	Name ContactCardName `json:"name,omitempty"`
 	Emails map[string]ContactCardEmail `json:"emails,omitempty"`

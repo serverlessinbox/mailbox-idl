@@ -121,6 +121,7 @@ function resolveRef(ref) {
  */
 function jsonKeyToFieldName(key) {
   const specials = {
+    '@type': 'AtType',
     id: 'ID',
     accountId: 'AccountID',
     fromAccountId: 'FromAccountID',
