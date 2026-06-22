@@ -64,7 +64,7 @@ enum DelegateAccessLevel {
 
 // SharedMailbox represents a shared mailbox resource.
 message SharedMailbox {
-  // id: Unique shared mailbox identifier (smb_ prefix).
+  // id: Unique shared mailbox identifier (res_ prefix).
   string id = 1;
   // name: Internal name for the shared mailbox (used in system references).
   string name = 2;
@@ -127,10 +127,10 @@ message CreateSharedMailboxResponse {
 }
 
 message GetSharedMailboxRequest {
-  // id: The shared mailbox ID to retrieve (smb_ prefix).
+  // id: The shared mailbox ID to retrieve (res_ prefix).
   string id = 1 [(validate.rules).string = {
     min_len: 1
-    pattern: "^smb_[a-zA-Z0-9_-]{21}$"
+    pattern: "^res_[a-zA-Z0-9_-]{21}$"
   }];
 }
 
@@ -145,10 +145,10 @@ message ListSharedMailboxesResponse {
 }
 
 message UpdateSharedMailboxRequest {
-  // id: The shared mailbox to update (smb_ prefix).
+  // id: The shared mailbox to update (res_ prefix).
   string id = 1 [(validate.rules).string = {
     min_len: 1
-    pattern: "^smb_[a-zA-Z0-9_-]{21}$"
+    pattern: "^res_[a-zA-Z0-9_-]{21}$"
   }];
   // display_name: New display name for the shared mailbox.
   optional string display_name = 2 [(validate.rules).string = {
@@ -162,10 +162,10 @@ message UpdateSharedMailboxResponse {
 }
 
 message DeleteSharedMailboxRequest {
-  // id: The shared mailbox to delete (smb_ prefix).
+  // id: The shared mailbox to delete (res_ prefix).
   string id = 1 [(validate.rules).string = {
     min_len: 1
-    pattern: "^smb_[a-zA-Z0-9_-]{21}$"
+    pattern: "^res_[a-zA-Z0-9_-]{21}$"
   }];
 }
 
@@ -218,10 +218,10 @@ message ListDelegatesResponse {
 }
 
 message AddSharedMailboxAccountCapabilityRequest {
-  // id: The shared mailbox ID (smb_ prefix).
+  // id: The shared mailbox ID (res_ prefix).
   string id = 1 [(validate.rules).string = {
     min_len: 1
-    pattern: "^smb_[a-zA-Z0-9_-]{21}$"
+    pattern: "^res_[a-zA-Z0-9_-]{21}$"
   }];
   // capability: The JMAP capability to add. See common.v1.AccountCapability for valid values.
   common.v1.AccountCapability capability = 2 [(validate.rules).enum.defined_only = true];

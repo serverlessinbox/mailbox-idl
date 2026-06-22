@@ -1,0 +1,151 @@
+syntax = "proto3";
+
+package setup.v1;
+
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/setup;setupv1";
+
+// ============================================
+// Setup / First-Contact Readiness
+// ============================================
+//
+// Purpose
+// -------
+// A single server-derived endpoint the admin console's Welcome view, Home
+// overview, and exception-only health tiles all read from. It aggregates
+// onboarding + health state from existing services (domains, email identities,
+// SES status, Lambda/monitoring throttles) plus a server-stored dismissal flag.
+//
+// Aggregation is best-effort: a failure in one source degrades only that
+// section, it never fails the whole response (mirrors StatusService.GetStatus).
+
+message GetReadinessRequest {
+  // Reserved for future options. Throttle lookback is defaulted server-side.
+}
+
+message IdentityReadiness {
+  int32 user_count = 1 [(validate.rules).int32 = {gte: 0}];
+  int32 group_count = 2 [(validate.rules).int32 = {gte: 0}];
+  int32 shared_mailbox_count = 3 [(validate.rules).int32 = {gte: 0}];
+}
+
+message GetReadinessResponse {
+  Readiness readiness = 1;
+}
+
+message Readiness {
+  // True when all required onboarding steps are done (receive + send paths).
+  bool complete = 1;
+
+  // Server-stored graduation flag (deployment-wide at v1). The UI may still
+  // show Welcome when false even if `complete` is true.
+  bool welcome_dismissed = 2;
+
+  ReceivingReadiness receiving = 3;
+  SendingReadiness sending = 4;
+  TestReadiness test = 5;
+
+  // Exception-only: empty when everything is healthy. Each entry is an
+  // actionable health finding for the UI to surface.
+  repeated HealthIssue health_issues = 6;
+
+  IdentityReadiness identity = 7;
+}
+
+message ReceivingReadiness {
+  // At least one domain is configured.
+  bool has_domain = 1;
+
+  // At least one domain has SES verification_status == SUCCESS.
+  bool has_verified_domain = 2;
+
+  // MX intended: derived from the cheap Dynamo `receive_enabled` signal. This
+  // is NOT live MX-record validation (which needs per-domain DNS lookups and is
+  // computed only on demand elsewhere, never on the Home hot path).
+  bool mx_configured = 3;
+
+  bool complete = 4;
+}
+
+message SendingReadiness {
+  // True when SES is in sandbox (production access disabled).
+  bool sandbox = 1;
+
+  bool production_access_enabled = 2;
+
+  // Count of verified identities seen on the first page (cost-bounded; see
+  // server notes). Use `has_verified_identity` for the boolean.
+  int32 verified_identity_count = 3 [(validate.rules).int32 = {gte: 0}];
+
+  bool has_verified_identity = 4;
+
+  bool complete = 5;
+}
+
+message TestReadiness {
+  // True when at least one verified identity exists (test send works in the
+  // SES sandbox via a verified identity).
+  bool can_send_test = 1;
+
+  // A verified identity the UI can pre-fill as the "from" of a test email.
+  optional string suggested_from_identity = 2 [(validate.rules).string = {max_len: 320}];
+
+  bool complete = 3;
+}
+
+message HealthIssue {
+  HealthIssueType type = 1 [(validate.rules).enum.defined_only = true];
+  HealthSeverity severity = 2 [(validate.rules).enum.defined_only = true];
+
+  // Short, display-safe title.
+  string title = 3 [(validate.rules).string = {max_len: 256}];
+
+  // Phrased with "likely"/"may" — NEVER asserted. Per-function throttle metrics
+  // cannot distinguish account-limit throttling from reserved-concurrency
+  // single-function throttling, so the cause is always hedged.
+  string likely_cause = 4 [(validate.rules).string = {max_len: 1024}];
+
+  SuggestedAction suggested_action = 5 [(validate.rules).enum.defined_only = true];
+}
+
+enum HealthIssueType {
+  HEALTH_ISSUE_TYPE_UNSPECIFIED = 0;
+
+  // Throttling was observed AND account concurrency is near its limit — a low
+  // new-account limit is the likely (not certain) cause.
+  HEALTH_ISSUE_TYPE_LAMBDA_THROTTLE_LIKELY_CONCURRENCY = 1;
+}
+
+enum HealthSeverity {
+  HEALTH_SEVERITY_UNSPECIFIED = 0;
+  HEALTH_SEVERITY_INFO = 1;
+  HEALTH_SEVERITY_WARNING = 2;
+  HEALTH_SEVERITY_CRITICAL = 3;
+}
+
+enum SuggestedAction {
+  SUGGESTED_ACTION_UNSPECIFIED = 0;
+
+  // Maps 1:1 onto the existing ChangeRequest flow
+  // (CHANGE_REQUEST_TYPE_LAMBDA_CONCURRENCY_INCREASE = 2 /
+  // LambdaConcurrencyIncreasePayload). The UI's "Request higher limit" calls the
+  // existing CreateChangeRequest — nothing new on the request side.
+  SUGGESTED_ACTION_REQUEST_LAMBDA_CONCURRENCY_INCREASE = 1;
+}
+
+message DismissWelcomeRequest {
+  // true graduates out of (dismisses) the Welcome view; false clears the
+  // dismissal so Welcome shows again.
+  bool dismissed = 1;
+}
+
+message DismissWelcomeResponse {}
+
+service SetupService {
+  // GetReadiness returns the aggregated onboarding/health snapshot. Read-only.
+  rpc GetReadiness(GetReadinessRequest) returns (GetReadinessResponse);
+
+  // DismissWelcome persists the deployment-wide Welcome graduation flag.
+  rpc DismissWelcome(DismissWelcomeRequest) returns (DismissWelcomeResponse);
+}

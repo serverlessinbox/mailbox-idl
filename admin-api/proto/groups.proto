@@ -2,19 +2,17 @@ syntax = "proto3";
 
 package groups.v1;
 
-import "common.proto";
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
 option go_package = "admin-api/generated/groups;groupsv1";
 
-// GroupsService manages group principals and their associated accounts.
-// A group principal owns a shared account that can be accessed by multiple users via JMAP ObjectGrants.
+// GroupsService manages group principals.
 service GroupsService {
-  // CreateGroupPrincipal provisions a new group principal + its account with the given capabilities.
+  // CreateGroupPrincipal provisions a new group principal.
   rpc CreateGroupPrincipal(CreateGroupPrincipalRequest) returns (CreateGroupPrincipalResponse);
 
-  // GetGroupPrincipal retrieves a group principal and its account.
+  // GetGroupPrincipal retrieves a group principal.
   rpc GetGroupPrincipal(GetGroupPrincipalRequest) returns (GetGroupPrincipalResponse);
 
   // ListGroupPrincipals lists all group principals for the tenant.
@@ -23,14 +21,8 @@ service GroupsService {
   // UpdateGroupPrincipal renames a group principal.
   rpc UpdateGroupPrincipal(UpdateGroupPrincipalRequest) returns (UpdateGroupPrincipalResponse);
 
-  // DeleteGroupPrincipal removes the group principal and its account (cascade delete).
+  // DeleteGroupPrincipal removes the group principal (cascade delete).
   rpc DeleteGroupPrincipal(DeleteGroupPrincipalRequest) returns (DeleteGroupPrincipalResponse);
-
-  // TransferGroupAccountOwnership transfers administrative ownership of a group account to a new user principal.
-  rpc TransferGroupAccountOwnership(TransferGroupAccountOwnershipRequest) returns (TransferGroupAccountOwnershipResponse);
-
-  // AddGroupAccountCapability idempotently adds a new JMAP capability to a group account and provisions the required resources.
-  rpc AddGroupAccountCapability(AddGroupAccountCapabilityRequest) returns (AddGroupAccountCapabilityResponse);
 
   // AddGroupMember adds a user principal as a member of a group.
   rpc AddGroupMember(AddGroupMemberRequest) returns (AddGroupMemberResponse);
@@ -42,7 +34,7 @@ service GroupsService {
   rpc ListGroupMembers(ListGroupMembersRequest) returns (ListGroupMembersResponse);
 }
 
-// GroupPrincipal is the combined view of a group principal and its associated account.
+// GroupPrincipal represents a group principal.
 message GroupPrincipal {
   // group_id: The principal ID for this group (grp_ prefix).
   string group_id = 1;
@@ -50,8 +42,6 @@ message GroupPrincipal {
   string name = 2;
   // owner_principal_id: The user principal (user_ prefix) who administers this group.
   string owner_principal_id = 3;
-  // account: The account provisioned for this group.
-  common.v1.Account account = 4;
 }
 
 message CreateGroupPrincipalRequest {
@@ -64,24 +54,6 @@ message CreateGroupPrincipalRequest {
   string owner_principal_id = 2 [(validate.rules).string = {
     min_len: 1
     pattern: "^usr_[a-zA-Z0-9_-]{21}$"
-  }];
-  // capabilities: JMAP capabilities to provision for the group account.
-  // Must contain at least one value. See common.v1.AccountCapability for valid values.
-  repeated common.v1.AccountCapability capabilities = 3 [(validate.rules).repeated = {
-    min_items: 1
-    max_items: 10
-    items: {enum: {defined_only: true}}
-  }];
-  // local_part: Email local part for the primary alias (required when capabilities includes mail).
-  optional string local_part = 4 [(validate.rules).string = {
-    min_len: 1
-    max_len: 64
-    pattern: "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$"
-  }];
-  // domain_id: Domain for the primary alias (required when capabilities includes mail).
-  optional string domain_id = 5 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
   }];
 }
 
@@ -135,36 +107,6 @@ message DeleteGroupPrincipalRequest {
 }
 
 message DeleteGroupPrincipalResponse {}
-
-message TransferGroupAccountOwnershipRequest {
-  string group_id = 1 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
-  }];
-  // new_owner_principal_id: The user principal who will become the new owner.
-  string new_owner_principal_id = 2 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^usr_[a-zA-Z0-9_-]{21}$"
-  }];
-}
-
-message TransferGroupAccountOwnershipResponse {
-  GroupPrincipal group = 1;
-}
-
-message AddGroupAccountCapabilityRequest {
-  string group_id = 1 [(validate.rules).string = {
-    min_len: 1
-    pattern: "^grp_[a-zA-Z0-9_-]{21}$"
-  }];
-  // capability: The JMAP capability to add. See common.v1.AccountCapability for valid values.
-  common.v1.AccountCapability capability = 2 [(validate.rules).enum.defined_only = true];
-}
-
-message AddGroupAccountCapabilityResponse {
-  // group: The updated group principal with the new capability reflected in its account.
-  GroupPrincipal group = 1;
-}
 
 // GroupMember represents a user principal that is a member of a group.
 message GroupMember {
