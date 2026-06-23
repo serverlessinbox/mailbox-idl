@@ -27,7 +27,7 @@ message GetReadinessRequest {
 message IdentityReadiness {
   int32 user_count = 1 [(validate.rules).int32 = {gte: 0}];
   int32 group_count = 2 [(validate.rules).int32 = {gte: 0}];
-  int32 shared_mailbox_count = 3 [(validate.rules).int32 = {gte: 0}];
+  int32 resource_account_count = 3 [(validate.rules).int32 = {gte: 0}];
 }
 
 message GetReadinessResponse {

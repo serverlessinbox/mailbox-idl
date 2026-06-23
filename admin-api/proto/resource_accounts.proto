@@ -1,54 +1,54 @@
 syntax = "proto3";
 
-package shared_mailboxes.v1;
+package resource_accounts.v1;
 
 import "common.proto";
 import "validate/validate.proto";
 
-option go_package = "admin-api/generated/shared_mailboxes;sharedmailboxesv1";
+option go_package = "admin-api/generated/resource_accounts;resourceaccountsv1";
 
-// SharedMailboxesService manages shared mailbox principals and their delegates.
-// A shared mailbox is a resource mailbox (mailbox, room, or equipment) that can be
+// ResourceAccountsService manages resource account principals and their delegates.
+// A resource account is a resource mailbox (mailbox, room, or equipment) that can be
 // accessed by multiple users via delegation.
-service SharedMailboxesService {
-  // CreateSharedMailbox provisions a new shared mailbox with the given identity.
-  rpc CreateSharedMailbox(CreateSharedMailboxRequest) returns (CreateSharedMailboxResponse);
+service ResourceAccountsService {
+  // CreateResourceAccount provisions a new resource account with the given identity.
+  rpc CreateResourceAccount(CreateResourceAccountRequest) returns (CreateResourceAccountResponse);
 
-  // GetSharedMailbox retrieves a shared mailbox by ID.
-  rpc GetSharedMailbox(GetSharedMailboxRequest) returns (GetSharedMailboxResponse);
+  // GetResourceAccount retrieves a resource account by ID.
+  rpc GetResourceAccount(GetResourceAccountRequest) returns (GetResourceAccountResponse);
 
-  // ListSharedMailboxes lists all shared mailboxes for the tenant.
-  rpc ListSharedMailboxes(ListSharedMailboxesRequest) returns (ListSharedMailboxesResponse);
+  // ListResourceAccounts lists all resource accounts for the tenant.
+  rpc ListResourceAccounts(ListResourceAccountsRequest) returns (ListResourceAccountsResponse);
 
-  // UpdateSharedMailbox updates shared mailbox properties.
-  rpc UpdateSharedMailbox(UpdateSharedMailboxRequest) returns (UpdateSharedMailboxResponse);
+  // UpdateResourceAccount updates resource account properties.
+  rpc UpdateResourceAccount(UpdateResourceAccountRequest) returns (UpdateResourceAccountResponse);
 
-  // DeleteSharedMailbox removes the shared mailbox and its account.
-  rpc DeleteSharedMailbox(DeleteSharedMailboxRequest) returns (DeleteSharedMailboxResponse);
+  // DeleteResourceAccount removes the resource account and its account.
+  rpc DeleteResourceAccount(DeleteResourceAccountRequest) returns (DeleteResourceAccountResponse);
 
-  // AddDelegate grants a principal delegate access to a shared mailbox account.
+  // AddDelegate grants a principal delegate access to a resource account.
   rpc AddDelegate(AddDelegateRequest) returns (AddDelegateResponse);
 
   // RemoveDelegate revokes delegate access from a principal.
   rpc RemoveDelegate(RemoveDelegateRequest) returns (RemoveDelegateResponse);
 
-  // ListDelegates lists all delegates for a shared mailbox account.
+  // ListDelegates lists all delegates for a resource account.
   rpc ListDelegates(ListDelegatesRequest) returns (ListDelegatesResponse);
 
-  // AddSharedMailboxAccountCapability idempotently adds a new JMAP capability to a shared mailbox account and provisions the required resources.
-  rpc AddSharedMailboxAccountCapability(AddSharedMailboxAccountCapabilityRequest) returns (AddSharedMailboxAccountCapabilityResponse);
+  // AddResourceAccountCapability idempotently adds a new JMAP capability to a resource account and provisions the required resources.
+  rpc AddResourceAccountCapability(AddResourceAccountCapabilityRequest) returns (AddResourceAccountCapabilityResponse);
 }
 
 // ============================================
 // Enums
 // ============================================
 
-// ResourceKind categorizes the type of shared mailbox resource.
-enum ResourceKind {
-  RESOURCE_KIND_UNSPECIFIED = 0;
-  RESOURCE_KIND_MAILBOX = 1;    // Standard shared mailbox
-  RESOURCE_KIND_ROOM = 2;       // Meeting room resource
-  RESOURCE_KIND_EQUIPMENT = 3;  // Equipment resource
+// ResourceClass categorizes the type of resource account.
+enum ResourceClass {
+  RESOURCE_CLASS_UNSPECIFIED = 0;
+  RESOURCE_CLASS_SHARED = 1;    // Standard shared mailbox
+  RESOURCE_CLASS_ROOM = 2;       // Meeting room resource
+  RESOURCE_CLASS_EQUIPMENT = 3;  // Equipment resource
 }
 
 // DelegateAccessLevel defines the level of access granted to a delegate.
@@ -62,22 +62,24 @@ enum DelegateAccessLevel {
 // Messages (Data Types)
 // ============================================
 
-// SharedMailbox represents a shared mailbox resource.
-message SharedMailbox {
-  // id: Unique shared mailbox identifier (res_ prefix).
+// ResourceAccount represents a resource account.
+message ResourceAccount {
+  // id: Unique resource account identifier (res_ prefix).
   string id = 1;
-  // name: Internal name for the shared mailbox (used in system references).
+  // name: Internal name for the resource account (used in system references).
   string name = 2;
   // display_name: Human-readable display name shown to users.
   string display_name = 3;
-  // email: Primary email address for this shared mailbox.
+  // email: Primary email address for this resource account.
   string email = 4;
-  // resource_kind: Type of resource this mailbox represents.
-  ResourceKind resource_kind = 5;
-  // account_id: The JMAP account provisioned for this shared mailbox (acc_ prefix).
+  // resource_class: Type of resource this account represents.
+  ResourceClass resource_class = 5;
+  // account_id: The JMAP account provisioned for this resource account (acc_ prefix).
   string account_id = 6;
   // status: Current provisioning/lifecycle status (e.g. "active", "provisioning", "suspended").
   string status = 7;
+  // capabilities: List of enabled JMAP capabilities for this account.
+  repeated string capabilities = 8;
 }
 
 // Delegate represents a principal's access grant to a shared mailbox account.
@@ -96,8 +98,8 @@ message Delegate {
 // Request/Response messages
 // ============================================
 
-message CreateSharedMailboxRequest {
-  // name: Internal name for the shared mailbox.
+message CreateResourceAccountRequest {
+  // name: Internal name for the resource account.
   string name = 1 [(validate.rules).string = {
     min_len: 1
     max_len: 255
@@ -118,61 +120,61 @@ message CreateSharedMailboxRequest {
     min_len: 1
     pattern: "^dom_[a-zA-Z0-9_-]{21}$"
   }];
-  // resource_kind: Type of resource this mailbox represents.
-  ResourceKind resource_kind = 5;
+  // resource_class: Type of resource this account represents.
+  ResourceClass resource_class = 5;
 }
 
-message CreateSharedMailboxResponse {
-  SharedMailbox shared_mailbox = 1;
+message CreateResourceAccountResponse {
+  ResourceAccount resource_account = 1;
 }
 
-message GetSharedMailboxRequest {
-  // id: The shared mailbox ID to retrieve (res_ prefix).
+message GetResourceAccountRequest {
+  // id: The resource account ID to retrieve (res_ prefix).
   string id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^res_[a-zA-Z0-9_-]{21}$"
   }];
 }
 
-message GetSharedMailboxResponse {
-  SharedMailbox shared_mailbox = 1;
+message GetResourceAccountResponse {
+  ResourceAccount resource_account = 1;
 }
 
-message ListSharedMailboxesRequest {}
+message ListResourceAccountsRequest {}
 
-message ListSharedMailboxesResponse {
-  repeated SharedMailbox shared_mailboxes = 1;
+message ListResourceAccountsResponse {
+  repeated ResourceAccount resource_accounts = 1;
 }
 
-message UpdateSharedMailboxRequest {
-  // id: The shared mailbox to update (res_ prefix).
+message UpdateResourceAccountRequest {
+  // id: The resource account to update (res_ prefix).
   string id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^res_[a-zA-Z0-9_-]{21}$"
   }];
-  // display_name: New display name for the shared mailbox.
+  // display_name: New display name for the resource account.
   optional string display_name = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 255
   }];
 }
 
-message UpdateSharedMailboxResponse {
-  SharedMailbox shared_mailbox = 1;
+message UpdateResourceAccountResponse {
+  ResourceAccount resource_account = 1;
 }
 
-message DeleteSharedMailboxRequest {
-  // id: The shared mailbox to delete (res_ prefix).
+message DeleteResourceAccountRequest {
+  // id: The resource account to delete (res_ prefix).
   string id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^res_[a-zA-Z0-9_-]{21}$"
   }];
 }
 
-message DeleteSharedMailboxResponse {}
+message DeleteResourceAccountResponse {}
 
 message AddDelegateRequest {
-  // account_id: The shared mailbox account to grant access to (acc_ prefix).
+  // account_id: The resource account to grant access to (acc_ prefix).
   string account_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^acc_[a-zA-Z0-9_-]{21}$"
@@ -191,7 +193,7 @@ message AddDelegateResponse {
 }
 
 message RemoveDelegateRequest {
-  // account_id: The shared mailbox account to revoke access from (acc_ prefix).
+  // account_id: The resource account to revoke access from (acc_ prefix).
   string account_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^acc_[a-zA-Z0-9_-]{21}$"
@@ -206,7 +208,7 @@ message RemoveDelegateRequest {
 message RemoveDelegateResponse {}
 
 message ListDelegatesRequest {
-  // account_id: The shared mailbox account to list delegates for (acc_ prefix).
+  // account_id: The resource account to list delegates for (acc_ prefix).
   string account_id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^acc_[a-zA-Z0-9_-]{21}$"
@@ -217,8 +219,8 @@ message ListDelegatesResponse {
   repeated Delegate delegates = 1;
 }
 
-message AddSharedMailboxAccountCapabilityRequest {
-  // id: The shared mailbox ID (res_ prefix).
+message AddResourceAccountCapabilityRequest {
+  // id: The resource account ID (res_ prefix).
   string id = 1 [(validate.rules).string = {
     min_len: 1
     pattern: "^res_[a-zA-Z0-9_-]{21}$"
@@ -227,7 +229,7 @@ message AddSharedMailboxAccountCapabilityRequest {
   common.v1.AccountCapability capability = 2 [(validate.rules).enum.defined_only = true];
 }
 
-message AddSharedMailboxAccountCapabilityResponse {
-  // shared_mailbox: The updated shared mailbox with the new capability reflected in its account.
-  SharedMailbox shared_mailbox = 1;
+message AddResourceAccountCapabilityResponse {
+  // resource_account: The updated resource account with the new capability reflected in its account.
+  ResourceAccount resource_account = 1;
 }
