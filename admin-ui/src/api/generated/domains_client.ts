@@ -18,6 +18,8 @@ import type {
   CheckDNSProviderResponse,
   ApplyDomainRecordsRequest,
   ApplyDomainRecordsResponse,
+  DeleteDomainRecordRequest,
+  DeleteDomainRecordResponse,
   SendTestEmailRequest,
   SendTestEmailResponse,
 } from './domains_pb';
@@ -37,6 +39,8 @@ import {
   CheckDNSProviderResponseSchema,
   ApplyDomainRecordsRequestSchema,
   ApplyDomainRecordsResponseSchema,
+  DeleteDomainRecordRequestSchema,
+  DeleteDomainRecordResponseSchema,
   SendTestEmailRequestSchema,
   SendTestEmailResponseSchema,
 } from './domains_pb';
@@ -49,6 +53,7 @@ type UpdateDomainRequestData = Omit<UpdateDomainRequest, keyof Message>;
 type RemoveDomainRequestData = Omit<RemoveDomainRequest, keyof Message>;
 type CheckDNSProviderRequestData = Omit<CheckDNSProviderRequest, keyof Message>;
 type ApplyDomainRecordsRequestData = Omit<ApplyDomainRecordsRequest, keyof Message>;
+type DeleteDomainRecordRequestData = Omit<DeleteDomainRecordRequest, keyof Message>;
 type SendTestEmailRequestData = Omit<SendTestEmailRequest, keyof Message>;
 
 export interface DomainsServiceClientConfig {
@@ -274,6 +279,34 @@ export class DomainsServiceClient {
 
     const responseData = (await response.json()) as any;
     return fromJson(ApplyDomainRecordsResponseSchema, responseData);
+  }
+
+  /**
+   * DeleteDomainRecord removes a single auto-applied DNS record from Route53.
+   */
+  async deleteDomainRecord(request: DeleteDomainRecordRequestData): Promise<DeleteDomainRecordResponse> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (this.authorization) {
+      headers['Authorization'] = this.authorization;
+    }
+
+    const requestMessage = create(DeleteDomainRecordRequestSchema, request || {});
+    const response = await this.fetch(`${this.endpoint}/DeleteDomainRecord`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(toJson(DeleteDomainRecordRequestSchema, requestMessage)),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`DeleteDomainRecord failed: ${response.status} ${error}`);
+    }
+
+    const responseData = (await response.json()) as any;
+    return fromJson(DeleteDomainRecordResponseSchema, responseData);
   }
 
   /**

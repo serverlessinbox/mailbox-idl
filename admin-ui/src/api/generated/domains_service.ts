@@ -15,6 +15,8 @@ import type {
   CheckDNSProviderResponse,
   ApplyDomainRecordsRequest,
   ApplyDomainRecordsResponse,
+  DeleteDomainRecordRequest,
+  DeleteDomainRecordResponse,
   SendTestEmailRequest,
   SendTestEmailResponse,
 } from './domains_pb';
@@ -34,6 +36,8 @@ import {
   CheckDNSProviderResponseSchema,
   ApplyDomainRecordsRequestSchema,
   ApplyDomainRecordsResponseSchema,
+  DeleteDomainRecordRequestSchema,
+  DeleteDomainRecordResponseSchema,
   SendTestEmailRequestSchema,
   SendTestEmailResponseSchema,
 } from './domains_pb';
@@ -52,6 +56,7 @@ export interface DomainsServiceHandlers<TAuth = unknown, TAudit = unknown> {
   removeDomain(ctx: HandlerContext<TAuth, TAudit>, req: RemoveDomainRequest): Promise<RemoveDomainResponse>;
   checkDNSProvider(ctx: HandlerContext<TAuth, TAudit>, req: CheckDNSProviderRequest): Promise<CheckDNSProviderResponse>;
   applyDomainRecords(ctx: HandlerContext<TAuth, TAudit>, req: ApplyDomainRecordsRequest): Promise<ApplyDomainRecordsResponse>;
+  deleteDomainRecord(ctx: HandlerContext<TAuth, TAudit>, req: DeleteDomainRecordRequest): Promise<DeleteDomainRecordResponse>;
   sendTestEmail(ctx: HandlerContext<TAuth, TAudit>, req: SendTestEmailRequest): Promise<SendTestEmailResponse>;
 }
 
@@ -100,6 +105,12 @@ export const DomainsServiceRuntime = {
       handlerName: 'applyDomainRecords',
       requestSchema: ApplyDomainRecordsRequestSchema,
       responseSchema: ApplyDomainRecordsResponseSchema,
+    },
+    DeleteDomainRecord: {
+      name: 'DeleteDomainRecord',
+      handlerName: 'deleteDomainRecord',
+      requestSchema: DeleteDomainRecordRequestSchema,
+      responseSchema: DeleteDomainRecordResponseSchema,
     },
     SendTestEmail: {
       name: 'SendTestEmail',

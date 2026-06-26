@@ -66,6 +66,10 @@ message ReceivingReadiness {
   bool mx_configured = 3;
 
   bool complete = 4;
+
+  // True when the MX record for at least one receive-enabled domain is valid.
+  // Sourced from cached DynamoDB state — NOT a live DNS lookup.
+  bool dns_required_valid = 5;
 }
 
 message SendingReadiness {
@@ -81,6 +85,14 @@ message SendingReadiness {
   bool has_verified_identity = 4;
 
   bool complete = 5;
+
+  // True when all required DNS records for sending (DKIM CNAMEs) are valid.
+  // Sourced from cached DynamoDB state — NOT a live DNS lookup.
+  bool dns_required_valid = 6;
+
+  // True when all recommended DNS records (SPF, DMARC) are valid.
+  // Sourced from cached DynamoDB state — NOT a live DNS lookup.
+  bool dns_recommended_valid = 7;
 }
 
 message TestReadiness {

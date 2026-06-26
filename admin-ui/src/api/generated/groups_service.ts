@@ -11,10 +11,6 @@ import type {
   UpdateGroupPrincipalResponse,
   DeleteGroupPrincipalRequest,
   DeleteGroupPrincipalResponse,
-  TransferGroupAccountOwnershipRequest,
-  TransferGroupAccountOwnershipResponse,
-  AddGroupAccountCapabilityRequest,
-  AddGroupAccountCapabilityResponse,
   AddGroupMemberRequest,
   AddGroupMemberResponse,
   RemoveGroupMemberRequest,
@@ -34,10 +30,6 @@ import {
   UpdateGroupPrincipalResponseSchema,
   DeleteGroupPrincipalRequestSchema,
   DeleteGroupPrincipalResponseSchema,
-  TransferGroupAccountOwnershipRequestSchema,
-  TransferGroupAccountOwnershipResponseSchema,
-  AddGroupAccountCapabilityRequestSchema,
-  AddGroupAccountCapabilityResponseSchema,
   AddGroupMemberRequestSchema,
   AddGroupMemberResponseSchema,
   RemoveGroupMemberRequestSchema,
@@ -58,8 +50,6 @@ export interface GroupsServiceHandlers<TAuth = unknown, TAudit = unknown> {
   listGroupPrincipals(ctx: HandlerContext<TAuth, TAudit>, req: ListGroupPrincipalsRequest): Promise<ListGroupPrincipalsResponse>;
   updateGroupPrincipal(ctx: HandlerContext<TAuth, TAudit>, req: UpdateGroupPrincipalRequest): Promise<UpdateGroupPrincipalResponse>;
   deleteGroupPrincipal(ctx: HandlerContext<TAuth, TAudit>, req: DeleteGroupPrincipalRequest): Promise<DeleteGroupPrincipalResponse>;
-  transferGroupAccountOwnership(ctx: HandlerContext<TAuth, TAudit>, req: TransferGroupAccountOwnershipRequest): Promise<TransferGroupAccountOwnershipResponse>;
-  addGroupAccountCapability(ctx: HandlerContext<TAuth, TAudit>, req: AddGroupAccountCapabilityRequest): Promise<AddGroupAccountCapabilityResponse>;
   addGroupMember(ctx: HandlerContext<TAuth, TAudit>, req: AddGroupMemberRequest): Promise<AddGroupMemberResponse>;
   removeGroupMember(ctx: HandlerContext<TAuth, TAudit>, req: RemoveGroupMemberRequest): Promise<RemoveGroupMemberResponse>;
   listGroupMembers(ctx: HandlerContext<TAuth, TAudit>, req: ListGroupMembersRequest): Promise<ListGroupMembersResponse>;
@@ -98,18 +88,6 @@ export const GroupsServiceRuntime = {
       handlerName: 'deleteGroupPrincipal',
       requestSchema: DeleteGroupPrincipalRequestSchema,
       responseSchema: DeleteGroupPrincipalResponseSchema,
-    },
-    TransferGroupAccountOwnership: {
-      name: 'TransferGroupAccountOwnership',
-      handlerName: 'transferGroupAccountOwnership',
-      requestSchema: TransferGroupAccountOwnershipRequestSchema,
-      responseSchema: TransferGroupAccountOwnershipResponseSchema,
-    },
-    AddGroupAccountCapability: {
-      name: 'AddGroupAccountCapability',
-      handlerName: 'addGroupAccountCapability',
-      requestSchema: AddGroupAccountCapabilityRequestSchema,
-      responseSchema: AddGroupAccountCapabilityResponseSchema,
     },
     AddGroupMember: {
       name: 'AddGroupMember',

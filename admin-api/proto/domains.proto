@@ -316,6 +316,21 @@ message ApplyDomainRecordsResponse {
   repeated string records_failed = 3;
 }
 
+// DeleteDomainRecordRequest removes a single auto-applied DNS record from Route53.
+message DeleteDomainRecordRequest {
+  string id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];
+  string record_name = 2 [(validate.rules).string.min_len = 1];
+  string record_type = 3 [(validate.rules).string = {in: "TXT", in: "CNAME", in: "MX"}];
+}
+
+// DeleteDomainRecordResponse confirms deletion (or idempotent no-op).
+message DeleteDomainRecordResponse {
+  bool deleted = 1;
+}
+
 // ============================================
 // Test Email Operations
 // ============================================
@@ -397,7 +412,10 @@ service DomainsService {
   
   // ApplyDomainRecords automatically creates DNS records in Route53.
   rpc ApplyDomainRecords(ApplyDomainRecordsRequest) returns (ApplyDomainRecordsResponse);
-  
+
+  // DeleteDomainRecord removes a single auto-applied DNS record from Route53.
+  rpc DeleteDomainRecord(DeleteDomainRecordRequest) returns (DeleteDomainRecordResponse);
+
   // Testing
   
   // SendTestEmail sends a test email from a verified domain.

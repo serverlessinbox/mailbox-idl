@@ -10,8 +10,8 @@ import {
   IdpUsersServiceClient,
   MailFeedbackServiceClient,
   MonitoringServiceClient,
+  ResourceAccountsServiceClient,
   SetupServiceClient,
-  SharedMailboxesServiceClient,
   StatusServiceClient,
   SuppressionServiceClient,
   UsersServiceClient,
@@ -37,8 +37,8 @@ export class Client {
   readonly idpUsers: IdpUsersServiceClient;
   readonly mailFeedback: MailFeedbackServiceClient;
   readonly monitoring: MonitoringServiceClient;
+  readonly resourceAccounts: ResourceAccountsServiceClient;
   readonly setup: SetupServiceClient;
-  readonly sharedMailboxes: SharedMailboxesServiceClient;
   readonly status: StatusServiceClient;
   readonly suppression: SuppressionServiceClient;
   readonly users: UsersServiceClient;
@@ -91,13 +91,13 @@ export class Client {
       authorization,
       fetch,
     });
-    this.setup = new SetupServiceClient({
-      endpoint: `${baseUrl}/setup`,
+    this.resourceAccounts = new ResourceAccountsServiceClient({
+      endpoint: `${baseUrl}/resource-accounts`,
       authorization,
       fetch,
     });
-    this.sharedMailboxes = new SharedMailboxesServiceClient({
-      endpoint: `${baseUrl}/shared-mailboxes`,
+    this.setup = new SetupServiceClient({
+      endpoint: `${baseUrl}/setup`,
       authorization,
       fetch,
     });

@@ -14,10 +14,6 @@ import type {
   UpdateGroupPrincipalResponse,
   DeleteGroupPrincipalRequest,
   DeleteGroupPrincipalResponse,
-  TransferGroupAccountOwnershipRequest,
-  TransferGroupAccountOwnershipResponse,
-  AddGroupAccountCapabilityRequest,
-  AddGroupAccountCapabilityResponse,
   AddGroupMemberRequest,
   AddGroupMemberResponse,
   RemoveGroupMemberRequest,
@@ -37,10 +33,6 @@ import {
   UpdateGroupPrincipalResponseSchema,
   DeleteGroupPrincipalRequestSchema,
   DeleteGroupPrincipalResponseSchema,
-  TransferGroupAccountOwnershipRequestSchema,
-  TransferGroupAccountOwnershipResponseSchema,
-  AddGroupAccountCapabilityRequestSchema,
-  AddGroupAccountCapabilityResponseSchema,
   AddGroupMemberRequestSchema,
   AddGroupMemberResponseSchema,
   RemoveGroupMemberRequestSchema,
@@ -55,8 +47,6 @@ type GetGroupPrincipalRequestData = Omit<GetGroupPrincipalRequest, keyof Message
 type ListGroupPrincipalsRequestData = Omit<ListGroupPrincipalsRequest, keyof Message>;
 type UpdateGroupPrincipalRequestData = Omit<UpdateGroupPrincipalRequest, keyof Message>;
 type DeleteGroupPrincipalRequestData = Omit<DeleteGroupPrincipalRequest, keyof Message>;
-type TransferGroupAccountOwnershipRequestData = Omit<TransferGroupAccountOwnershipRequest, keyof Message>;
-type AddGroupAccountCapabilityRequestData = Omit<AddGroupAccountCapabilityRequest, keyof Message>;
 type AddGroupMemberRequestData = Omit<AddGroupMemberRequest, keyof Message>;
 type RemoveGroupMemberRequestData = Omit<RemoveGroupMemberRequest, keyof Message>;
 type ListGroupMembersRequestData = Omit<ListGroupMembersRequest, keyof Message>;
@@ -69,8 +59,7 @@ export interface GroupsServiceClientConfig {
 }
 
 /**
- * GroupsService manages group principals and their associated accounts.
- * A group principal owns a shared account that can be accessed by multiple users via JMAP ObjectGrants.
+ * GroupsService manages group principals.
  */
 export class GroupsServiceClient {
   private readonly endpoint: string;
@@ -84,7 +73,7 @@ export class GroupsServiceClient {
   }
 
   /**
-   * CreateGroupPrincipal provisions a new group principal + its account with the given capabilities.
+   * CreateGroupPrincipal provisions a new group principal.
    */
   async createGroupPrincipal(request: CreateGroupPrincipalRequestData): Promise<CreateGroupPrincipalResponse> {
     const headers: Record<string, string> = {
@@ -112,7 +101,7 @@ export class GroupsServiceClient {
   }
 
   /**
-   * GetGroupPrincipal retrieves a group principal and its account.
+   * GetGroupPrincipal retrieves a group principal.
    */
   async getGroupPrincipal(request: GetGroupPrincipalRequestData): Promise<GetGroupPrincipalResponse> {
     const headers: Record<string, string> = {
@@ -196,7 +185,7 @@ export class GroupsServiceClient {
   }
 
   /**
-   * DeleteGroupPrincipal removes the group principal and its account (cascade delete).
+   * DeleteGroupPrincipal removes the group principal (cascade delete).
    */
   async deleteGroupPrincipal(request: DeleteGroupPrincipalRequestData): Promise<DeleteGroupPrincipalResponse> {
     const headers: Record<string, string> = {
@@ -221,62 +210,6 @@ export class GroupsServiceClient {
 
     const responseData = (await response.json()) as any;
     return fromJson(DeleteGroupPrincipalResponseSchema, responseData);
-  }
-
-  /**
-   * TransferGroupAccountOwnership transfers administrative ownership of a group account to a new user principal.
-   */
-  async transferGroupAccountOwnership(request: TransferGroupAccountOwnershipRequestData): Promise<TransferGroupAccountOwnershipResponse> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (this.authorization) {
-      headers['Authorization'] = this.authorization;
-    }
-
-    const requestMessage = create(TransferGroupAccountOwnershipRequestSchema, request || {});
-    const response = await this.fetch(`${this.endpoint}/TransferGroupAccountOwnership`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(toJson(TransferGroupAccountOwnershipRequestSchema, requestMessage)),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`TransferGroupAccountOwnership failed: ${response.status} ${error}`);
-    }
-
-    const responseData = (await response.json()) as any;
-    return fromJson(TransferGroupAccountOwnershipResponseSchema, responseData);
-  }
-
-  /**
-   * AddGroupAccountCapability idempotently adds a new JMAP capability to a group account and provisions the required resources.
-   */
-  async addGroupAccountCapability(request: AddGroupAccountCapabilityRequestData): Promise<AddGroupAccountCapabilityResponse> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (this.authorization) {
-      headers['Authorization'] = this.authorization;
-    }
-
-    const requestMessage = create(AddGroupAccountCapabilityRequestSchema, request || {});
-    const response = await this.fetch(`${this.endpoint}/AddGroupAccountCapability`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(toJson(AddGroupAccountCapabilityRequestSchema, requestMessage)),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`AddGroupAccountCapability failed: ${response.status} ${error}`);
-    }
-
-    const responseData = (await response.json()) as any;
-    return fromJson(AddGroupAccountCapabilityResponseSchema, responseData);
   }
 
   /**
