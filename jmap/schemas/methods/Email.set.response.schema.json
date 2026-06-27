@@ -33,9 +33,9 @@
 
     "updated": {
       "type": ["object", "null"],
-      "description": "Map of successfully updated EmailId to null.",
+      "description": "Map of successfully updated EmailId to null or a partial Email object containing only the properties the server changed (RFC 8620 §5.3).",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
-      "additionalProperties": { "type": "null" }
+      "additionalProperties": { "anyOf": [{ "$ref": "../core/types.schema.json#/$defs/EmailExt" }, { "type": "null" }] }
     },
 
     "destroyed": {
