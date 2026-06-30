@@ -103,6 +103,7 @@ message Domain {
 
   google.protobuf.Timestamp created_at = 16;  // When the domain was added
   google.protobuf.Timestamp updated_at = 17;  // When the domain was last modified
+  bool is_primary = 18;  // Whether this is the primary domain for the account
 }
 
 message DNSApplyState {
