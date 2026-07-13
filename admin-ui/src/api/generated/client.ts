@@ -14,6 +14,7 @@ import {
   SetupServiceClient,
   StatusServiceClient,
   SuppressionServiceClient,
+  UpdateServiceClient,
   UsersServiceClient,
 } from './index';
 
@@ -41,6 +42,7 @@ export class Client {
   readonly setup: SetupServiceClient;
   readonly status: StatusServiceClient;
   readonly suppression: SuppressionServiceClient;
+  readonly update: UpdateServiceClient;
   readonly users: UsersServiceClient;
 
   constructor(config: ClientConfig) {
@@ -108,6 +110,11 @@ export class Client {
     });
     this.suppression = new SuppressionServiceClient({
       endpoint: `${baseUrl}/suppression`,
+      authorization,
+      fetch,
+    });
+    this.update = new UpdateServiceClient({
+      endpoint: `${baseUrl}/update`,
       authorization,
       fetch,
     });

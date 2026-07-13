@@ -1,0 +1,256 @@
+syntax = "proto3";
+
+package update.v1;
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/update;updatev1";
+
+// UpdateService handles CloudFormation ChangeSet creation, review, and execution
+// for root stack updates. All operations are human-gated and audited.
+service UpdateService {
+  // GetUpdateOptions returns the current stack template version and available upgrade paths
+  // within the current distTag, plus any active (pending) changeset.
+  rpc GetUpdateOptions(GetUpdateOptionsRequest) returns (GetUpdateOptionsResponse);
+
+  // CreateChangeSet initiates a new changeset for the selected target version,
+  // superseding any prior pending changeset. Non-idempotent.
+  rpc CreateChangeSet(CreateChangeSetRequest) returns (CreateChangeSetResponse);
+
+  // DescribeChangeSet retrieves the changeset status and resource-level detail.
+  // Serves both as a creation-status poll endpoint and a detail-fetch endpoint.
+  rpc DescribeChangeSet(DescribeChangeSetRequest) returns (DescribeChangeSetResponse);
+
+  // ExecuteChangeSet applies the changeset to the root stack after passing all gates
+  // (lock, typed confirmation, IAM re-verification, executability check).
+  rpc ExecuteChangeSet(ExecuteChangeSetRequest) returns (ExecuteChangeSetResponse);
+
+  // GetChangeSetExecutionStatus polls the stack update status after ExecuteChangeSet.
+  rpc GetChangeSetExecutionStatus(GetChangeSetExecutionStatusRequest) returns (GetChangeSetExecutionStatusResponse);
+
+  // ListUpdateHistory returns paginated audit trail of past update executions.
+  rpc ListUpdateHistory(ListUpdateHistoryRequest) returns (ListUpdateHistoryResponse);
+}
+
+// ============================================
+// GetUpdateOptions
+// ============================================
+
+message GetUpdateOptionsRequest {}
+
+message GetUpdateOptionsResponse {
+  // Current template version deployed in the stack.
+  string current_version = 1;
+
+  // Current distTag (e.g., "stable", "edge").
+  string current_dist_tag = 2;
+
+  // Next available minor version bump within the current major version and distTag.
+  // Absent if already on the latest minor.
+  optional UpdateOption next_minor = 3;
+
+  // Next available major version bump within the current distTag.
+  // Absence means no newer major version exists. Presence always implies breaking change.
+  optional UpdateOption next_major = 4;
+
+  // Active (pending, not yet executed) changeset if one exists and is still valid.
+  // Absent if no changeset is currently pending.
+  optional ActiveChangeSet active_change_set = 5;
+}
+
+message UpdateOption {
+  // Semantic version string (e.g., "2.1.0").
+  string version = 1;
+}
+
+message ActiveChangeSet {
+  // CloudFormation ChangeSet ID.
+  string change_set_id = 1;
+
+  // Template version this changeset was created against (parsed from Description).
+  string source_template_version = 2;
+
+  // RFC3339 timestamp of changeset creation (from CFN CreationTime).
+  string created_at = 3;
+
+  // True if a newer version has been published since this changeset was created.
+  // When true, the UI should prompt to recreate the changeset rather than resume review.
+  bool is_stale = 4;
+}
+
+// ============================================
+// CreateChangeSet
+// ============================================
+
+message CreateChangeSetRequest {
+  // Target template version. If omitted, defaults to next_minor from GetUpdateOptions.
+  // To target next_major, explicitly pass next_major.version.
+  // Must match semver pattern if provided.
+  optional string target_template_version = 1 [(validate.rules).string = {pattern: "^v?\\d+\\.\\d+\\.\\d+$"}];
+}
+
+message CreateChangeSetResponse {
+  // CloudFormation ChangeSet ID.
+  string change_set_id = 1;
+
+  // CloudFormation ChangeSet ARN.
+  string change_set_arn = 2;
+}
+
+// ============================================
+// DescribeChangeSet
+// ============================================
+
+message DescribeChangeSetRequest {
+  // CloudFormation ChangeSet ID (from CreateChangeSetResponse or active_change_set).
+  string change_set_id = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message DescribeChangeSetResponse {
+  // Changeset creation status (or execution status if already executed).
+  ChangeSetStatus status = 1;
+
+  // CFN StatusReason on CREATE_FAILED or EXECUTE_FAILED; sanitized for client display.
+  string status_reason = 2;
+
+  // Fully-formed AWS Console URL for this changeset.
+  string console_url = 3;
+
+  // Raw CloudFormation template body (JSON) before this changeset's changes.
+  // Also used by the frontend to parse aws:cdk:path for the CDK-metadata tree view.
+  string previous_template = 4;
+
+  // Raw CloudFormation template body (JSON) after this changeset's changes.
+  string proposed_template = 5;
+
+  // Resource-level changes from this changeset.
+  // Pre-sorted with IAM-related resources first, everything else in template order.
+  repeated ResourceChange resource_changes = 6;
+}
+
+enum ChangeSetStatus {
+  CHANGESET_STATUS_UNSPECIFIED = 0;
+  CHANGESET_STATUS_CREATE_PENDING = 1;
+  CHANGESET_STATUS_CREATE_IN_PROGRESS = 2;
+  CHANGESET_STATUS_CREATE_COMPLETE = 3;
+  CHANGESET_STATUS_CREATE_FAILED = 4;
+  CHANGESET_STATUS_EXECUTE_IN_PROGRESS = 5;
+  CHANGESET_STATUS_EXECUTE_COMPLETE = 6;
+  CHANGESET_STATUS_EXECUTE_FAILED = 7;
+}
+
+message ResourceChange {
+  // CloudFormation LogicalResourceId.
+  string logical_id = 1;
+
+  // CloudFormation resource type (e.g., "AWS::DynamoDB::Table").
+  string resource_type = 2;
+
+  // Physical resource ID (if available).
+  string physical_resource_id = 3;
+
+  // Action type: ADD, MODIFY, or REMOVE.
+  ResourceChangeAction action = 4;
+
+  // True if this resource is IAM-related (security-critical, gates ExecuteChangeSet).
+  // The sole server-computed classification; all other groupings are frontend-computed.
+  bool is_iam_related = 5;
+
+  // Raw property-level diff (JSON structure from CloudFormation).
+  // Frontend derives groupings (tag-only, etc.) and the tree view entirely from this.
+  string change_detail_json = 6;
+}
+
+enum ResourceChangeAction {
+  RESOURCE_CHANGE_ACTION_UNSPECIFIED = 0;
+  ADD = 1;
+  MODIFY = 2;
+  REMOVE = 3;
+}
+
+// ============================================
+// ExecuteChangeSet
+// ============================================
+
+message ExecuteChangeSetRequest {
+  // CloudFormation ChangeSet ID (from CreateChangeSetResponse).
+  string change_set_id = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Typed re-confirmation: must exactly match the root stack name. Server-known, not from client.
+  string typed_confirmation = 2 [(validate.rules).string = {min_len: 1}];
+
+  // Hard confirmation that the admin has reviewed any IAM changes.
+  // Required if any resource_changes[].is_iam_related is true; can be false only if no IAM changes exist.
+  bool iam_review_ack = 3;
+}
+
+message ExecuteChangeSetResponse {
+  // Stack update has been initiated. Poll GetChangeSetExecutionStatus for completion.
+}
+
+// ============================================
+// GetChangeSetExecutionStatus
+// ============================================
+
+message GetChangeSetExecutionStatusRequest {
+  // CloudFormation ChangeSet ID.
+  string change_set_id = 1 [(validate.rules).string = {min_len: 1}];
+}
+
+message GetChangeSetExecutionStatusResponse {
+  // Current stack update status.
+  StackStatus status = 1;
+
+  // RFC3339 timestamp of the most recent event (from CFN StackEvents).
+  string last_event_at = 2;
+
+  // Event summary (e.g., "Stack UPDATE_COMPLETE_CLEANUP_IN_PROGRESS").
+  string last_event_message = 3;
+}
+
+enum StackStatus {
+  STACK_STATUS_UNSPECIFIED = 0;
+  STACK_STATUS_CREATE_IN_PROGRESS = 1;
+  STACK_STATUS_CREATE_COMPLETE = 2;
+  STACK_STATUS_CREATE_FAILED = 3;
+  STACK_STATUS_UPDATE_IN_PROGRESS = 4;
+  STACK_STATUS_UPDATE_COMPLETE = 5;
+  STACK_STATUS_UPDATE_COMPLETE_CLEANUP_IN_PROGRESS = 6;
+  STACK_STATUS_UPDATE_FAILED = 7;
+  STACK_STATUS_UPDATE_ROLLBACK_IN_PROGRESS = 8;
+  STACK_STATUS_UPDATE_ROLLBACK_COMPLETE = 9;
+}
+
+// ============================================
+// ListUpdateHistory
+// ============================================
+
+message ListUpdateHistoryRequest {
+  // Maximum results per page (default 50, max 100).
+  optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 100}];
+
+  // Pagination token from previous response.
+  optional string page_token = 2 [(validate.rules).string.max_len = 512];
+}
+
+message ListUpdateHistoryResponse {
+  repeated UpdateHistoryEntry entries = 1;
+
+  // Token for next page; empty if no more results.
+  string next_page_token = 2;
+}
+
+message UpdateHistoryEntry {
+  // RFC3339 timestamp of execution.
+  string executed_at = 1;
+
+  // Version delta (e.g., "v1.0.0 → v1.1.0").
+  string version_delta = 2;
+
+  // Final status of the stack update.
+  StackStatus status = 3;
+
+  // Principal who executed the update.
+  string actor = 4;
+}

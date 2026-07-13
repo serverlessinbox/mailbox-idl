@@ -13,6 +13,7 @@ export { ResourceAccountsServiceClient } from './resource_accounts_client';
 export { SetupServiceClient } from './setup_client';
 export { StatusServiceClient } from './status_client';
 export { SuppressionServiceClient } from './suppression_client';
+export { UpdateServiceClient } from './update_client';
 export { UsersServiceClient } from './users_client';
 
 export * from './aliases_pb';
@@ -29,6 +30,7 @@ export * from './resource_accounts_pb';
 export * from './setup_pb';
 export * from './status_pb';
 export * from './suppression_pb';
+export * from './update_pb';
 export * from './users_pb';
 
 export { Client, type ClientConfig } from './client';
