@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package update.v1;
 
-import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
 option go_package = "admin-api/generated/stack_update;stackupdatev1";
@@ -130,14 +129,14 @@ message DescribeChangeSetResponse {
 }
 
 enum ChangeSetStatus {
-  CHANGESET_STATUS_UNSPECIFIED = 0;
-  CHANGESET_STATUS_CREATE_PENDING = 1;
-  CHANGESET_STATUS_CREATE_IN_PROGRESS = 2;
-  CHANGESET_STATUS_CREATE_COMPLETE = 3;
-  CHANGESET_STATUS_CREATE_FAILED = 4;
-  CHANGESET_STATUS_EXECUTE_IN_PROGRESS = 5;
-  CHANGESET_STATUS_EXECUTE_COMPLETE = 6;
-  CHANGESET_STATUS_EXECUTE_FAILED = 7;
+  CHANGE_SET_STATUS_UNSPECIFIED = 0;
+  CHANGE_SET_STATUS_CREATE_PENDING = 1;
+  CHANGE_SET_STATUS_CREATE_IN_PROGRESS = 2;
+  CHANGE_SET_STATUS_CREATE_COMPLETE = 3;
+  CHANGE_SET_STATUS_CREATE_FAILED = 4;
+  CHANGE_SET_STATUS_EXECUTE_IN_PROGRESS = 5;
+  CHANGE_SET_STATUS_EXECUTE_COMPLETE = 6;
+  CHANGE_SET_STATUS_EXECUTE_FAILED = 7;
 }
 
 message ResourceChange {
@@ -164,9 +163,9 @@ message ResourceChange {
 
 enum ResourceChangeAction {
   RESOURCE_CHANGE_ACTION_UNSPECIFIED = 0;
-  ADD = 1;
-  MODIFY = 2;
-  REMOVE = 3;
+  RESOURCE_CHANGE_ACTION_ADD = 1;
+  RESOURCE_CHANGE_ACTION_MODIFY = 2;
+  RESOURCE_CHANGE_ACTION_REMOVE = 3;
 }
 
 // ============================================
