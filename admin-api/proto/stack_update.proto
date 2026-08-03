@@ -5,11 +5,11 @@ package update.v1;
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
-option go_package = "admin-api/generated/update;updatev1";
+option go_package = "admin-api/generated/stack_update;stackupdatev1";
 
-// UpdateService handles CloudFormation ChangeSet creation, review, and execution
+// StackUpdateService handles CloudFormation ChangeSet creation, review, and execution
 // for root stack updates. All operations are human-gated and audited.
-service UpdateService {
+service StackUpdateService {
   // GetUpdateOptions returns the current stack template version and available upgrade paths
   // within the current distTag, plus any active (pending) changeset.
   rpc GetUpdateOptions(GetUpdateOptionsRequest) returns (GetUpdateOptionsResponse);
@@ -87,7 +87,7 @@ message CreateChangeSetRequest {
   // Target template version. If omitted, defaults to next_minor from GetUpdateOptions.
   // To target next_major, explicitly pass next_major.version.
   // Must match semver pattern if provided.
-  optional string target_template_version = 1 [(validate.rules).string = {pattern: "^v?\\d+\\.\\d+\\.\\d+$"}];
+  optional string target_template_version = 1 [(validate.rules).string = {pattern: "^v?\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*)?$"}];
 }
 
 message CreateChangeSetResponse {
@@ -177,12 +177,9 @@ message ExecuteChangeSetRequest {
   // CloudFormation ChangeSet ID (from CreateChangeSetResponse).
   string change_set_id = 1 [(validate.rules).string = {min_len: 1}];
 
-  // Typed re-confirmation: must exactly match the root stack name. Server-known, not from client.
-  string typed_confirmation = 2 [(validate.rules).string = {min_len: 1}];
-
   // Hard confirmation that the admin has reviewed any IAM changes.
   // Required if any resource_changes[].is_iam_related is true; can be false only if no IAM changes exist.
-  bool iam_review_ack = 3;
+  bool iam_review_ack = 2;
 }
 
 message ExecuteChangeSetResponse {
