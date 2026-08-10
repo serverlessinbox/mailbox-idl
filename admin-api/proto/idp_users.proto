@@ -23,6 +23,9 @@ service IdpUsersService {
 
   // SetIdpUserPassword sets a user's password (admin-driven; avoids email dependency).
   rpc SetIdpUserPassword(SetIdpUserPasswordRequest) returns (SetIdpUserPasswordResponse);
+
+  // DeleteIdpUser removes an IdP user account.
+  rpc DeleteIdpUser(DeleteIdpUserRequest) returns (DeleteIdpUserResponse);
 }
 
 message IdpUser {
@@ -85,3 +88,9 @@ message SetIdpUserPasswordRequest {
 }
 
 message SetIdpUserPasswordResponse {}
+
+message DeleteIdpUserRequest {
+  string username = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
+}
+
+message DeleteIdpUserResponse {}

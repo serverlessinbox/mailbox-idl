@@ -32,9 +32,9 @@ tasks:
       - task -d admin-api generate:go:e2e OUTPUT_DIR={{.OUTPUT_DIR}}
 
   admin-api:generate:ts:
-    desc: Generate TypeScript SDK for Admin API
+    desc: Generate TypeScript SDK for Admin API (output outside this repo; OUTPUT_DIR required)
     vars:
-      OUTPUT_DIR: '{{default "../admin-ui/src/api/generated" .OUTPUT_DIR}}'
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
     cmds:
       - task -d admin-api generate:ts OUTPUT_DIR={{.OUTPUT_DIR}}
 

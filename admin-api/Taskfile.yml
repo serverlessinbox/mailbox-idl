@@ -83,11 +83,17 @@ tasks:
       - tools/protoc-gen-go-http-client/**
 
   generate:ts:
-    desc: Generate TypeScript SDK from protobuf
+    desc: Generate TypeScript SDK from protobuf (output outside this repo; OUTPUT_DIR required)
     vars:
-      OUTPUT_DIR: '{{default "../../admin-ui/src/api/generated" .OUTPUT_DIR}}'
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
     cmds:
-      - buf generate --template buf.gen.ts.yaml -o "{{.OUTPUT_DIR}}"
+      - |
+        set -euo pipefail
+        if [ -z "{{.OUTPUT_DIR}}" ]; then
+          echo "ERROR: OUTPUT_DIR is required (directory to write generated TS files to)." >&2
+          exit 2
+        fi
+        buf generate --template buf.gen.ts.yaml -o "{{.OUTPUT_DIR}}"
     sources:
       - proto/**/*.proto
       - buf.yaml
