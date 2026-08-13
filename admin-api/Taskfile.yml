@@ -12,6 +12,9 @@ tasks:
           echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
           exit 2
         fi
+        # Build the local buf plugin for the host platform — the checked-out binary
+        # may be from another OS/arch (buf execs it by relative path).
+        (cd tools/protoc-gen-go-interface && GOWORK=off go build -o protoc-gen-go-interface .)
         buf generate --template buf.gen.go.yaml -o "{{.OUTPUT_DIR}}"
     sources:
       - proto/**/*.proto
