@@ -56,6 +56,13 @@ message GetUpdateOptionsResponse {
   // Active (pending, not yet executed) changeset if one exists and is still valid.
   // Absent if no changeset is currently pending.
   optional ActiveChangeSet active_change_set = 5;
+
+  // Root stack name (from the stack ARN). Always present. Generic identity field —
+  // the client derives console links from stack_name + region.
+  string stack_name = 6;
+
+  // AWS region the root stack lives in (from the stack ARN). Always present.
+  string region = 7;
 }
 
 message UpdateOption {
