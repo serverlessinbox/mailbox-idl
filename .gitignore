@@ -3,3 +3,10 @@
 # else's checkout. Was tracked until 2026-08-23, which made every codegen run
 # dirty the working tree and produced conflicts on files nobody reads.
 .task/
+
+# Compiled protoc plugins. `go build -o <name> .` writes these next to their own
+# main.go, so the binary sits inside the package directory rather than a build
+# output dir. Rebuilt by admin-api/Taskfile.yml on every codegen run, and
+# architecture-specific — tracking them dirtied the tree after each build.
+admin-api/tools/protoc-gen-go-interface/protoc-gen-go-interface
+admin-api/tools/protoc-gen-go-http-client/protoc-gen-go-http-client
