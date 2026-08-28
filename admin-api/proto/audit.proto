@@ -13,6 +13,7 @@ enum ActorType {
   ACTOR_TYPE_USER = 1;       // Human user authenticated via OAuth
   ACTOR_TYPE_SERVICE = 2;    // Service account or background process
   ACTOR_TYPE_SYSTEM = 3;     // System-generated action (e.g., bootstrap)
+  ACTOR_TYPE_VENDOR = 4;     // Vendor support engineer assuming a support role (via support access case)
 }
 
 // AuditService provides access to audit logs for admin operations

@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package support_access.v1;
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "admin-api/generated/support_access;supportaccessv1";
+
+// SupportAccessService manages support access cases and role-based access control.
+service SupportAccessService {
+  // OpenSupportAccessCase opens a new support access case with a specified tier and optional expiry.
+  // The returned caseId serves as both the external ID for trust policy and the primary case identifier.
+  rpc OpenSupportAccessCase(OpenSupportAccessCaseRequest) returns (OpenSupportAccessCaseResponse);
+
+  // CloseSupportAccessCase closes an open support access case, revoking access immediately.
+  // Closing an already-closed case is a no-op.
+  rpc CloseSupportAccessCase(CloseSupportAccessCaseRequest) returns (CloseSupportAccessCaseResponse);
+
+  // ListSupportAccessCases lists all support access cases for the tenant, including an audit trail health check.
+  // Status values include "open", "closed", and computed "expired" (derived from expiresAt vs. now).
+  rpc ListSupportAccessCases(ListSupportAccessCasesRequest) returns (ListSupportAccessCasesResponse);
+}
+
+// RoleTier enumerates the types of support roles that can be granted access.
+enum RoleTier {
+  ROLE_TIER_UNSPECIFIED = 0;
+  ROLE_TIER_DIAG = 1;              // support-diag: read-only diagnostics
+  ROLE_TIER_CONFIG_READ = 2;        // support-config-read: read-only config access
+  // Future tiers (Phase 2+): ROLE_TIER_REMEDIATE, ROLE_TIER_MAIL_META, ROLE_TIER_MAIL_BODY
+}
+
+// SupportAccessCase represents a single support access grant.
+message SupportAccessCase {
+  string case_id = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];                                          // Unique case identifier (also externalId for trust policy)
+  RoleTier role_tier = 2;                      // The role tier being granted (support-diag, support-config-read, etc.)
+  string ticket_ref = 3 [(validate.rules).string.max_len = 1000];       // Reference to the support ticket
+  string status = 4 [(validate.rules).string = {
+    min_len: 1
+    max_len: 20
+  }];                                          // "open" or "closed"
+  google.protobuf.Timestamp expires_at = 5;   // When the access expires (UTC)
+  google.protobuf.Timestamp opened_at = 6;    // When the case was opened (UTC)
+  string opened_by = 7 [(validate.rules).string.max_len = 255];         // User who opened the case (format: usr_<id>)
+  optional google.protobuf.Timestamp closed_at = 8;   // When the case was closed (UTC, unset if open)
+  optional string closed_by = 9 [(validate.rules).string.max_len = 255]; // User who closed the case (format: usr_<id>)
+}
+
+// OpenSupportAccessCaseRequest opens a new support access case.
+message OpenSupportAccessCaseRequest {
+  RoleTier role_tier = 1 [(validate.rules).enum.defined_only = true];          // The role tier to grant
+  string ticket_ref = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 1000
+  }];     // Reference to the support ticket (e.g., ticket ID in the vendor's system)
+  optional int64 expiry_seconds = 3 [(validate.rules).int64 = {gte: 300}];     // Seconds until expiry (default 86400 = 24h, min 5 minutes)
+}
+
+// OpenSupportAccessCaseResponse returns the opened case ID.
+message OpenSupportAccessCaseResponse {
+  string case_id = 1;  // Unique case identifier (also used as externalId in trust policy)
+}
+
+// CloseSupportAccessCaseRequest closes an open support access case.
+message CloseSupportAccessCaseRequest {
+  string case_id = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];  // The case ID to close
+}
+
+// CloseSupportAccessCaseResponse is empty (only status matters).
+message CloseSupportAccessCaseResponse {}
+
+// ListSupportAccessCasesRequest lists support access cases for the tenant.
+message ListSupportAccessCasesRequest {}
+
+// ListSupportAccessCasesResponse returns a list of support access cases and audit trail health status.
+message ListSupportAccessCasesResponse {
+  repeated SupportAccessCase cases = 1;  // All support access cases for the tenant
+  bool audit_trail_healthy = 2;          // Whether CloudTrail logging is enabled in the current region
+}
