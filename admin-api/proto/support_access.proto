@@ -8,18 +8,40 @@ import "validate/validate.proto";
 option go_package = "admin-api/generated/support_access;supportaccessv1";
 
 // SupportAccessService manages support access cases and role-based access control.
+// Access is granted when all three conditions hold:
+// - case.status == "open"
+// - tier ∈ case.allowedTiers
+// - now < case.activeUntil
 service SupportAccessService {
-  // OpenSupportAccessCase opens a new support access case with a specified tier and optional expiry.
+  // OpenSupportAccessCase opens a new support access case with optional tier grants.
   // The returned caseId serves as both the external ID for trust policy and the primary case identifier.
+  // Opening a case with an empty allowedTiers grants no access until tiers are set via SetSupportAccessTiers.
   rpc OpenSupportAccessCase(OpenSupportAccessCaseRequest) returns (OpenSupportAccessCaseResponse);
 
   // CloseSupportAccessCase closes an open support access case, revoking access immediately.
-  // Closing an already-closed case is a no-op.
+  // Closing an already-closed case is a no-op. Case history and audit trail are retained.
   rpc CloseSupportAccessCase(CloseSupportAccessCaseRequest) returns (CloseSupportAccessCaseResponse);
 
-  // ListSupportAccessCases lists all support access cases for the tenant, including an audit trail health check.
-  // Status values include "open", "closed", and computed "expired" (derived from expiresAt vs. now).
+  // ListSupportAccessCases lists all support access cases for the tenant.
+  // Note: status values are "open" or "closed"; access is determined by the three-condition predicate,
+  // not by a computed field. Use activeUntil to distinguish active from inactive (lapsed) cases.
   rpc ListSupportAccessCases(ListSupportAccessCasesRequest) returns (ListSupportAccessCasesResponse);
+
+  // SetSupportAccessTiers sets the allowed tiers for a support access case.
+  // The tier list may be empty, which revokes access without closing the case.
+  // Pointer rows are diffed: tiers added get pointer rows written, tiers removed get them deleted.
+  // Returns the updated case.
+  rpc SetSupportAccessTiers(SetSupportAccessTiersRequest) returns (SetSupportAccessTiersResponse);
+
+  // SetSupportAccessActiveUntil sets the activation window for a support access case.
+  // This RPC handles both extension (setting a future time) and immediate deactivation (setting now).
+  // Deactivation does not close the case; reactivation restores the same caseId, externalId, and tier set.
+  // The window is capped at 7 days; attempts to exceed it are rejected server-side.
+  rpc SetSupportAccessActiveUntil(SetSupportAccessActiveUntilRequest) returns (SetSupportAccessActiveUntilResponse);
+
+  // ListSupportRoleAssumptions lists CloudTrail AssumeRole events recorded for a support access case,
+  // combining archived (DynamoDB) and live (CloudTrail Event history) results, deduplicated by eventId.
+  rpc ListSupportRoleAssumptions(ListSupportRoleAssumptionsRequest) returns (ListSupportRoleAssumptionsResponse);
 }
 
 // RoleTier enumerates the types of support roles that can be granted access.
@@ -31,32 +53,35 @@ enum RoleTier {
 }
 
 // SupportAccessCase represents a single support access grant.
+// Access is granted iff: status == "open" AND tier ∈ allowedTiers AND now < activeUntil.
 message SupportAccessCase {
   string case_id = 1 [(validate.rules).string = {
     min_len: 1
     max_len: 255
   }];                                          // Unique case identifier (also externalId for trust policy)
-  RoleTier role_tier = 2;                      // The role tier being granted (support-diag, support-config-read, etc.)
   string ticket_ref = 3 [(validate.rules).string.max_len = 1000];       // Reference to the support ticket
   string status = 4 [(validate.rules).string = {
     min_len: 1
     max_len: 20
   }];                                          // "open" or "closed"
-  google.protobuf.Timestamp expires_at = 5;   // When the access expires (UTC)
   google.protobuf.Timestamp opened_at = 6;    // When the case was opened (UTC)
   string opened_by = 7 [(validate.rules).string.max_len = 255];         // User who opened the case (format: usr_<id>)
   optional google.protobuf.Timestamp closed_at = 8;   // When the case was closed (UTC, unset if open)
   optional string closed_by = 9 [(validate.rules).string.max_len = 255]; // User who closed the case (format: usr_<id>)
+  repeated RoleTier allowed_tiers = 10;                                  // The tiers granted for this case (may be empty)
+  google.protobuf.Timestamp active_until = 11;                          // When the access window expires; deactivation does not close the case
+  reserved 2, 5;
+  reserved "role_tier", "expires_at";
 }
 
 // OpenSupportAccessCaseRequest opens a new support access case.
 message OpenSupportAccessCaseRequest {
-  RoleTier role_tier = 1 [(validate.rules).enum.defined_only = true];          // The role tier to grant
   string ticket_ref = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 1000
   }];     // Reference to the support ticket (e.g., ticket ID in the vendor's system)
-  optional int64 expiry_seconds = 3 [(validate.rules).int64 = {gte: 300}];     // Seconds until expiry (default 86400 = 24h, min 5 minutes)
+  repeated RoleTier allowed_tiers = 4;                                  // The role tiers to grant (may be empty; grants nothing until set)
+  optional int64 activation_seconds = 5 [(validate.rules).int64 = {gte: 300}];  // Seconds from now until access deactivates (default 259200 = 3 days, min 5 minutes, max 7 days server-side)
 }
 
 // OpenSupportAccessCaseResponse returns the opened case ID.
@@ -75,11 +100,68 @@ message CloseSupportAccessCaseRequest {
 // CloseSupportAccessCaseResponse is empty (only status matters).
 message CloseSupportAccessCaseResponse {}
 
+// SetSupportAccessTiersRequest sets the allowed tiers for a case.
+message SetSupportAccessTiersRequest {
+  string case_id = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];  // The case ID to update
+  repeated RoleTier allowed_tiers = 2;  // The new tier list (may be empty to revoke access)
+}
+
+// SetSupportAccessTiersResponse returns the updated case.
+message SetSupportAccessTiersResponse {
+  SupportAccessCase case = 1;  // The updated support access case
+}
+
+// SetSupportAccessActiveUntilRequest sets the activation window for a case.
+message SetSupportAccessActiveUntilRequest {
+  string case_id = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];  // The case ID to update
+  google.protobuf.Timestamp active_until = 2;  // The new activation window end time (UTC); may be now or in the past to deactivate
+}
+
+// SetSupportAccessActiveUntilResponse returns the updated case.
+message SetSupportAccessActiveUntilResponse {
+  SupportAccessCase case = 1;  // The updated support access case
+}
+
 // ListSupportAccessCasesRequest lists support access cases for the tenant.
 message ListSupportAccessCasesRequest {}
 
-// ListSupportAccessCasesResponse returns a list of support access cases and audit trail health status.
+// ListSupportAccessCasesResponse returns a list of support access cases.
 message ListSupportAccessCasesResponse {
   repeated SupportAccessCase cases = 1;  // All support access cases for the tenant
-  bool audit_trail_healthy = 2;          // Whether CloudTrail logging is enabled in the current region
+  reserved 2;
+  reserved "audit_trail_healthy";
+}
+
+// SupportRoleAssumption represents a single CloudTrail AssumeRole event for a support access case.
+message SupportRoleAssumption {
+  string event_id = 1;                            // CloudTrail eventID (UUID) -- the dedupe key
+  google.protobuf.Timestamp event_time = 2;
+  string assuming_principal = 3 [(validate.rules).string.max_len = 1024];
+  string role_session_name = 4 [(validate.rules).string.max_len = 1024];  // AWS field name; equals the caseId (D14)
+  string source_ip_address = 5 [(validate.rules).string.max_len = 1024];
+  string role_assumed = 6 [(validate.rules).string.max_len = 1024];
+  optional string external_id = 7 [(validate.rules).string.max_len = 1024];  // opportunistic secondary evidence, often absent
+}
+
+// ListSupportRoleAssumptionsRequest lists CloudTrail AssumeRole events for a support access case.
+message ListSupportRoleAssumptionsRequest {
+  string case_id = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];  // The case ID to list role assumptions for
+}
+
+// ListSupportRoleAssumptionsResponse returns the merged, deduplicated set of role assumptions.
+message ListSupportRoleAssumptionsResponse {
+  repeated SupportRoleAssumption assumptions = 1;
+  // live_lookup_complete is false when the live CloudTrail half failed or is not yet authoritative.
+  // CloudTrail events take ~15 minutes to appear, so the UI must be able to say "may not have propagated
+  // yet" instead of presenting an ambiguous empty list.
+  bool live_lookup_complete = 2;
 }
