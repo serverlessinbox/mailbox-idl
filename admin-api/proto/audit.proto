@@ -5,7 +5,7 @@ package audit.v1;
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
-option go_package = "admin-api/generated/audit;auditv1";
+option go_package = "shared/generated/audit;auditv1";
 
 // ActorType enumerates the types of actors that can perform actions
 enum ActorType {

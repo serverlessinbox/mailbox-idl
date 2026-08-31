@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 import "common.proto";
 
-option go_package = "admin-api/generated/domains;domainsv1";
+option go_package = "shared/generated/domains;domainsv1";
 
 // ============================================
 // Enums

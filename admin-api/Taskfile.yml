@@ -71,7 +71,7 @@ tasks:
         # Rewrite go_package so E2E-generated types live under the e2e-tests module.
         # This keeps the per-file Go package split (statusv1, aliasesv1, etc.) intact.
         find "${TMP_DIR}/proto" -name '*.proto' -print0 | \
-          xargs -0 perl -pi -e 's#option go_package = "admin-api/generated/#option go_package = "e2e-tests/generated/adminapi/#g'
+          xargs -0 perl -pi -e 's#option go_package = "shared/generated/#option go_package = "e2e-tests/generated/adminapi/#g'
 
         # Ensure local protoc plugin exists for this platform.
         (cd tools/protoc-gen-go-http-client && GOWORK=off go build -o protoc-gen-go-http-client .)

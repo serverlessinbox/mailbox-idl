@@ -4,7 +4,7 @@ package update.v1;
 
 import "validate/validate.proto";
 
-option go_package = "admin-api/generated/stack_update;stackupdatev1";
+option go_package = "shared/generated/stack_update;stackupdatev1";
 
 // StackUpdateService handles CloudFormation ChangeSet creation, review, and execution
 // for root stack updates. All operations are human-gated and audited.

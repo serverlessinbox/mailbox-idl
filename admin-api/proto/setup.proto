@@ -4,7 +4,7 @@ package setup.v1;
 
 import "validate/validate.proto";
 
-option go_package = "admin-api/generated/setup;setupv1";
+option go_package = "shared/generated/setup;setupv1";
 
 // ============================================
 // Setup / First-Contact Readiness

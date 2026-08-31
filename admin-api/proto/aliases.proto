@@ -4,7 +4,7 @@ package aliases.v1;
 
 import "validate/validate.proto";
 
-option go_package = "admin-api/generated/aliases;aliasesv1";
+option go_package = "shared/generated/aliases;aliasesv1";
 
 // AliasesService provides operations for managing aliases.
 service AliasesService {

@@ -6,7 +6,7 @@ import "common.proto";
 import "validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "admin-api/generated/suppression;suppressionv1";
+option go_package = "shared/generated/suppression;suppressionv1";
 
 // SuppressionService provides operations for managing recipient suppressions
 service SuppressionService {

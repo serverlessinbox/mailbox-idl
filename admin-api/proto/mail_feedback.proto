@@ -6,7 +6,7 @@ import "common.proto";
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
-option go_package = "admin-api/generated/mail_feedback;mail_feedbackv1";
+option go_package = "shared/generated/mail_feedback;mail_feedbackv1";
 
 // FeedbackType represents the type of mail feedback
 enum FeedbackType {

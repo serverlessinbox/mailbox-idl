@@ -5,7 +5,7 @@ package resource_accounts.v1;
 import "common.proto";
 import "validate/validate.proto";
 
-option go_package = "admin-api/generated/resource_accounts;resourceaccountsv1";
+option go_package = "shared/generated/resource_accounts;resourceaccountsv1";
 
 // ResourceAccountsService manages resource account principals and their delegates.
 // A resource account is a resource mailbox (mailbox, room, or equipment) that can be
