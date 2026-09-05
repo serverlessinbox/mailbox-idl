@@ -107,6 +107,7 @@ message SetSupportAccessTiersRequest {
     max_len: 255
   }];  // The case ID to update
   repeated RoleTier allowed_tiers = 2;  // The new tier list (may be empty to revoke access)
+  optional int64 activation_seconds = 3 [(validate.rules).int64 = {gte: 300}];  // Seconds from now until access deactivates when reactivating an expired case (default 86400 = 24 hours, min 5 minutes, max 7 days server-side)
 }
 
 // SetSupportAccessTiersResponse returns the updated case.
