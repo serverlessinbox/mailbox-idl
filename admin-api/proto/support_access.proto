@@ -59,7 +59,6 @@ message SupportAccessCase {
     min_len: 1
     max_len: 255
   }];                                          // Unique case identifier (also externalId for trust policy)
-  string ticket_ref = 3 [(validate.rules).string.max_len = 1000];       // Reference to the support ticket
   string status = 4 [(validate.rules).string = {
     min_len: 1
     max_len: 20
@@ -70,18 +69,26 @@ message SupportAccessCase {
   optional string closed_by = 9 [(validate.rules).string.max_len = 255]; // User who closed the case (format: usr_<id>)
   repeated RoleTier allowed_tiers = 10;                                  // The tiers granted for this case (may be empty)
   google.protobuf.Timestamp active_until = 11;                          // When the access window expires; deactivation does not close the case
-  reserved 2, 5;
-  reserved "role_tier", "expires_at";
+  string subject = 12 [(validate.rules).string = {
+    min_len: 1
+    max_len: 512
+  }];                                          // Brief subject line for the support case
+  optional string description = 13 [(validate.rules).string.max_len = 10000];  // Detailed description of the support case (optional, supports multi-line)
+  reserved 2, 3, 5;
+  reserved "role_tier", "expires_at", "ticket_ref";
 }
 
 // OpenSupportAccessCaseRequest opens a new support access case.
 message OpenSupportAccessCaseRequest {
-  string ticket_ref = 2 [(validate.rules).string = {
+  string subject = 1 [(validate.rules).string = {
     min_len: 1
-    max_len: 1000
-  }];     // Reference to the support ticket (e.g., ticket ID in the vendor's system)
+    max_len: 512
+  }];     // Brief subject line for the support case
+  optional string description = 3 [(validate.rules).string.max_len = 10000];  // Detailed description of the support case (optional, supports multi-line)
   repeated RoleTier allowed_tiers = 4;                                  // The role tiers to grant (may be empty; grants nothing until set)
   optional int64 activation_seconds = 5 [(validate.rules).int64 = {gte: 300}];  // Seconds from now until access deactivates (default 259200 = 3 days, min 5 minutes, max 7 days server-side)
+  reserved 2;
+  reserved "ticket_ref";
 }
 
 // OpenSupportAccessCaseResponse returns the opened case ID.
