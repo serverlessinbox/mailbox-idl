@@ -1,45 +1,45 @@
 syntax = "proto3";
 
-package support_access.v1;
+package support.v1;
 
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
-option go_package = "shared/generated/support_access;supportaccessv1";
+option go_package = "shared/generated/support;supportv1";
 
-// SupportAccessService manages support access cases and role-based access control.
+// SupportService manages support cases and role-based access control.
 // Access is granted when all three conditions hold:
 // - case.status == "open"
 // - tier ∈ case.allowedTiers
 // - now < case.activeUntil
-service SupportAccessService {
-  // OpenSupportAccessCase opens a new support access case with optional tier grants.
+service SupportService {
+  // OpenSupportCase opens a new support case with optional tier grants.
   // The returned caseId serves as both the external ID for trust policy and the primary case identifier.
-  // Opening a case with an empty allowedTiers grants no access until tiers are set via SetSupportAccessTiers.
-  rpc OpenSupportAccessCase(OpenSupportAccessCaseRequest) returns (OpenSupportAccessCaseResponse);
+  // Opening a case with an empty allowedTiers grants no access until tiers are set via SetSupportCaseTiers.
+  rpc OpenSupportCase(OpenSupportCaseRequest) returns (OpenSupportCaseResponse);
 
-  // CloseSupportAccessCase closes an open support access case, revoking access immediately.
+  // CloseSupportCase closes an open support case, revoking access immediately.
   // Closing an already-closed case is a no-op. Case history and audit trail are retained.
-  rpc CloseSupportAccessCase(CloseSupportAccessCaseRequest) returns (CloseSupportAccessCaseResponse);
+  rpc CloseSupportCase(CloseSupportCaseRequest) returns (CloseSupportCaseResponse);
 
-  // ListSupportAccessCases lists all support access cases for the tenant.
+  // ListSupportCases lists all support cases for the tenant.
   // Note: status values are "open" or "closed"; access is determined by the three-condition predicate,
   // not by a computed field. Use activeUntil to distinguish active from inactive (lapsed) cases.
-  rpc ListSupportAccessCases(ListSupportAccessCasesRequest) returns (ListSupportAccessCasesResponse);
+  rpc ListSupportCases(ListSupportCasesRequest) returns (ListSupportCasesResponse);
 
-  // SetSupportAccessTiers sets the allowed tiers for a support access case.
+  // SetSupportCaseTiers sets the allowed tiers for a support case.
   // The tier list may be empty, which revokes access without closing the case.
   // Pointer rows are diffed: tiers added get pointer rows written, tiers removed get them deleted.
   // Returns the updated case.
-  rpc SetSupportAccessTiers(SetSupportAccessTiersRequest) returns (SetSupportAccessTiersResponse);
+  rpc SetSupportCaseTiers(SetSupportCaseTiersRequest) returns (SetSupportCaseTiersResponse);
 
-  // SetSupportAccessActiveUntil sets the activation window for a support access case.
+  // SetSupportCaseActiveUntil sets the activation window for a support case.
   // This RPC handles both extension (setting a future time) and immediate deactivation (setting now).
   // Deactivation does not close the case; reactivation restores the same caseId, externalId, and tier set.
   // The window is capped at 7 days; attempts to exceed it are rejected server-side.
-  rpc SetSupportAccessActiveUntil(SetSupportAccessActiveUntilRequest) returns (SetSupportAccessActiveUntilResponse);
+  rpc SetSupportCaseActiveUntil(SetSupportCaseActiveUntilRequest) returns (SetSupportCaseActiveUntilResponse);
 
-  // ListSupportRoleAssumptions lists CloudTrail AssumeRole events recorded for a support access case,
+  // ListSupportRoleAssumptions lists CloudTrail AssumeRole events recorded for a support case,
   // combining archived (DynamoDB) and live (CloudTrail Event history) results, deduplicated by eventId.
   rpc ListSupportRoleAssumptions(ListSupportRoleAssumptionsRequest) returns (ListSupportRoleAssumptionsResponse);
 }
@@ -52,9 +52,9 @@ enum RoleTier {
   // Future tiers (Phase 2+): ROLE_TIER_REMEDIATE, ROLE_TIER_MAIL_META, ROLE_TIER_MAIL_BODY
 }
 
-// SupportAccessCase represents a single support access grant.
+// SupportCase represents a single support grant.
 // Access is granted iff: status == "open" AND tier ∈ allowedTiers AND now < activeUntil.
-message SupportAccessCase {
+message SupportCase {
   string case_id = 1 [(validate.rules).string = {
     min_len: 1
     max_len: 255
@@ -78,8 +78,8 @@ message SupportAccessCase {
   reserved "role_tier", "expires_at", "ticket_ref";
 }
 
-// OpenSupportAccessCaseRequest opens a new support access case.
-message OpenSupportAccessCaseRequest {
+// OpenSupportCaseRequest opens a new support case.
+message OpenSupportCaseRequest {
   string subject = 1 [(validate.rules).string = {
     min_len: 1
     max_len: 512
@@ -91,24 +91,24 @@ message OpenSupportAccessCaseRequest {
   reserved "ticket_ref";
 }
 
-// OpenSupportAccessCaseResponse returns the opened case ID.
-message OpenSupportAccessCaseResponse {
+// OpenSupportCaseResponse returns the opened case ID.
+message OpenSupportCaseResponse {
   string case_id = 1;  // Unique case identifier (also used as externalId in trust policy)
 }
 
-// CloseSupportAccessCaseRequest closes an open support access case.
-message CloseSupportAccessCaseRequest {
+// CloseSupportCaseRequest closes an open support case.
+message CloseSupportCaseRequest {
   string case_id = 1 [(validate.rules).string = {
     min_len: 1
     max_len: 255
   }];  // The case ID to close
 }
 
-// CloseSupportAccessCaseResponse is empty (only status matters).
-message CloseSupportAccessCaseResponse {}
+// CloseSupportCaseResponse is empty (only status matters).
+message CloseSupportCaseResponse {}
 
-// SetSupportAccessTiersRequest sets the allowed tiers for a case.
-message SetSupportAccessTiersRequest {
+// SetSupportCaseTiersRequest sets the allowed tiers for a case.
+message SetSupportCaseTiersRequest {
   string case_id = 1 [(validate.rules).string = {
     min_len: 1
     max_len: 255
@@ -117,13 +117,13 @@ message SetSupportAccessTiersRequest {
   optional int64 activation_seconds = 3 [(validate.rules).int64 = {gte: 300}];  // Seconds from now until access deactivates when reactivating an expired case (default 86400 = 24 hours, min 5 minutes, max 7 days server-side)
 }
 
-// SetSupportAccessTiersResponse returns the updated case.
-message SetSupportAccessTiersResponse {
-  SupportAccessCase case = 1;  // The updated support access case
+// SetSupportCaseTiersResponse returns the updated case.
+message SetSupportCaseTiersResponse {
+  SupportCase case = 1;  // The updated support case
 }
 
-// SetSupportAccessActiveUntilRequest sets the activation window for a case.
-message SetSupportAccessActiveUntilRequest {
+// SetSupportCaseActiveUntilRequest sets the activation window for a case.
+message SetSupportCaseActiveUntilRequest {
   string case_id = 1 [(validate.rules).string = {
     min_len: 1
     max_len: 255
@@ -131,22 +131,22 @@ message SetSupportAccessActiveUntilRequest {
   google.protobuf.Timestamp active_until = 2;  // The new activation window end time (UTC); may be now or in the past to deactivate
 }
 
-// SetSupportAccessActiveUntilResponse returns the updated case.
-message SetSupportAccessActiveUntilResponse {
-  SupportAccessCase case = 1;  // The updated support access case
+// SetSupportCaseActiveUntilResponse returns the updated case.
+message SetSupportCaseActiveUntilResponse {
+  SupportCase case = 1;  // The updated support case
 }
 
-// ListSupportAccessCasesRequest lists support access cases for the tenant.
-message ListSupportAccessCasesRequest {}
+// ListSupportCasesRequest lists support cases for the tenant.
+message ListSupportCasesRequest {}
 
-// ListSupportAccessCasesResponse returns a list of support access cases.
-message ListSupportAccessCasesResponse {
-  repeated SupportAccessCase cases = 1;  // All support access cases for the tenant
+// ListSupportCasesResponse returns a list of support cases.
+message ListSupportCasesResponse {
+  repeated SupportCase cases = 1;  // All support cases for the tenant
   reserved 2;
   reserved "audit_trail_healthy";
 }
 
-// SupportRoleAssumption represents a single CloudTrail AssumeRole event for a support access case.
+// SupportRoleAssumption represents a single CloudTrail AssumeRole event for a support case.
 message SupportRoleAssumption {
   string event_id = 1;                            // CloudTrail eventID (UUID) -- the dedupe key
   google.protobuf.Timestamp event_time = 2;
@@ -157,7 +157,7 @@ message SupportRoleAssumption {
   optional string external_id = 7 [(validate.rules).string.max_len = 1024];  // opportunistic secondary evidence, often absent
 }
 
-// ListSupportRoleAssumptionsRequest lists CloudTrail AssumeRole events for a support access case.
+// ListSupportRoleAssumptionsRequest lists CloudTrail AssumeRole events for a support case.
 message ListSupportRoleAssumptionsRequest {
   string case_id = 1 [(validate.rules).string = {
     min_len: 1
