@@ -1,7 +1,7 @@
 # buf.gen.ts.yaml - TypeScript SDK generation (from protobuf)
 version: v2
 plugins:
-  - remote: buf.build/bufbuild/es
+  - remote: buf.build/bufbuild/es:v2.15.0
     out: .
     include_imports: true
     opt:
