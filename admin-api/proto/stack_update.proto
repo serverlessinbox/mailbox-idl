@@ -212,6 +212,10 @@ message GetChangeSetExecutionStatusResponse {
   string last_event_message = 3;
 }
 
+// Mirrors AWS CloudFormation's StackStatus enum 1:1 (one value per CFN
+// status string, including DELETE_*, ROLLBACK_* and IMPORT_* families) so a
+// future CFN status addition is caught by adding a value here rather than by
+// silently collapsing into an existing one.
 enum StackStatus {
   STACK_STATUS_UNSPECIFIED = 0;
   STACK_STATUS_CREATE_IN_PROGRESS = 1;
@@ -223,6 +227,20 @@ enum StackStatus {
   STACK_STATUS_UPDATE_FAILED = 7;
   STACK_STATUS_UPDATE_ROLLBACK_IN_PROGRESS = 8;
   STACK_STATUS_UPDATE_ROLLBACK_COMPLETE = 9;
+  STACK_STATUS_ROLLBACK_IN_PROGRESS = 10;
+  STACK_STATUS_ROLLBACK_FAILED = 11;
+  STACK_STATUS_ROLLBACK_COMPLETE = 12;
+  STACK_STATUS_DELETE_IN_PROGRESS = 13;
+  STACK_STATUS_DELETE_FAILED = 14;
+  STACK_STATUS_DELETE_COMPLETE = 15;
+  STACK_STATUS_UPDATE_ROLLBACK_FAILED = 16;
+  STACK_STATUS_UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS = 17;
+  STACK_STATUS_REVIEW_IN_PROGRESS = 18;
+  STACK_STATUS_IMPORT_IN_PROGRESS = 19;
+  STACK_STATUS_IMPORT_COMPLETE = 20;
+  STACK_STATUS_IMPORT_ROLLBACK_IN_PROGRESS = 21;
+  STACK_STATUS_IMPORT_ROLLBACK_FAILED = 22;
+  STACK_STATUS_IMPORT_ROLLBACK_COMPLETE = 23;
 }
 
 // ============================================
