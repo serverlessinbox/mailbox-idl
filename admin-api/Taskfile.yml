@@ -96,6 +96,9 @@ tasks:
           echo "ERROR: OUTPUT_DIR is required (directory to write generated TS files to)." >&2
           exit 2
         fi
+        # Build the local buf plugin for the host platform — the checked-out binary
+        # may be from another OS/arch (buf execs it by relative path).
+        (cd tools/protoc-gen-ts-client && GOWORK=off go build -o protoc-gen-ts-client .)
         buf generate --template buf.gen.ts.yaml -o "{{.OUTPUT_DIR}}"
     sources:
       - proto/**/*.proto

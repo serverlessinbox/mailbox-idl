@@ -10,3 +10,4 @@
 # architecture-specific — tracking them dirtied the tree after each build.
 admin-api/tools/protoc-gen-go-interface/protoc-gen-go-interface
 admin-api/tools/protoc-gen-go-http-client/protoc-gen-go-http-client
+admin-api/tools/protoc-gen-ts-client/protoc-gen-ts-client
