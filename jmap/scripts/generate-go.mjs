@@ -58,12 +58,16 @@ const STRING_ONLY_DEFS = new Set([
 const SKIP_DEFS = new Set(['PatchObject']);
 
 // ---------------------------------------------------------------------------
-// Hand-written runtime files — never delete or overwrite these
+// Files to protect during cleanup — go.mod may be generated into a module root
 // ---------------------------------------------------------------------------
 
-const RUNTIME_FILES = new Set([
-  'client.go', 'session.go', 'refs.go', 'batch.go', 'doc.go', 'go.mod', 'shared.go',
-]);
+const PROTECTED_FILES = new Set(['go.mod']);
+
+// ---------------------------------------------------------------------------
+// Runtime templates to emit as .go files
+// ---------------------------------------------------------------------------
+
+const RUNTIME_TEMPLATES = ['client.go', 'session.go', 'refs.go', 'batch.go', 'doc.go', 'shared.go'];
 
 // ---------------------------------------------------------------------------
 // Load core types schema and build defs map
@@ -136,6 +140,7 @@ function jsonKeyToFieldName(key) {
     mdnBlobIds: 'MDNBlobIDs',
     principalId: 'PrincipalID',
     objectAccountId: 'ObjectAccountID',
+    cid: 'CID',
   };
   if (key in specials) return specials[key];
 
@@ -340,7 +345,7 @@ function generateAllOfStruct(typeName, schema) {
 // Complex defs to generate (in definition order from the spec)
 const COMPLEX_DEFS = [
   'EmailHeader', 'Keywords', 'Mailbox', 'MailboxBase', 'MailboxExt',
-  'Email', 'EmailBase', 'EmailExt', 'SetError', 'EmailAddress',
+  'Email', 'EmailBase', 'EmailExt', 'EmailBodyValue', 'EmailBodyPart', 'SetError', 'EmailAddress',
   'AddressWithParameters', 'Envelope', 'DeliveryStatus', 'EmailSubmission',
   'EmailSubmissionCreate', 'Identity', 'IdentityUpdate', 'MailboxCreate',
   'MailboxUpdate', 'ImportEmailObject', 'AddressBookRights', 'AddressBook',
@@ -408,17 +413,54 @@ await fs.writeFile(coreTypesOut, coreTypesParts.join('\n'), 'utf8');
 console.log(`  wrote core_types.go`);
 
 // ---------------------------------------------------------------------------
-// Step 2: Clean up stale generated files (except runtime files)
+// Step 2: Clean up stale generated files (except protected files)
 // ---------------------------------------------------------------------------
 
 const existingFiles = await fs.readdir(outDir);
 for (const f of existingFiles) {
   if (!f.endsWith('.go') && f !== 'go.mod') continue;
-  if (RUNTIME_FILES.has(f)) continue;
+  if (PROTECTED_FILES.has(f)) continue;
   if (f === 'core_types.go') continue; // just wrote it
+  // Skip runtime templates that will be written in Step 2b
+  if (RUNTIME_TEMPLATES.includes(f)) continue;
   const fullPath = path.join(outDir, f);
   await fs.unlink(fullPath);
   console.log(`  deleted stale file: ${f}`);
+}
+
+// ---------------------------------------------------------------------------
+// Step 2b: Write runtime templates with package substitution
+// ---------------------------------------------------------------------------
+
+const runtimeDir = path.join(scriptDir, 'go-runtime');
+
+for (const templateName of RUNTIME_TEMPLATES) {
+  const templatePath = path.join(runtimeDir, templateName + '.tmpl');
+  const outPath = path.join(outDir, templateName);
+
+  try {
+    const templateContent = await fs.readFile(templatePath, 'utf8');
+
+    // Add generated header line at the top.
+    let output = '// Code generated from mailbox-idl/jmap. DO NOT EDIT.\n\n';
+
+    // Replace "package jmapsdk" with "package <pkg>"
+    let content = templateContent.replace(/^package\s+\w+/m, `package ${pkg}`);
+
+    // For doc.go, also update the package comment to use the correct package name
+    if (templateName === 'doc.go') {
+      content = content.replace(
+        /^\/\/ Package\s+\w+/m,
+        `// Package ${pkg}`
+      );
+    }
+
+    output += content;
+    await fs.writeFile(outPath, output, 'utf8');
+    console.log(`  wrote ${templateName} (from template)`);
+  } catch (err) {
+    console.error(`  ERROR writing ${templateName}: ${err.message}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -619,5 +661,35 @@ const typedBatchSrc =
 
 await fs.writeFile(path.join(outDir, 'typed_batch.go'), typedBatchSrc, 'utf8');
 console.log(`  wrote typed_batch.go`);
+
+// ---------------------------------------------------------------------------
+// Step 6: Format all generated Go files with gofmt
+// ---------------------------------------------------------------------------
+
+import { spawnSync } from 'node:child_process';
+
+try {
+  const result = spawnSync('gofmt', ['-w', outDir], {
+    encoding: 'utf8',
+  });
+
+  if (result.error) {
+    if (result.error.code === 'ENOENT') {
+      console.error('ERROR: gofmt not found. Go must be installed and gofmt must be on PATH.');
+      process.exit(1);
+    }
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    console.error('ERROR: gofmt failed:', result.stderr);
+    process.exit(1);
+  }
+
+  console.log(`  formatted with gofmt`);
+} catch (err) {
+  console.error('ERROR running gofmt:', err.message);
+  process.exit(1);
+}
 
 console.log(`\nDone. Generated core_types.go + ${generatedFiles.length} method files + typed_client.go + typed_batch.go`);

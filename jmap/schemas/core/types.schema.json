@@ -58,6 +58,7 @@
         "location":    { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Content-Location URI, or null." },
         "subParts":    { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "Sub-parts for multipart/* types, or null for non-multipart parts." }
       },
+      "required": ["type"],
       "additionalProperties": false
     },
 
