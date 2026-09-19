@@ -6,8 +6,6 @@ import "aliases.proto";
 import "common.proto";
 import "validate/validate.proto";
 
-option go_package = "shared/generated/users;usersv1";
-
 // UsersService provides operations for managing users and their primary accounts.
 service UsersService {
   // ListUsers retrieves all users with pagination.

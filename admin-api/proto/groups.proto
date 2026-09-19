@@ -5,8 +5,6 @@ package groups.v1;
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
-option go_package = "shared/generated/groups;groupsv1";
-
 // GroupsService manages group principals.
 service GroupsService {
   // CreateGroupPrincipal provisions a new group principal.

@@ -1,9 +1,0 @@
-# buf.gen.go.httpclient.yaml - Go HTTP client generation (from protobuf)
-version: v2
-plugins:
-  - local: ["tools/protoc-gen-go-http-client/protoc-gen-go-http-client"]
-    out: .
-    opt:
-      - client_mode=external
-      - client_package=adminclient
-      - client_filename=generated/adminclient/admin_api_http_client.pb.go

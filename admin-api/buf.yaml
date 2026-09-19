@@ -14,5 +14,7 @@ lint:
 breaking:
   use:
     - FILE
+  except:
+    - FILE_SAME_GO_PACKAGE
 deps:
   - buf.build/envoyproxy/protoc-gen-validate

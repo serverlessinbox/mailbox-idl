@@ -16,12 +16,10 @@ managed:
   override:
     - file_option: go_package
       path: push_ws.proto
-      value: github.com/serverlessinbox/mailbox-idl/push-ws/pushws;pushwsv1
+      value: @GO_PACKAGE_PREFIX@/pushws;pushwsv1
       module: buf.build/serverlessinbox/mailbox-idl-push-ws
 plugins:
-
-  - remote: buf.build/bufbuild/es:v2.15.0
+  - local: protoc-gen-go
     out: .
-    include_imports: true
     opt:
-      - target=ts
+      - module=@GO_MODULE_TRIM@

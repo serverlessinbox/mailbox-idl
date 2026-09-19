@@ -16,3 +16,5 @@ breaking:
 
   use:
     - FILE
+  except:
+    - FILE_SAME_GO_PACKAGE

@@ -5,6 +5,8 @@ tasks:
     desc: Generate Go types for Push WS protocol (output outside this repo)
     vars:
       OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      GO_PACKAGE_PREFIX: '{{.GO_PACKAGE_PREFIX}}'
+      GO_MODULE_TRIM: '{{.GO_MODULE_TRIM}}'
     cmds:
       - |
         set -euo pipefail
@@ -12,12 +14,37 @@ tasks:
           echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
           exit 2
         fi
-        buf generate --template buf.gen.go.yaml -o "{{.OUTPUT_DIR}}"
+        if [ -z "{{.GO_PACKAGE_PREFIX}}" ]; then
+          echo "ERROR: GO_PACKAGE_PREFIX is required (Go import path prefix, e.g. example.com/myapp/generated)." >&2
+          exit 2
+        fi
+        if [ -z "{{.GO_MODULE_TRIM}}" ]; then
+          echo "ERROR: GO_MODULE_TRIM is required (protoc-gen-go module= value, e.g. example.com/myapp)." >&2
+          exit 2
+        fi
+
+        # Render the template with variables
+        TMP_DIR=$(mktemp -d)
+        trap "rm -rf $TMP_DIR" EXIT
+        TMP_YAML="$TMP_DIR/buf.gen.yaml"
+        cat buf.gen.go.yaml.tmpl | \
+          sed -e 's|@GO_PACKAGE_PREFIX@|{{.GO_PACKAGE_PREFIX}}|g' \
+              -e 's|@GO_MODULE_TRIM@|{{.GO_MODULE_TRIM}}|g' \
+          > "$TMP_YAML"
+
+        # Verify all template variables were replaced
+        if grep -qE '@[A-Z_]+@' "$TMP_YAML"; then
+          echo "ERROR: Template has unsubstituted variables (check buf.gen.go.yaml.tmpl):" >&2
+          grep -nE '@[A-Z_]+@' "$TMP_YAML" >&2
+          exit 2
+        fi
+
+        buf generate --template "$TMP_YAML" -o "{{.OUTPUT_DIR}}"
     sources:
       - proto/**/*.proto
       - buf.yaml
       - buf.lock
-      - buf.gen.go.yaml
+      - buf.gen.go.yaml.tmpl
 
   generate:ts:
     desc: Generate TypeScript types for Push WS protocol (output outside this repo)

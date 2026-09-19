@@ -22,10 +22,10 @@ The API contracts of ServerlessInbox, in machine-readable form. Every API is def
 | `urn:ietf:params:jmap:contacts` | [RFC 9610](https://www.rfc-editor.org/rfc/rfc9610): JMAP for Contacts |
 | `urn:ietf:params:jmap:principals` | [RFC 9670](https://www.rfc-editor.org/rfc/rfc9670): JMAP Sharing |
 
-ServerlessInbox adds two extensions, each with its own capability URI:
+ServerlessInbox adds two extensions. Each capability URI is also the address of its specification on [specs.serverlessinbox.com](https://specs.serverlessinbox.com):
 
-- `https://specs.serverlessinbox.com/page-token`: cursor-based pagination for `*/query`, for backends that cannot page by index.
-- `https://specs.serverlessinbox.com/websocket`: WebSocket push.
+- [`https://specs.serverlessinbox.com/page-token`](https://specs.serverlessinbox.com/page-token): cursor-based pagination for `*/query`, for backends that cannot page by index.
+- [`https://specs.serverlessinbox.com/websocket`](https://specs.serverlessinbox.com/websocket): WebSocket push.
 
 `manifest.yaml` is the authoritative list of supported methods.
 
@@ -39,16 +39,34 @@ This repo contains **definitions only, never generated code**. Each consumer gen
 # JMAP: TypeScript types and validators
 task jmap:generate:ts OUTPUT_DIR=/path/to/your/project/src/jmap
 
+# JMAP: complete Go SDK (types, typed client and batch builder), gofmt-formatted
+task jmap:generate:go OUTPUT_DIR=/path/to/your/go/module/jmapsdk PACKAGE=jmapsdk
+
 # Admin API: TypeScript client
 task admin-api:generate:ts OUTPUT_DIR=/path/to/your/project/src/admin-api
+
+# Admin API: Go types and interfaces
+task admin-api:generate:go \
+  OUTPUT_DIR=/path/to/your/go/module \
+  GO_PACKAGE_PREFIX=myprefix/generated \
+  GO_MODULE_TRIM=myprefix
 
 # Admin API: Go HTTP client
 task admin-api:generate:go:http-client OUTPUT_DIR=/path/to/your/go/module
 
-# Push WebSocket events: TypeScript or Go
+# Push WebSocket events: TypeScript
 task push-ws:generate:ts OUTPUT_DIR=/path/to/your/project/src/push
-task push-ws:generate:go OUTPUT_DIR=/path/to/your/go/module
+
+# Push WebSocket events: Go types
+task push-ws:generate:go \
+  OUTPUT_DIR=/path/to/your/go/module \
+  GO_PACKAGE_PREFIX=myprefix/generated \
+  GO_MODULE_TRIM=myprefix
 ```
+
+For Go code generators (`admin-api:generate:go` and `push-ws:generate:go`):
+- `GO_PACKAGE_PREFIX`: The Go import path prefix where generated code lives (e.g., `shared/generated`). This prefix appears in the `go_package` option of generated protobuf messages.
+- `GO_MODULE_TRIM`: The leading path segment that `protoc-gen-go` strips when computing the output directory. Must be a prefix of `GO_PACKAGE_PREFIX`; typically the first segment (e.g., `shared` when `GO_PACKAGE_PREFIX=shared/generated`).
 
 Run `task --list` to see every generator, including the Go server interfaces used by the backend.
 

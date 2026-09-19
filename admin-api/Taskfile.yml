@@ -5,6 +5,8 @@ tasks:
     desc: Generate Go server SDK from protobuf (output outside this repo)
     vars:
       OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      GO_PACKAGE_PREFIX: '{{.GO_PACKAGE_PREFIX}}'
+      GO_MODULE_TRIM: '{{.GO_MODULE_TRIM}}'
     cmds:
       - |
         set -euo pipefail
@@ -12,21 +14,52 @@ tasks:
           echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
           exit 2
         fi
+        if [ -z "{{.GO_PACKAGE_PREFIX}}" ]; then
+          echo "ERROR: GO_PACKAGE_PREFIX is required (Go import path prefix, e.g. example.com/myapp/generated)." >&2
+          exit 2
+        fi
+        if [ -z "{{.GO_MODULE_TRIM}}" ]; then
+          echo "ERROR: GO_MODULE_TRIM is required (protoc-gen-go module= value, e.g. example.com/myapp)." >&2
+          exit 2
+        fi
         # Build the local buf plugin for the host platform — the checked-out binary
         # may be from another OS/arch (buf execs it by relative path).
         (cd tools/protoc-gen-go-interface && GOWORK=off go build -o protoc-gen-go-interface .)
-        buf generate --template buf.gen.go.yaml -o "{{.OUTPUT_DIR}}"
+
+        # Render the template with variables
+        TMP_DIR=$(mktemp -d)
+        trap "rm -rf $TMP_DIR" EXIT
+        TMP_YAML="$TMP_DIR/buf.gen.yaml"
+        cat buf.gen.go.yaml.tmpl | \
+          sed -e 's|@GO_PACKAGE_PREFIX@|{{.GO_PACKAGE_PREFIX}}|g' \
+              -e 's|@GO_MODULE_TRIM@|{{.GO_MODULE_TRIM}}|g' \
+          > "$TMP_YAML"
+
+        # Verify all template variables were replaced
+        if grep -qE '@[A-Z_]+@' "$TMP_YAML"; then
+          echo "ERROR: Template has unsubstituted variables (check buf.gen.go.yaml.tmpl):" >&2
+          grep -nE '@[A-Z_]+@' "$TMP_YAML" >&2
+          exit 2
+        fi
+
+        buf generate --template "$TMP_YAML" -o "{{.OUTPUT_DIR}}"
     sources:
       - proto/**/*.proto
       - buf.yaml
       - buf.lock
-      - buf.gen.go.yaml
+      - buf.gen.go.yaml.tmpl
       - tools/protoc-gen-go-interface/**
 
   generate:go:http-client:
     desc: Generate Go HTTP client SDK (output outside this repo)
     vars:
       OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      GO_PACKAGE_PREFIX: '{{.GO_PACKAGE_PREFIX}}'
+      GO_MODULE_TRIM: '{{.GO_MODULE_TRIM}}'
+      CLIENT_PACKAGE: '{{.CLIENT_PACKAGE | default "adminclient"}}'
+      CLIENT_FILENAME: '{{.CLIENT_FILENAME | default "generated/adminclient/admin_api_http_client.pb.go"}}'
+      COMPOUND_CLIENT: '{{.COMPOUND_CLIENT | default "false"}}'
+      COMPOUND_CLIENT_FILENAME: '{{.COMPOUND_CLIENT_FILENAME | default "generated/adminclient/admin_api_client.pb.go"}}'
     cmds:
       - |
         set -euo pipefail
@@ -34,56 +67,46 @@ tasks:
           echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
           exit 2
         fi
-
-        # Ensure local protoc plugin exists for this platform.
-        (cd tools/protoc-gen-go-http-client && GOWORK=off go build -o protoc-gen-go-http-client .)
-
-        buf generate --template buf.gen.go.httpclient.yaml -o "{{.OUTPUT_DIR}}"
-    sources:
-      - proto/**/*.proto
-      - buf.yaml
-      - buf.lock
-      - buf.gen.go.httpclient.yaml
-      - tools/protoc-gen-go-http-client/**
-
-  generate:go:e2e:
-    desc: Generate standalone Go E2E SDK (protobuf types + HTTP client)
-    vars:
-      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
-    cmds:
-      - |
-        set -euo pipefail
-        if [ -z "{{.OUTPUT_DIR}}" ]; then
-          echo "ERROR: OUTPUT_DIR is required (directory to write generated Go files to)." >&2
+        if [ -z "{{.GO_PACKAGE_PREFIX}}" ]; then
+          echo "ERROR: GO_PACKAGE_PREFIX is required (Go import path prefix, e.g. example.com/myapp/generated)." >&2
+          exit 2
+        fi
+        if [ -z "{{.GO_MODULE_TRIM}}" ]; then
+          echo "ERROR: GO_MODULE_TRIM is required (protoc-gen-go module= value, e.g. example.com/myapp)." >&2
           exit 2
         fi
 
-        TMP_DIR=".tmp-buf-e2e"
-        rm -rf "${TMP_DIR}"
-        mkdir -p "${TMP_DIR}/proto"
-
-        cp buf.yaml "${TMP_DIR}/buf.yaml"
-        if [ -f buf.lock ]; then
-          cp buf.lock "${TMP_DIR}/buf.lock"
-        fi
-        cp -R proto/* "${TMP_DIR}/proto/"
-
-        # Rewrite go_package so E2E-generated types live under the e2e-tests module.
-        # This keeps the per-file Go package split (statusv1, aliasesv1, etc.) intact.
-        find "${TMP_DIR}/proto" -name '*.proto' -print0 | \
-          xargs -0 perl -pi -e 's#option go_package = "shared/generated/#option go_package = "e2e-tests/generated/adminapi/#g'
-
         # Ensure local protoc plugin exists for this platform.
         (cd tools/protoc-gen-go-http-client && GOWORK=off go build -o protoc-gen-go-http-client .)
 
-        (cd "${TMP_DIR}" && buf generate --template ../buf.gen.go.e2e.yaml -o "{{.OUTPUT_DIR}}")
-        rm -rf "${TMP_DIR}"
+        # Render the template with variables
+        TMP_DIR=$(mktemp -d)
+        trap "rm -rf $TMP_DIR" EXIT
+        TMP_YAML="$TMP_DIR/buf.gen.yaml"
+        cat buf.gen.go.httpclient.yaml.tmpl | \
+          sed -e 's|@GO_PACKAGE_PREFIX@|{{.GO_PACKAGE_PREFIX}}|g' \
+              -e 's|@GO_MODULE_TRIM@|{{.GO_MODULE_TRIM}}|g' \
+              -e 's|@CLIENT_PACKAGE@|{{.CLIENT_PACKAGE}}|g' \
+              -e 's|@CLIENT_FILENAME@|{{.CLIENT_FILENAME}}|g' \
+              -e 's|@COMPOUND_CLIENT@|{{.COMPOUND_CLIENT}}|g' \
+              -e 's|@COMPOUND_CLIENT_FILENAME@|{{.COMPOUND_CLIENT_FILENAME}}|g' \
+          > "$TMP_YAML"
+
+        # Verify all template variables were replaced
+        if grep -qE '@[A-Z_]+@' "$TMP_YAML"; then
+          echo "ERROR: Template has unsubstituted variables (check buf.gen.go.httpclient.yaml.tmpl):" >&2
+          grep -nE '@[A-Z_]+@' "$TMP_YAML" >&2
+          exit 2
+        fi
+
+        buf generate --template "$TMP_YAML" -o "{{.OUTPUT_DIR}}"
     sources:
       - proto/**/*.proto
       - buf.yaml
       - buf.lock
-      - buf.gen.go.e2e.yaml
+      - buf.gen.go.httpclient.yaml.tmpl
       - tools/protoc-gen-go-http-client/**
+
 
   generate:ts:
     desc: Generate TypeScript SDK from protobuf (output outside this repo; OUTPUT_DIR required)

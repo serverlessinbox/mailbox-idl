@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package common.v1;
 
-option go_package = "shared/generated/common;commonv1";
-
 // ============================================
 // Shared Enums
 // ============================================

@@ -5,8 +5,6 @@ package email_identities.v1;
 import "validate/validate.proto";
 import "common.proto";
 
-option go_package = "shared/generated/email_identities;email_identitiesv1";
-
 // ============================================
 // Messages
 // ============================================

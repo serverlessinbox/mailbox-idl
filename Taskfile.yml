@@ -18,18 +18,25 @@ tasks:
 
   admin-api:generate:go:
     desc: Generate Go server SDK for Admin API (output outside this repo)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      GO_PACKAGE_PREFIX: '{{.GO_PACKAGE_PREFIX}}'
+      GO_MODULE_TRIM: '{{.GO_MODULE_TRIM}}'
     cmds:
-      - task -d admin-api generate:go OUTPUT_DIR={{.OUTPUT_DIR}}
+      - task -d admin-api generate:go OUTPUT_DIR={{.OUTPUT_DIR}} GO_PACKAGE_PREFIX={{.GO_PACKAGE_PREFIX}} GO_MODULE_TRIM={{.GO_MODULE_TRIM}}
 
   admin-api:generate:go:http-client:
     desc: Generate Go HTTP client SDK for Admin API (output outside this repo)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      GO_PACKAGE_PREFIX: '{{.GO_PACKAGE_PREFIX}}'
+      GO_MODULE_TRIM: '{{.GO_MODULE_TRIM}}'
+      CLIENT_PACKAGE: '{{.CLIENT_PACKAGE | default "adminclient"}}'
+      CLIENT_FILENAME: '{{.CLIENT_FILENAME | default "generated/adminclient/admin_api_http_client.pb.go"}}'
+      COMPOUND_CLIENT: '{{.COMPOUND_CLIENT | default "false"}}'
+      COMPOUND_CLIENT_FILENAME: '{{.COMPOUND_CLIENT_FILENAME | default "generated/adminclient/admin_api_client.pb.go"}}'
     cmds:
-      - task -d admin-api generate:go:http-client OUTPUT_DIR={{.OUTPUT_DIR}}
-
-  admin-api:generate:go:e2e:
-    desc: Generate standalone Go E2E SDK for Admin API (protobuf types + HTTP client)
-    cmds:
-      - task -d admin-api generate:go:e2e OUTPUT_DIR={{.OUTPUT_DIR}}
+      - task -d admin-api generate:go:http-client OUTPUT_DIR={{.OUTPUT_DIR}} GO_PACKAGE_PREFIX={{.GO_PACKAGE_PREFIX}} GO_MODULE_TRIM={{.GO_MODULE_TRIM}} CLIENT_PACKAGE={{.CLIENT_PACKAGE}} CLIENT_FILENAME={{.CLIENT_FILENAME}} COMPOUND_CLIENT={{.COMPOUND_CLIENT}} COMPOUND_CLIENT_FILENAME={{.COMPOUND_CLIENT_FILENAME}}
 
   admin-api:generate:ts:
     desc: Generate TypeScript SDK for Admin API (output outside this repo; OUTPUT_DIR required)
@@ -50,8 +57,12 @@ tasks:
 
   push-ws:generate:go:
     desc: Generate Go types for Push WS protocol (output outside this repo)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      GO_PACKAGE_PREFIX: '{{.GO_PACKAGE_PREFIX}}'
+      GO_MODULE_TRIM: '{{.GO_MODULE_TRIM}}'
     cmds:
-      - task -d push-ws generate:go OUTPUT_DIR={{.OUTPUT_DIR}}
+      - task -d push-ws generate:go OUTPUT_DIR={{.OUTPUT_DIR}} GO_PACKAGE_PREFIX={{.GO_PACKAGE_PREFIX}} GO_MODULE_TRIM={{.GO_MODULE_TRIM}}
 
   push-ws:generate:ts:
     desc: Generate TypeScript types for Push WS protocol (output outside this repo)

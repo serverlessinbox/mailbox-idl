@@ -1,4 +1,4 @@
-# buf.gen.ts.yaml - TypeScript SDK generation (from protobuf)
+# buf.gen.go.httpclient.yaml.tmpl - Go HTTP client generation (from protobuf)
 version: v2
 managed:
   enabled: true
@@ -17,81 +17,78 @@ managed:
   override:
     - file_option: go_package
       path: aliases.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/aliases;aliasesv1
+      value: @GO_PACKAGE_PREFIX@/aliases;aliasesv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: audit.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/audit;auditv1
+      value: @GO_PACKAGE_PREFIX@/audit;auditv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: change_requests.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/ops;opsv1
+      value: @GO_PACKAGE_PREFIX@/ops;opsv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: common.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/common;commonv1
+      value: @GO_PACKAGE_PREFIX@/common;commonv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: domains.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/domains;domainsv1
+      value: @GO_PACKAGE_PREFIX@/domains;domainsv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: email_identities.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/email_identities;email_identitiesv1
+      value: @GO_PACKAGE_PREFIX@/email_identities;email_identitiesv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: groups.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/groups;groupsv1
+      value: @GO_PACKAGE_PREFIX@/groups;groupsv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: idp_users.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/idp_users;idp_usersv1
+      value: @GO_PACKAGE_PREFIX@/idp_users;idp_usersv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: mail_feedback.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/mail_feedback;mail_feedbackv1
+      value: @GO_PACKAGE_PREFIX@/mail_feedback;mail_feedbackv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: monitoring.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/monitoring;monitoringv1
+      value: @GO_PACKAGE_PREFIX@/monitoring;monitoringv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: resource_accounts.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/resource_accounts;resourceaccountsv1
+      value: @GO_PACKAGE_PREFIX@/resource_accounts;resourceaccountsv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: setup.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/setup;setupv1
+      value: @GO_PACKAGE_PREFIX@/setup;setupv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: stack_update.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/stack_update;stackupdatev1
+      value: @GO_PACKAGE_PREFIX@/stack_update;stackupdatev1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: status.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/status;statusv1
+      value: @GO_PACKAGE_PREFIX@/status;statusv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: support.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/support;supportv1
+      value: @GO_PACKAGE_PREFIX@/support;supportv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: suppression.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/suppression;suppressionv1
+      value: @GO_PACKAGE_PREFIX@/suppression;suppressionv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
       path: users.proto
-      value: github.com/serverlessinbox/mailbox-idl/admin-api/users;usersv1
+      value: @GO_PACKAGE_PREFIX@/users;usersv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
 plugins:
-  - remote: buf.build/bufbuild/es:v2.15.0
+  - local: ["tools/protoc-gen-go-http-client/protoc-gen-go-http-client"]
     out: .
-    include_imports: true
     opt:
-      - target=ts
-
-  - local: ["tools/protoc-gen-ts-client/protoc-gen-ts-client"]
-    out: .
-    strategy: all
-    opt:
-      - paths=source_relative
+      - client_mode=external
+      - client_package=@CLIENT_PACKAGE@
+      - client_filename=@CLIENT_FILENAME@
+      - compound_client=@COMPOUND_CLIENT@
+      - compound_client_filename=@COMPOUND_CLIENT_FILENAME@

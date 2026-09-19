@@ -4,8 +4,6 @@ package status.v1;
 
 import "validate/validate.proto";
 
-option go_package = "shared/generated/status;statusv1";
-
 // ============================================
 // Admin Status / Environment Introspection
 // ============================================

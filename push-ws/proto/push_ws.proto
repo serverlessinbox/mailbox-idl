@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package pushws.v1;
 
-option go_package = "shared/generated/pushws;pushwsv1";
-
 // PushMessage is the single JSON text-frame payload for the WebSocket protocol.
 // It uses a oneof envelope so JSON is self-describing without a discriminator field:
 // {"subscribe":{...}} | {"subscribed":{...}} | {"stateChange":{...}} | {"error":{...}}
