@@ -192,6 +192,32 @@ const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT.
 `  sessionState?: string;\n` +
 `}\n\n` +
 `export type MethodsMap = Record<string, { args: unknown; response: unknown }>;\n\n` +
+`/** Shape of a JMAP method-level error object, per RFC 8620 §3.5.1. */\n` +
+`export interface JmapErrorPayload {\n` +
+`  readonly type: string;\n` +
+`  readonly description?: string;\n` +
+`  readonly [key: string]: unknown;\n` +
+`}\n\n` +
+`/**\n` +
+" * Thrown by `JmapClient.call()` when the server returns a JMAP method error\n" +
+` * instead of a success response. A method error must never be returned to a\n` +
+` * caller typed as a success response (RFC 8620 §3.5.1) — callers must catch\n` +
+` * this (or let it propagate to a caller that does, e.g. React Query) rather\n` +
+` * than relying on a silent pass-through.\n` +
+` */\n` +
+`export class JmapMethodCallError extends Error {\n` +
+`  readonly methodName: string;\n` +
+`  readonly jmapError: JmapErrorPayload;\n\n` +
+`  constructor(methodName: string, jmapError: JmapErrorPayload) {\n` +
+`    super(\n` +
+"      `JMAP method error for ${methodName}: ${jmapError.type}` +\n" +
+"        (jmapError.description ? ` — ${jmapError.description}` : ''),\n" +
+`    );\n` +
+`    this.name = 'JmapMethodCallError';\n` +
+`    this.methodName = methodName;\n` +
+`    this.jmapError = jmapError;\n` +
+`  }\n` +
+`}\n\n` +
 `export interface JmapClientConfig {\n` +
 `  apiUrl: string;\n` +
 `  using: readonly string[];\n` +
@@ -222,7 +248,11 @@ const clientTs = `/* Code generated from mailbox-idl/jmap manifest. DO NOT EDIT.
 `    const res = await this.post(body);\n` +
 `    const match = res.methodResponses.find((r) => r[2] === callId);\n` +
 `    if (!match) throw new Error('Missing JMAP response for callId ' + callId);\n` +
-`    if (match[0] === 'error') onMethodError(name, match[1]);\n` +
+`    if (match[0] === 'error') {\n` +
+`      const error = match[1] as JmapErrorPayload;\n` +
+`      onMethodError(name, error);\n` +
+`      throw new JmapMethodCallError(name, error);\n` +
+`    }\n` +
 `    return match[1] as M[K]['response'];\n` +
 `  }\n\n` +
 `  async batch(calls: Array<{ name: keyof M & string; args: unknown }>): Promise<JmapResponseBody> {\n` +
