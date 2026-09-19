@@ -11,3 +11,7 @@
 admin-api/tools/protoc-gen-go-interface/protoc-gen-go-interface
 admin-api/tools/protoc-gen-go-http-client/protoc-gen-go-http-client
 admin-api/tools/protoc-gen-ts-client/protoc-gen-ts-client
+
+# Generated client code belongs in each consumer's own repo, never here. A misdirected
+# codegen run once committed a stale copy of webmail-ui's generated JMAP client.
+webmail-ui/
