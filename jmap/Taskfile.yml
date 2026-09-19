@@ -38,10 +38,3 @@ tasks:
         OUTPUT_DIR="{{.OUTPUT_DIR}}" PACKAGE="{{.PACKAGE}}" \
           yarn --cwd "{{.TASKFILE_DIR}}" node ./scripts/generate-go.mjs
 
-  generate:go:inplace:
-    desc: Generate Go types directly into go/ (for in-repo development)
-    cmds:
-      - task: generate:go
-        vars:
-          OUTPUT_DIR: '{{.TASKFILE_DIR}}/go'
-          PACKAGE: jmapsdk
