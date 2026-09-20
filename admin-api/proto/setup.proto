@@ -29,6 +29,7 @@ message IdentityReadiness {
 }
 
 message GetReadinessResponse {
+  // readiness: The aggregated onboarding/health snapshot.
   Readiness readiness = 1;
 }
 
@@ -40,14 +41,18 @@ message Readiness {
   // show Welcome when false even if `complete` is true.
   bool welcome_dismissed = 2;
 
+  // Receiving-path (inbound mail) onboarding status.
   ReceivingReadiness receiving = 3;
+  // Sending-path (outbound mail) onboarding status.
   SendingReadiness sending = 4;
+  // Test-send readiness (whether a test email can be sent now).
   TestReadiness test = 5;
 
   // Exception-only: empty when everything is healthy. Each entry is an
   // actionable health finding for the UI to surface.
   repeated HealthIssue health_issues = 6;
 
+  // Identity/roster counts (users, groups, resource accounts).
   IdentityReadiness identity = 7;
 }
 
@@ -63,6 +68,7 @@ message ReceivingReadiness {
   // computed only on demand elsewhere, never on the Home hot path).
   bool mx_configured = 3;
 
+  // True when all receiving-readiness checks above are satisfied.
   bool complete = 4;
 
   // True when the MX record for at least one receive-enabled domain is valid.
@@ -74,14 +80,17 @@ message SendingReadiness {
   // True when SES is in sandbox (production access disabled).
   bool sandbox = 1;
 
+  // True when SES production access is enabled (i.e. not in sandbox).
   bool production_access_enabled = 2;
 
   // Count of verified identities seen on the first page (cost-bounded; see
   // server notes). Use `has_verified_identity` for the boolean.
   int32 verified_identity_count = 3 [(validate.rules).int32 = {gte: 0}];
 
+  // True when at least one verified sending identity exists.
   bool has_verified_identity = 4;
 
+  // True when all sending-readiness checks above are satisfied.
   bool complete = 5;
 
   // True when all required DNS records for sending (DKIM CNAMEs) are valid.
@@ -101,11 +110,14 @@ message TestReadiness {
   // A verified identity the UI can pre-fill as the "from" of a test email.
   optional string suggested_from_identity = 2 [(validate.rules).string = {max_len: 320}];
 
+  // True when a test email can be sent now.
   bool complete = 3;
 }
 
 message HealthIssue {
+  // type: The category of health issue.
   HealthIssueType type = 1 [(validate.rules).enum.defined_only = true];
+  // severity: How urgent this issue is.
   HealthSeverity severity = 2 [(validate.rules).enum.defined_only = true];
 
   // Short, display-safe title.

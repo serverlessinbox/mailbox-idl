@@ -2,6 +2,11 @@
 version: v2
 managed:
   enabled: true
+  # The go_package overrides below are required even though this template generates
+  # TypeScript output: the remote buf.build/bufbuild/es plugin and the local
+  # protoc-gen-ts-client plugin are both Go-based tooling and refuse to run without a
+  # resolvable go_package option on every file. The path value itself has no effect on
+  # the generated TS.
   disable:
     - file_option: java_package
     - file_option: java_outer_classname

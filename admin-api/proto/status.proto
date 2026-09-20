@@ -75,7 +75,9 @@ message SesReputationStatus {
 
   // Underlying counts for the window used.
   optional int64 delivery_attempts = 3 [(validate.rules).int64 = {gte: 0}];
+  // Bounce count within the window used.
   optional int64 bounces = 4 [(validate.rules).int64 = {gte: 0}];
+  // Complaint count within the window used.
   optional int64 complaints = 5 [(validate.rules).int64 = {gte: 0}];
 
   // Human-readable description of the aggregation window (e.g. "24h").
@@ -104,8 +106,9 @@ message SesAccountStatus {
 }
 
 message AdminStatus {
-  // AWS account metadata.
+  // AWS account ID the stack is deployed into.
   optional string aws_account_id = 1 [(validate.rules).string = {min_len: 1, max_len: 32}];
+  // AWS region the stack is deployed into.
   optional string aws_region = 2 [(validate.rules).string = {min_len: 1, max_len: 32}];
 
   // SES status needed for onboarding.
@@ -119,6 +122,7 @@ message AdminStatus {
 }
 
 message GetStatusResponse {
+  // status: The current admin status snapshot.
   AdminStatus status = 1;
 }
 

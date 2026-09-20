@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+// Intentional: this file is named change_requests.proto but declares package ops.v1,
+// unlike every other file in this directory where filename and package match. Not a bug.
 package ops.v1;
 
 import "google/protobuf/timestamp.proto";
