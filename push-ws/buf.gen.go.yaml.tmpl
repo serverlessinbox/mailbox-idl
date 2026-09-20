@@ -19,7 +19,7 @@ managed:
       value: @GO_PACKAGE_PREFIX@/pushws;pushwsv1
       module: buf.build/serverlessinbox/mailbox-idl-push-ws
 plugins:
-  - local: protoc-gen-go
+  - local: tools/bin/protoc-gen-go
     out: .
     opt:
       - module=@GO_MODULE_TRIM@

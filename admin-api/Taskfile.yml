@@ -7,6 +7,7 @@ tasks:
       OUTPUT_DIR: '{{.OUTPUT_DIR}}'
       GO_PACKAGE_PREFIX: '{{.GO_PACKAGE_PREFIX}}'
       GO_MODULE_TRIM: '{{.GO_MODULE_TRIM}}'
+      TOOLSBIN: '{{.TASKFILE_DIR}}/tools/bin'
     cmds:
       - |
         set -euo pipefail
@@ -22,6 +23,15 @@ tasks:
           echo "ERROR: GO_MODULE_TRIM is required (protoc-gen-go module= value, e.g. example.com/myapp)." >&2
           exit 2
         fi
+        # Ensure tools/bin directory exists
+        mkdir -p {{.TOOLSBIN}}
+
+        # Install protoc-gen-go to local tools/bin (pinned to version matching google.golang.org/protobuf)
+        GOBIN={{.TOOLSBIN}} go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+
+        # Install protoc-gen-validate to local tools/bin
+        GOBIN={{.TOOLSBIN}} go install github.com/envoyproxy/protoc-gen-validate@v1.0.4
+
         # Build the local buf plugin for the host platform — the checked-out binary
         # may be from another OS/arch (buf execs it by relative path).
         (cd tools/protoc-gen-go-interface && GOWORK=off go build -o protoc-gen-go-interface .)

@@ -83,12 +83,12 @@ managed:
       value: @GO_PACKAGE_PREFIX@/users;usersv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
 plugins:
-  - local: protoc-gen-go
+  - local: tools/bin/protoc-gen-go
     out: .
     opt:
       - module=@GO_MODULE_TRIM@
 
-  - local: protoc-gen-validate
+  - local: tools/bin/protoc-gen-validate
     out: .
     opt:
       - lang=go

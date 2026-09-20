@@ -12,7 +12,7 @@ tasks:
     desc: Generate Go types for JMAP (output outside this repo)
     vars:
       OUTPUT_DIR: '{{.OUTPUT_DIR}}'
-      PACKAGE: '{{default "jmaptypes" .PACKAGE}}'
+      PACKAGE: '{{default "jmapsdk" .PACKAGE}}'
     cmds:
       - task -d jmap generate:go OUTPUT_DIR={{.OUTPUT_DIR}} PACKAGE={{.PACKAGE}}
 
