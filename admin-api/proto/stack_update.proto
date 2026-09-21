@@ -113,17 +113,6 @@ message DescribeChangeSetResponse {
 
   // Fully-formed AWS Console URL for this changeset.
   string console_url = 3;
-
-  // Raw CloudFormation template body (JSON) before this changeset's changes.
-  // Also used by the frontend to parse aws:cdk:path for the CDK-metadata tree view.
-  string previous_template = 4;
-
-  // Raw CloudFormation template body (JSON) after this changeset's changes.
-  string proposed_template = 5;
-
-  // Resource-level changes from this changeset.
-  // Pre-sorted with IAM-related resources first, everything else in template order.
-  repeated ResourceChange resource_changes = 6;
 }
 
 enum ChangeSetStatus {
@@ -132,35 +121,6 @@ enum ChangeSetStatus {
   CHANGE_SET_STATUS_CREATE_IN_PROGRESS = 2;
   CHANGE_SET_STATUS_CREATE_COMPLETE = 3;
   CHANGE_SET_STATUS_CREATE_FAILED = 4;
-}
-
-message ResourceChange {
-  // CloudFormation LogicalResourceId.
-  string logical_id = 1;
-
-  // CloudFormation resource type (e.g., "AWS::DynamoDB::Table").
-  string resource_type = 2;
-
-  // Physical resource ID (if available).
-  string physical_resource_id = 3;
-
-  // Action type: ADD, MODIFY, or REMOVE.
-  ResourceChangeAction action = 4;
-
-  // True if this resource is IAM-related (security-critical).
-  // The sole server-computed classification; all other groupings are frontend-computed.
-  bool is_iam_related = 5;
-
-  // Raw property-level diff (JSON structure from CloudFormation).
-  // Frontend derives groupings (tag-only, etc.) and the tree view entirely from this.
-  string change_detail_json = 6;
-}
-
-enum ResourceChangeAction {
-  RESOURCE_CHANGE_ACTION_UNSPECIFIED = 0;
-  RESOURCE_CHANGE_ACTION_ADD = 1;
-  RESOURCE_CHANGE_ACTION_MODIFY = 2;
-  RESOURCE_CHANGE_ACTION_REMOVE = 3;
 }
 
 // Mirrors AWS CloudFormation's StackStatus enum 1:1 (one value per CFN
