@@ -21,15 +21,6 @@ service StackUpdateService {
   // Serves both as a creation-status poll endpoint and a detail-fetch endpoint.
   rpc DescribeChangeSet(DescribeChangeSetRequest) returns (DescribeChangeSetResponse);
 
-  // ExecuteChangeSet applies the changeset to the root stack after passing all gates
-  // (lock, typed confirmation, IAM re-verification, executability check).
-  rpc ExecuteChangeSet(ExecuteChangeSetRequest) returns (ExecuteChangeSetResponse);
-
-  // GetChangeSetExecutionStatus polls the stack update status after ExecuteChangeSet.
-  rpc GetChangeSetExecutionStatus(GetChangeSetExecutionStatusRequest) returns (GetChangeSetExecutionStatusResponse);
-
-  // ListUpdateHistory returns paginated audit trail of past update executions.
-  rpc ListUpdateHistory(ListUpdateHistoryRequest) returns (ListUpdateHistoryResponse);
 }
 
 // ============================================
@@ -114,10 +105,10 @@ message DescribeChangeSetRequest {
 }
 
 message DescribeChangeSetResponse {
-  // Changeset creation status (or execution status if already executed).
+  // Changeset creation status.
   ChangeSetStatus status = 1;
 
-  // CFN StatusReason on CREATE_FAILED or EXECUTE_FAILED; sanitized for client display.
+  // CFN StatusReason on CREATE_FAILED; sanitized for client display.
   string status_reason = 2;
 
   // Fully-formed AWS Console URL for this changeset.
@@ -141,9 +132,6 @@ enum ChangeSetStatus {
   CHANGE_SET_STATUS_CREATE_IN_PROGRESS = 2;
   CHANGE_SET_STATUS_CREATE_COMPLETE = 3;
   CHANGE_SET_STATUS_CREATE_FAILED = 4;
-  CHANGE_SET_STATUS_EXECUTE_IN_PROGRESS = 5;
-  CHANGE_SET_STATUS_EXECUTE_COMPLETE = 6;
-  CHANGE_SET_STATUS_EXECUTE_FAILED = 7;
 }
 
 message ResourceChange {
@@ -159,7 +147,7 @@ message ResourceChange {
   // Action type: ADD, MODIFY, or REMOVE.
   ResourceChangeAction action = 4;
 
-  // True if this resource is IAM-related (security-critical, gates ExecuteChangeSet).
+  // True if this resource is IAM-related (security-critical).
   // The sole server-computed classification; all other groupings are frontend-computed.
   bool is_iam_related = 5;
 
@@ -173,43 +161,6 @@ enum ResourceChangeAction {
   RESOURCE_CHANGE_ACTION_ADD = 1;
   RESOURCE_CHANGE_ACTION_MODIFY = 2;
   RESOURCE_CHANGE_ACTION_REMOVE = 3;
-}
-
-// ============================================
-// ExecuteChangeSet
-// ============================================
-
-message ExecuteChangeSetRequest {
-  // CloudFormation ChangeSet ID (from CreateChangeSetResponse).
-  string change_set_id = 1 [(validate.rules).string = {min_len: 1}];
-
-  // Hard confirmation that the admin has reviewed any IAM changes.
-  // Required if any resource_changes[].is_iam_related is true; can be false only if no IAM changes exist.
-  bool iam_review_ack = 2;
-}
-
-message ExecuteChangeSetResponse {
-  // Stack update has been initiated. Poll GetChangeSetExecutionStatus for completion.
-}
-
-// ============================================
-// GetChangeSetExecutionStatus
-// ============================================
-
-message GetChangeSetExecutionStatusRequest {
-  // CloudFormation ChangeSet ID.
-  string change_set_id = 1 [(validate.rules).string = {min_len: 1}];
-}
-
-message GetChangeSetExecutionStatusResponse {
-  // Current stack update status.
-  StackStatus status = 1;
-
-  // RFC3339 timestamp of the most recent event (from CFN StackEvents).
-  string last_event_at = 2;
-
-  // Event summary (e.g., "Stack UPDATE_COMPLETE_CLEANUP_IN_PROGRESS").
-  string last_event_message = 3;
 }
 
 // Mirrors AWS CloudFormation's StackStatus enum 1:1 (one value per CFN
@@ -241,37 +192,4 @@ enum StackStatus {
   STACK_STATUS_IMPORT_ROLLBACK_IN_PROGRESS = 21;
   STACK_STATUS_IMPORT_ROLLBACK_FAILED = 22;
   STACK_STATUS_IMPORT_ROLLBACK_COMPLETE = 23;
-}
-
-// ============================================
-// ListUpdateHistory
-// ============================================
-
-message ListUpdateHistoryRequest {
-  // Maximum results per page (default 50, max 100).
-  optional int32 page_size = 1 [(validate.rules).int32 = {gte: 1, lte: 100}];
-
-  // Pagination token from previous response.
-  optional string page_token = 2 [(validate.rules).string.max_len = 512];
-}
-
-message ListUpdateHistoryResponse {
-  repeated UpdateHistoryEntry entries = 1;
-
-  // Token for next page; empty if no more results.
-  string next_page_token = 2;
-}
-
-message UpdateHistoryEntry {
-  // RFC3339 timestamp of execution.
-  string executed_at = 1;
-
-  // Version delta (e.g., "v1.0.0 → v1.1.0").
-  string version_delta = 2;
-
-  // Final status of the stack update.
-  StackStatus status = 3;
-
-  // Principal who executed the update.
-  string actor = 4;
 }
