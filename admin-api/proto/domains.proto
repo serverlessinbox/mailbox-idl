@@ -61,6 +61,13 @@ enum DNSRecordRequirement {
   DNS_RECORD_REQUIREMENT_RECOMMENDED = 2;
 }
 
+// CheckDNSProviderAccessReason indicates why DNS provider access is unavailable.
+enum CheckDNSProviderAccessReason {
+  CHECK_DNS_PROVIDER_ACCESS_REASON_UNSPECIFIED = 0;  // Unspecified or access is available
+  CHECK_DNS_PROVIDER_ACCESS_REASON_NO_HOSTED_ZONE = 1;  // No hosted zone exists for the domain
+  CHECK_DNS_PROVIDER_ACCESS_REASON_LOOKUP_FAILED = 2;  // The hosted zone lookup failed
+}
+
 // ============================================
 // Messages (Data Types)
 // ============================================
@@ -295,6 +302,8 @@ message CheckDNSProviderResponse {
   optional DNSProviderType provider_type = 2;
   // route53: Route53 hosted zone details (if provider is Route53)
   optional Route53HostedZone route53 = 3;
+  // access_reason: Reason why access is unavailable (if has_access is false)
+  optional CheckDNSProviderAccessReason access_reason = 4;
 }
 
 // ApplyDomainRecordsRequest automatically creates DNS records in Route53.
