@@ -80,6 +80,11 @@ methods:
     argsSchema: schemas/methods/Email.parse.args.schema.json
     responseSchema: schemas/methods/Email.parse.response.schema.json
 
+  - name: Blob/copy
+    capability: urn:ietf:params:jmap:core
+    argsSchema: schemas/methods/Blob.copy.args.schema.json
+    responseSchema: schemas/methods/Blob.copy.response.schema.json
+
   - name: Thread/query
     capability: urn:ietf:params:jmap:mail
     argsSchema: schemas/methods/Thread.query.args.schema.json

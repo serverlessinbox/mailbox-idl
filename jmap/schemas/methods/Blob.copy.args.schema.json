@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Blob.copy.args.schema.json",
+  "title": "Blob/copy args",
+  "description": "Arguments for Blob/copy (RFC 8620 §6.3). Copies blobs between accounts.",
+  "type": "object",
+  "properties": {
+    "fromAccountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to copy blobs from." },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to copy blobs into." },
+    "blobIds": {
+      "type": "array",
+      "description": "A list of ids of blobs to copy to the other account.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" }
+    }
+  },
+  "required": ["fromAccountId", "accountId", "blobIds"],
+  "additionalProperties": false
+}

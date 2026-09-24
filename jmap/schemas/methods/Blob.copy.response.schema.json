@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/Blob.copy.response.schema.json",
+  "title": "Blob/copy response",
+  "description": "Response for Blob/copy (RFC 8620 §6.3).",
+  "type": "object",
+  "properties": {
+    "fromAccountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the blobs were copied from." },
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the blobs were copied into." },
+    "copied": {
+      "type": ["object", "null"],
+      "description": "Map of blobId in the fromAccount to the id for the blob in the account it was copied to, or null if none were successfully copied.",
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/Id" }
+    },
+    "notCopied": {
+      "type": ["object", "null"],
+      "description": "Map of blobId to a SetError for each blob that failed to be copied, or null if none.",
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    }
+  },
+  "required": ["fromAccountId", "accountId"],
+  "additionalProperties": false
+}
