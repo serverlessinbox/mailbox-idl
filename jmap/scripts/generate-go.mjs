@@ -347,7 +347,7 @@ const COMPLEX_DEFS = [
   'EmailHeader', 'Keywords', 'Mailbox', 'MailboxBase', 'MailboxExt',
   'Email', 'EmailBase', 'EmailExt', 'EmailBodyValue', 'EmailBodyPart', 'SetError', 'EmailAddress',
   'AddressWithParameters', 'Envelope', 'DeliveryStatus', 'EmailSubmission',
-  'EmailSubmissionCreate', 'Identity', 'IdentityUpdate', 'MailboxCreate',
+  'EmailSubmissionCreate', 'Identity', 'IdentityCreate', 'IdentityUpdate', 'MailboxCreate',
   'MailboxUpdate', 'ImportEmailObject', 'AddressBookRights', 'AddressBook',
   'AddressBookCreate', 'AddressBookUpdate', 'NameComponent', 'ContactCardName',
   'ContactCardEmail', 'ContactCardPhone', 'AddressComponent', 'ContactCardAddress',

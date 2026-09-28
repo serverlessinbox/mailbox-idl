@@ -51,16 +51,14 @@ message Alias {
   bool can_send_from = 7;
   // name: Optional display name used in the From header (e.g. "Jane Smith").
   optional string name = 8 [(validate.rules).string.max_len = 255];
-  // reply_to: Optional override Reply-To address for outgoing mail sent from this alias.
-  optional string reply_to = 9 [(validate.rules).string = {
-    email: true
-    max_len: 255
-  }];
   // bcc: Optional address added as BCC on every email sent from this alias.
   optional string bcc = 10 [(validate.rules).string = {
     email: true
     max_len: 255
   }];
+
+  reserved 9;
+  reserved "reply_to";
 }
 
 message ListAccountAliasesRequest {
@@ -99,16 +97,14 @@ message CreateAliasRequest {
   optional bool can_send_from = 6;
   // name: Display name shown in the From header (e.g. "Support Team").
   optional string name = 7 [(validate.rules).string.max_len = 255];
-  // reply_to: Override Reply-To address for outgoing mail sent from this alias.
-  optional string reply_to = 8 [(validate.rules).string = {
-    email: true
-    max_len: 255
-  }];
   // bcc: Address added as BCC on every email sent from this alias.
   optional string bcc = 9 [(validate.rules).string = {
     email: true
     max_len: 255
   }];
+
+  reserved 8;
+  reserved "reply_to";
 }
 
 message CreateAliasResponse {
@@ -129,16 +125,14 @@ message UpdateAliasRequest {
   optional bool can_send_from = 4;
   // name: Update the From header display name.
   optional string name = 5 [(validate.rules).string.max_len = 255];
-  // reply_to: Update the override Reply-To address.
-  optional string reply_to = 6 [(validate.rules).string = {
-    email: true
-    max_len: 255
-  }];
   // bcc: Update the always-BCC address.
   optional string bcc = 7 [(validate.rules).string = {
     email: true
     max_len: 255
   }];
+
+  reserved 6;
+  reserved "reply_to";
 }
 
 message UpdateAliasResponse {

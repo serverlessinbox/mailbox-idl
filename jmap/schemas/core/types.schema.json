@@ -322,6 +322,7 @@
         "bcc":           { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Bcc header addresses added to all outgoing emails, or null for none." },
         "textSignature": { "type": "string", "description": "Plain-text signature appended to outgoing emails." },
         "htmlSignature": { "type": "string", "description": "HTML signature appended to outgoing emails." },
+        "label":         { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "User-provided label for this identity (vendor property under https://specs.serverlessinbox.com/identity-extras)." },
         "mayDelete":     { "type": "boolean", "description": "Whether the user may delete this identity (server-set)." }
       },
       "required": ["id", "name", "email", "textSignature", "htmlSignature", "mayDelete"],
@@ -336,8 +337,25 @@
         "replyTo":       { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Reply-To header addresses, or null to remove." },
         "bcc":           { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Bcc addresses added to all outgoing emails, or null to remove." },
         "textSignature": { "type": "string", "description": "Plain-text signature appended to outgoing emails." },
-        "htmlSignature": { "type": "string", "description": "HTML signature appended to outgoing emails." }
+        "htmlSignature": { "type": "string", "description": "HTML signature appended to outgoing emails." },
+        "label":         { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "User-provided label for this identity (vendor property under https://specs.serverlessinbox.com/identity-extras)." }
       },
+      "additionalProperties": false
+    },
+
+    "IdentityCreate": {
+      "type": "object",
+      "description": "Client-settable fields when creating an Identity (RFC 8621 §6.3).",
+      "properties": {
+        "email":         { "type": "string", "description": "The email address the identity sends from. Required." },
+        "name":          { "type": "string", "description": "Display name shown in the From header." },
+        "replyTo":       { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Reply-To header addresses, or null for none." },
+        "bcc":           { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Bcc header addresses added to all outgoing emails, or null for none." },
+        "textSignature": { "type": "string", "description": "Plain-text signature appended to outgoing emails." },
+        "htmlSignature": { "type": "string", "description": "HTML signature appended to outgoing emails." },
+        "label":         { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "User-provided label for this identity (vendor property under https://specs.serverlessinbox.com/identity-extras)." }
+      },
+      "required": ["email"],
       "additionalProperties": false
     },
 

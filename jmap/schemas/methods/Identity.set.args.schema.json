@@ -2,16 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://serverlessinbox.com/schemas/jmap/methods/Identity.set.args.schema.json",
   "title": "Identity/set args",
-  "description": "Arguments for Identity/set (RFC 8621 §6.3). Clients may only update identities; create and destroy are server-controlled.",
+  "description": "Arguments for Identity/set (RFC 8621 §6.3). Clients may create identities for addresses they are permitted to send from, update existing identities, or destroy identities where mayDelete is true.",
   "type": "object",
   "properties": {
     "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to update Identity objects in." },
     "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard on Identity state." },
     "create": {
       "type": ["object", "null"],
-      "description": "Map of creation id to Identity create objects. This server does not support client-initiated creation.",
+      "description": "Map of creation id to IdentityCreate objects. Clients may create an identity for an address they are permitted to send from.",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
-      "additionalProperties": true
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/IdentityCreate" }
     },
     "update": {
       "type": ["object", "null"],
@@ -22,7 +22,7 @@
     "destroy": {
       "type": ["array", "null"],
       "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
-      "description": "Ids to destroy. This server does not support client-initiated destruction."
+      "description": "Ids to destroy. Clients may destroy an identity whose mayDelete is true."
     }
   },
   "required": ["accountId"],
