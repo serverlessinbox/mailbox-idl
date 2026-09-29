@@ -344,8 +344,8 @@ function generateAllOfStruct(typeName, schema) {
 
 // Complex defs to generate (in definition order from the spec)
 const COMPLEX_DEFS = [
-  'EmailHeader', 'Keywords', 'Mailbox', 'MailboxBase', 'MailboxExt',
-  'Email', 'EmailBase', 'EmailExt', 'EmailBodyValue', 'EmailBodyPart', 'SetError', 'EmailAddress',
+  'EmailHeader', 'Keywords', 'Mailbox',
+  'Email', 'EmailBodyValue', 'EmailBodyPart', 'SetError', 'EmailAddress',
   'AddressWithParameters', 'Envelope', 'DeliveryStatus', 'EmailSubmission',
   'EmailSubmissionCreate', 'Identity', 'IdentityCreate', 'IdentityUpdate', 'MailboxCreate',
   'MailboxUpdate', 'ImportEmailObject', 'AddressBookRights', 'AddressBook',
@@ -366,13 +366,26 @@ const coreTypesParts = [
   ``,
   `package ${pkg}`,
   ``,
-  `import "encoding/json"`,
-  ``,
 ];
 
 const allComplexDefs = [...COMPLEX_DEFS];
 if (THREAD_IN_SCHEMA && !allComplexDefs.includes('Thread')) {
   allComplexDefs.splice(allComplexDefs.indexOf('Email'), 0, 'Thread');
+}
+
+// Check if we need json import for allOf structs
+let hasAllOf = false;
+for (const defName of allComplexDefs) {
+  const defSchema = defs[defName];
+  if (defSchema && defSchema.allOf && !SKIP_DEFS.has(defName)) {
+    hasAllOf = true;
+    break;
+  }
+}
+
+if (hasAllOf) {
+  coreTypesParts.push(`import "encoding/json"`);
+  coreTypesParts.push(``);
 }
 
 for (const defName of allComplexDefs) {

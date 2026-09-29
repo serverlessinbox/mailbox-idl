@@ -17,6 +17,5 @@
       "items": { "type": "string" }
     }
   },
-  "required": ["accountId", "state", "list", "notFound"],
-  "additionalProperties": false
+  "required": ["accountId", "state", "list", "notFound"]
 }

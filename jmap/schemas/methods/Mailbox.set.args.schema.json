@@ -29,6 +29,5 @@
       "description": "If true, also destroy all emails in the mailbox. Default false; destroying a non-empty mailbox without this flag results in a mailboxHasChild or mailboxHasEmail error."
     }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

@@ -18,6 +18,5 @@
       "description": "Ids that were not found."
     }
   },
-  "required": ["accountId", "state", "list"],
-  "additionalProperties": false
+  "required": ["accountId", "state", "list"]
 }

@@ -22,12 +22,10 @@
           "id": { "$ref": "../core/types.schema.json#/$defs/Id" },
           "index": { "type": "integer", "minimum": 0 }
         },
-        "required": ["id", "index"],
-        "additionalProperties": false
+        "required": ["id", "index"]
       },
       "description": "Items added to the query results with their new index."
     }
   },
-  "required": ["accountId", "oldQueryState", "newQueryState", "removed", "added"],
-  "additionalProperties": false
+  "required": ["accountId", "oldQueryState", "newQueryState", "removed", "added"]
 }

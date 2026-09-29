@@ -20,8 +20,7 @@
           "property": { "type": "string" },
           "isAscending": { "type": "boolean" }
         },
-        "required": ["property"],
-        "additionalProperties": false
+        "required": ["property"]
       }
     },
     "position": { "type": ["integer", "null"], "description": "Zero-based index of the first result to return." },
@@ -30,6 +29,5 @@
     "limit": { "type": ["integer", "null"], "minimum": 0, "description": "Maximum number of ids to return." },
     "calculateTotal": { "type": ["boolean", "null"], "description": "If true, return the total count of results." }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

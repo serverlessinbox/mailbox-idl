@@ -25,6 +25,5 @@
       "description": "Identity ids destroyed since sinceState."
     }
   },
-  "required": ["accountId", "oldState", "newState", "hasMoreChanges", "created", "updated", "destroyed"],
-  "additionalProperties": false
+  "required": ["accountId", "oldState", "newState", "hasMoreChanges", "created", "updated", "destroyed"]
 }

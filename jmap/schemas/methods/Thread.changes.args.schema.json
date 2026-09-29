@@ -9,6 +9,5 @@
     "sinceState": { "type": "string", "description": "The state to get changes since." },
     "maxChanges": { "type": ["integer", "null"], "minimum": 1, "description": "Maximum number of changes to return." }
   },
-  "required": ["accountId", "sinceState"],
-  "additionalProperties": false
+  "required": ["accountId", "sinceState"]
 }

@@ -20,6 +20,5 @@
       "description": "AddressBook properties to include in the response. Null or omitted for all properties."
     }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

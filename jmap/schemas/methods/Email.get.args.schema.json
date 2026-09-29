@@ -31,6 +31,5 @@
     },
     "fetchAllHeaders": { "type": ["boolean", "null"], "description": "If true, return all raw headers regardless of fetchHeaders list." }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

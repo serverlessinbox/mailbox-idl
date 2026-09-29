@@ -22,12 +22,10 @@
           "id": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" },
           "index": { "type": "integer", "minimum": 0 }
         },
-        "required": ["id", "index"],
-        "additionalProperties": false
+        "required": ["id", "index"]
       }
     },
     "total": { "type": "integer", "minimum": 0, "description": "Updated total count of results (if calculateTotal was true in the original query)." }
   },
-  "required": ["accountId", "oldQueryState", "newQueryState", "hasMoreChanges", "removed", "added"],
-  "additionalProperties": false
+  "required": ["accountId", "oldQueryState", "newQueryState", "hasMoreChanges", "removed", "added"]
 }

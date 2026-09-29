@@ -43,6 +43,5 @@
       "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
     }
   },
-  "required": ["accountId", "newState"],
-  "additionalProperties": false
+  "required": ["accountId", "newState"]
 }

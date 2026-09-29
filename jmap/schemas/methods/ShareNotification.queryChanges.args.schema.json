@@ -15,6 +15,5 @@
     "upToId": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId", "description": "Return changes only up to and including this ShareNotificationId." },
     "calculateTotal": { "type": "boolean", "description": "If true, return the updated total count of results." }
   },
-  "required": ["accountId", "sinceQueryState"],
-  "additionalProperties": false
+  "required": ["accountId", "sinceQueryState"]
 }

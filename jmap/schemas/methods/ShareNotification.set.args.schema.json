@@ -25,6 +25,5 @@
       "items": { "$ref": "../core/types.schema.json#/$defs/ShareNotificationId" }
     }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

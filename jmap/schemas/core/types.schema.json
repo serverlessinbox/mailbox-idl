@@ -19,8 +19,7 @@
         "name":  { "type": "string", "description": "Header field name (case-insensitive per RFC 5322)." },
         "value": { "type": "string", "description": "Header field value (decoded, with folding whitespace collapsed)." }
       },
-      "required": ["name", "value"],
-      "additionalProperties": false
+      "required": ["name", "value"]
     },
 
     "Keywords": {
@@ -37,8 +36,7 @@
         "isEncodingProblem": { "type": "boolean", "description": "True if there was a decoding error (e.g. bad Content-Transfer-Encoding)." },
         "isTruncated":       { "type": "boolean", "description": "True if the value was truncated at maxBodyValueBytes." }
       },
-      "required": ["value", "isEncodingProblem", "isTruncated"],
-      "additionalProperties": false
+      "required": ["value", "isEncodingProblem", "isTruncated"]
     },
 
     "EmailBodyPart": {
@@ -58,8 +56,7 @@
         "location":    { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Content-Location URI, or null." },
         "subParts":    { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "Sub-parts for multipart/* types, or null for non-multipart parts." }
       },
-      "required": ["type"],
-      "additionalProperties": false
+      "required": ["type"]
     },
 
     "Mailbox": {
@@ -78,40 +75,7 @@
         "totalThreads":  { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }], "description": "Total number of threads with at least one email in this mailbox, or null if not supported (server-set)." },
         "unreadThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }], "description": "Number of threads with at least one unread email in this mailbox, or null if not supported (server-set)." }
       },
-      "required": ["id"],
-      "additionalProperties": false
-    },
-
-    "MailboxBase": {
-      "type": "object",
-      "description": "Base Mailbox shape used as the allOf anchor for MailboxExt (allows vendor-prefixed properties).",
-      "properties": {
-        "id":            { "$ref": "#/$defs/MailboxId", "description": "The mailbox id (server-set, immutable)." },
-        "accountId":    { "$ref": "#/$defs/AccountId", "description": "The account this mailbox belongs to (server-set)." },
-        "name":         { "type": "string", "description": "User-visible name of the mailbox." },
-        "role":         { "type": ["string", "null"], "description": "System role (inbox, trash, drafts, etc.), or null for user-created mailboxes." },
-        "parentId":     { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }], "description": "Id of the parent mailbox, or null if top-level." },
-        "sortOrder":    { "type": "integer", "minimum": 0, "description": "Client sort-order hint; lower values sort first." },
-        "deletable":    { "type": "boolean", "description": "Whether the user may delete this mailbox (server-set)." },
-        "totalEmails":  { "type": "integer", "minimum": 0, "description": "Total number of emails in the mailbox (server-set)." },
-        "unreadEmails": { "type": "integer", "minimum": 0, "description": "Number of emails without the \\Seen keyword (server-set)." },
-        "totalThreads":  { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }], "description": "Total number of threads with at least one email in this mailbox, or null if not supported (server-set)." },
-        "unreadThreads": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }], "description": "Number of threads with at least one unread email in this mailbox, or null if not supported (server-set)." }
-      },
       "required": ["id"]
-    },
-
-    "MailboxExt": {
-      "allOf": [
-        { "$ref": "#/$defs/MailboxBase" },
-        {
-          "type": "object",
-          "patternProperties": {
-            "^sib:": {}
-          }
-        }
-      ],
-      "unevaluatedProperties": false
     },
 
     "Email": {
@@ -145,55 +109,7 @@
         "htmlBody":      { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "text/html body parts in display order (RFC 8621 §4.1.4)." },
         "attachments":   { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "Non-inline attachment parts (RFC 8621 §4.1.4)." }
       },
-      "required": ["id"],
-      "additionalProperties": false
-    },
-
-    "EmailBase": {
-      "type": "object",
-      "description": "Base Email shape used as the allOf anchor for EmailExt (allows vendor-prefixed properties).",
-      "properties": {
-        "id":            { "$ref": "#/$defs/EmailId", "description": "The email id (server-set, immutable)." },
-        "blobId":        { "$ref": "#/$defs/BlobId", "description": "Blob id of the raw RFC 5322 message (server-set)." },
-        "threadId":      { "$ref": "#/$defs/ThreadId", "description": "Thread this email belongs to (server-set)." },
-        "mailboxIds":    { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Id[Boolean] map — MailboxId → true means the email is in that mailbox (RFC 8621 §4.1.1)." },
-        "keywords":      { "$ref": "#/$defs/Keywords", "description": "IMAP keywords set on this email." },
-        "size":          { "type": "integer", "minimum": 0, "description": "Size in bytes of the raw RFC 5322 message (server-set)." },
-        "receivedAt":    { "$ref": "#/$defs/JmapDate", "description": "Date/time the message was received by the server." },
-        "sentAt":        { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "Date/time from the Date header (RFC 8621 §4.1.3)." },
-        "subject":       { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Decoded Subject header value, or null if absent." },
-        "messageId":     { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Array of Message-ID values (RFC 8621 §4.1.3), or null if absent." },
-        "inReplyTo":     { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Array of In-Reply-To values (RFC 8621 §4.1.3), or null if absent." },
-        "references":    { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Array of References values (RFC 8621 §4.1.3), or null if absent." },
-        "sender":        { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Sender header addresses (RFC 8621 §4.1.2.3), or null if absent." },
-        "from":          { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "From header addresses (RFC 8621 §4.1.2.3), or null if absent." },
-        "to":            { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "To header addresses (RFC 8621 §4.1.2.3), or null if absent." },
-        "cc":            { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Cc header addresses (RFC 8621 §4.1.2.3), or null if absent." },
-        "bcc":           { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Bcc header addresses (RFC 8621 §4.1.2.3), or null if absent." },
-        "replyTo":       { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailAddress" } }, { "type": "null" }], "description": "Reply-To header addresses (RFC 8621 §4.1.2.3), or null if absent." },
-        "preview":       { "type": "string", "description": "Plain-text excerpt of the message body (at most 256 characters, server-set)." },
-        "hasAttachment": { "type": "boolean", "description": "True if the message has at least one attachment (server-set)." },
-        "headers":       { "type": "array", "items": { "$ref": "#/$defs/EmailHeader" }, "description": "Ordered list of all raw message header fields (RFC 8621 §4.1.3)." },
-        "bodyStructure": { "anyOf": [{ "$ref": "#/$defs/EmailBodyPart" }, { "type": "null" }], "description": "Full MIME tree of the message as a single EmailBodyPart (RFC 8621 §4.1.4). Only present when requested via bodyProperties." },
-        "bodyValues":    { "anyOf": [{ "type": "object", "additionalProperties": { "$ref": "#/$defs/EmailBodyValue" } }, { "type": "null" }], "description": "PartId → EmailBodyValue map (RFC 8621 §4.1.4). Populated only when fetchTextBodyValues, fetchHTMLBodyValues, or fetchAllBodyValues is true." },
-        "textBody":      { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "text/plain body parts in display order (RFC 8621 §4.1.4)." },
-        "htmlBody":      { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "text/html body parts in display order (RFC 8621 §4.1.4)." },
-        "attachments":   { "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/EmailBodyPart" } }, { "type": "null" }], "description": "Non-inline attachment parts (RFC 8621 §4.1.4)." }
-      },
       "required": ["id"]
-    },
-
-    "EmailExt": {
-      "allOf": [
-        { "$ref": "#/$defs/EmailBase" },
-        {
-          "type": "object",
-          "patternProperties": {
-            "^sib:": {}
-          }
-        }
-      ],
-      "unevaluatedProperties": false
     },
 
     "SubmissionId": { "type": "string", "minLength": 1, "description": "Identifies an EmailSubmission object (RFC 8621 §7)." },
@@ -216,8 +132,7 @@
     "PatchObject": {
       "type": "object",
       "description": "JMAP PatchObject (RFC 8620 §5.3): keys are JSON Pointers (e.g. /name); values are replacement values or null to remove.",
-      "patternProperties": { "^/": {} },
-      "additionalProperties": false
+      "patternProperties": { "^/": {} }
     },
 
     "Thread": {
@@ -227,8 +142,7 @@
         "id":       { "$ref": "#/$defs/ThreadId", "description": "The thread id." },
         "emailIds": { "type": "array", "items": { "$ref": "#/$defs/EmailId" }, "description": "Ordered list of email ids in this thread, oldest first." }
       },
-      "required": ["id", "emailIds"],
-      "additionalProperties": false
+      "required": ["id", "emailIds"]
     },
 
     "EmailAddress": {
@@ -238,8 +152,7 @@
         "name":  { "type": ["string", "null"], "description": "Display name, or null if none." },
         "email": { "type": "string", "description": "The email address (addr-spec)." }
       },
-      "required": ["email"],
-      "additionalProperties": false
+      "required": ["email"]
     },
 
     "AddressWithParameters": {
@@ -252,8 +165,7 @@
           "description": "Optional SMTP parameters (e.g. BODY, SIZE)."
         }
       },
-      "required": ["email"],
-      "additionalProperties": false
+      "required": ["email"]
     },
 
     "Envelope": {
@@ -263,8 +175,7 @@
         "mailFrom": { "$ref": "#/$defs/AddressWithParameters", "description": "SMTP MAIL FROM address." },
         "rcptTo":   { "type": "array", "items": { "$ref": "#/$defs/AddressWithParameters" }, "description": "SMTP RCPT TO addresses." }
       },
-      "required": ["mailFrom", "rcptTo"],
-      "additionalProperties": false
+      "required": ["mailFrom", "rcptTo"]
     },
 
     "DeliveryStatus": {
@@ -275,8 +186,7 @@
         "delivered": { "type": "string", "enum": ["queued", "yes", "no", "unknown"], "description": "Whether the message has been delivered to the recipient's incoming mail server." },
         "displayed": { "type": "string", "enum": ["unknown", "yes"], "description": "Whether the recipient's client has displayed it (from an MDN)." }
       },
-      "required": ["delivered", "displayed"],
-      "additionalProperties": false
+      "required": ["delivered", "displayed"]
     },
 
     "EmailSubmission": {
@@ -294,8 +204,7 @@
         "dsnBlobIds":       { "type": "array", "items": { "$ref": "#/$defs/BlobId" }, "description": "Blob ids of received DSN messages (server-set)." },
         "mdnBlobIds":       { "type": "array", "items": { "$ref": "#/$defs/BlobId" }, "description": "Blob ids of received MDN messages (server-set)." }
       },
-      "required": ["id", "identityId", "emailId", "threadId", "sendAt", "undoStatus"],
-      "additionalProperties": false
+      "required": ["id", "identityId", "emailId", "threadId", "sendAt", "undoStatus"]
     },
 
     "EmailSubmissionCreate": {
@@ -307,8 +216,7 @@
         "envelope":   { "anyOf": [{ "$ref": "#/$defs/Envelope" }, { "type": "null" }], "description": "SMTP envelope. If null the server generates it from the email headers." },
         "sendAt":     { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "Scheduled send time. If null send immediately." }
       },
-      "required": ["identityId", "emailId"],
-      "additionalProperties": false
+      "required": ["identityId", "emailId"]
     },
 
     "Identity": {
@@ -325,8 +233,7 @@
         "label":         { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "User-provided label for this identity (vendor property under https://specs.serverlessinbox.com/identity-extras)." },
         "mayDelete":     { "type": "boolean", "description": "Whether the user may delete this identity (server-set)." }
       },
-      "required": ["id", "name", "email", "textSignature", "htmlSignature", "mayDelete"],
-      "additionalProperties": false
+      "required": ["id", "name", "email", "textSignature", "htmlSignature", "mayDelete"]
     },
 
     "IdentityUpdate": {
@@ -339,8 +246,7 @@
         "textSignature": { "type": "string", "description": "Plain-text signature appended to outgoing emails." },
         "htmlSignature": { "type": "string", "description": "HTML signature appended to outgoing emails." },
         "label":         { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "User-provided label for this identity (vendor property under https://specs.serverlessinbox.com/identity-extras)." }
-      },
-      "additionalProperties": false
+      }
     },
 
     "IdentityCreate": {
@@ -355,8 +261,7 @@
         "htmlSignature": { "type": "string", "description": "HTML signature appended to outgoing emails." },
         "label":         { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "User-provided label for this identity (vendor property under https://specs.serverlessinbox.com/identity-extras)." }
       },
-      "required": ["email"],
-      "additionalProperties": false
+      "required": ["email"]
     },
 
     "MailboxCreate": {
@@ -368,8 +273,7 @@
         "role":      { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "System role (inbox, trash, etc.), or null." },
         "sortOrder": { "type": "integer", "minimum": 0, "description": "Sort order hint for display." }
       },
-      "required": ["name"],
-      "additionalProperties": false
+      "required": ["name"]
     },
 
     "MailboxUpdate": {
@@ -379,8 +283,7 @@
         "name":      { "type": "string", "minLength": 1, "description": "New user-visible name for the mailbox." },
         "parentId":  { "anyOf": [{ "$ref": "#/$defs/MailboxId" }, { "type": "null" }], "description": "New parent mailbox id, or null to move to top-level." },
         "sortOrder": { "type": "integer", "minimum": 0, "description": "New client sort-order hint." }
-      },
-      "additionalProperties": false
+      }
     },
 
     "ImportEmailObject": {
@@ -392,8 +295,7 @@
         "keywords":   { "$ref": "#/$defs/Keywords", "description": "Initial keywords to set on the email." },
         "receivedAt": { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "Override for the receivedAt date. If null the server uses the current time." }
       },
-      "required": ["blobId", "mailboxIds"],
-      "additionalProperties": false
+      "required": ["blobId", "mailboxIds"]
     },
 
     "AddressBookId": { "type": "string", "minLength": 1, "description": "Identifies an AddressBook object (RFC 9610)." },
@@ -410,8 +312,7 @@
         "mayShare":  { "type": "boolean", "description": "The principal may modify the shareWith property of this address book." },
         "mayDelete": { "type": "boolean", "description": "The principal may delete this address book entirely." }
       },
-      "required": ["mayRead", "mayWrite", "mayShare", "mayDelete"],
-      "additionalProperties": false
+      "required": ["mayRead", "mayWrite", "mayShare", "mayDelete"]
     },
 
     "AddressBook": {
@@ -427,8 +328,7 @@
         "shareWith":    { "type": "object", "additionalProperties": { "$ref": "#/$defs/AddressBookRights" }, "description": "PrincipalId → AddressBookRights map of shared access (server-set for non-owners)." },
         "myRights":     { "$ref": "#/$defs/AddressBookRights", "description": "The rights the current user has on this address book (server-set)." }
       },
-      "required": ["id", "name", "sortOrder", "isDefault", "isSubscribed", "myRights"],
-      "additionalProperties": false
+      "required": ["id", "name", "sortOrder", "isDefault", "isSubscribed", "myRights"]
     },
 
     "AddressBookCreate": {
@@ -441,8 +341,7 @@
         "isDefault":   { "type": "boolean", "description": "Whether this should be the default address book for new contacts." },
         "shareWith":   { "type": "object", "additionalProperties": { "$ref": "#/$defs/AddressBookRights" }, "description": "Initial PrincipalId → AddressBookRights sharing map." }
       },
-      "required": ["name"],
-      "additionalProperties": false
+      "required": ["name"]
     },
 
     "AddressBookUpdate": {
@@ -455,8 +354,7 @@
         "isDefault":    { "type": "boolean", "description": "Set to true to make this the default address book." },
         "isSubscribed": { "type": "boolean", "description": "Set subscription status." },
         "shareWith":    { "type": "object", "additionalProperties": { "$ref": "#/$defs/AddressBookRights" }, "description": "Replacement PrincipalId → AddressBookRights sharing map." }
-      },
-      "additionalProperties": false
+      }
     },
 
     "NameComponent": {
@@ -466,8 +364,7 @@
         "kind":  { "type": "string", "description": "Component kind: title, given, given2, surname, surname2, credential, generation, separator." },
         "value": { "type": "string", "description": "The text value of this component." }
       },
-      "required": ["kind", "value"],
-      "additionalProperties": false
+      "required": ["kind", "value"]
     },
 
     "ContactCardName": {
@@ -477,8 +374,7 @@
         "components": { "type": "array", "items": { "$ref": "#/$defs/NameComponent" }, "description": "Ordered name components." },
         "full":       { "type": "string", "description": "Full name as a single string." },
         "isOrdered":  { "type": "boolean", "description": "Whether the components are in display order." }
-      },
-      "additionalProperties": false
+      }
     },
 
     "ContactCardEmail": {
@@ -490,8 +386,7 @@
         "contexts": { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Usage contexts (e.g. work, private)." },
         "pref":     { "type": "integer", "minimum": 1, "maximum": 100, "description": "Preference value; lower is more preferred." }
       },
-      "required": ["address"],
-      "additionalProperties": false
+      "required": ["address"]
     },
 
     "ContactCardPhone": {
@@ -504,8 +399,7 @@
         "features": { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Phone features (e.g. voice, fax, cell, video)." },
         "pref":     { "type": "integer", "minimum": 1, "maximum": 100, "description": "Preference value; lower is more preferred." }
       },
-      "required": ["number"],
-      "additionalProperties": false
+      "required": ["number"]
     },
 
     "AddressComponent": {
@@ -515,8 +409,7 @@
         "kind":  { "type": "string", "description": "Component kind: room, apartment, floor, building, number, name, block, subdistrict, district, locality, region, postcode, country, direction, landmark, postOfficeBox, separator." },
         "value": { "type": "string", "description": "The text value of this component." }
       },
-      "required": ["kind", "value"],
-      "additionalProperties": false
+      "required": ["kind", "value"]
     },
 
     "ContactCardAddress": {
@@ -529,8 +422,7 @@
         "isOrdered":   { "type": "boolean", "description": "Whether the components are in display order." },
         "contexts":    { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Usage contexts." },
         "pref":        { "type": "integer", "minimum": 1, "maximum": 100, "description": "Preference value; lower is more preferred." }
-      },
-      "additionalProperties": false
+      }
     },
 
     "OrgUnit": {
@@ -539,8 +431,7 @@
       "properties": {
         "name": { "type": "string", "description": "Name of the organizational unit." }
       },
-      "required": ["name"],
-      "additionalProperties": false
+      "required": ["name"]
     },
 
     "ContactCardOrganization": {
@@ -550,8 +441,7 @@
         "name":     { "type": "string", "description": "Name of the organization." },
         "units":    { "type": "array", "items": { "$ref": "#/$defs/OrgUnit" }, "description": "Organizational units." },
         "contexts": { "type": "object", "additionalProperties": { "type": "boolean" }, "description": "Usage contexts." }
-      },
-      "additionalProperties": false
+      }
     },
 
     "ContactCardTitle": {
@@ -561,8 +451,7 @@
         "name": { "type": "string", "description": "Title or role text." },
         "kind": { "type": "string", "description": "\"title\" or \"role\"." }
       },
-      "required": ["name"],
-      "additionalProperties": false
+      "required": ["name"]
     },
 
     "ContactCardNote": {
@@ -571,8 +460,7 @@
       "properties": {
         "note": { "type": "string", "description": "Note text." }
       },
-      "required": ["note"],
-      "additionalProperties": false
+      "required": ["note"]
     },
 
     "PartialDate": {
@@ -582,8 +470,7 @@
         "year":  { "type": "integer", "minimum": 1, "description": "4-digit year. Omit if unknown." },
         "month": { "type": "integer", "minimum": 1, "maximum": 12, "description": "Month (1-12). Omit if unknown." },
         "day":   { "type": "integer", "minimum": 1, "maximum": 31, "description": "Day of month (1-31). Omit if unknown." }
-      },
-      "additionalProperties": false
+      }
     },
 
     "ContactCardAnniversary": {
@@ -593,8 +480,7 @@
         "kind": { "type": "string", "description": "Anniversary kind: birth, death, wedding." },
         "date": { "$ref": "#/$defs/PartialDate", "description": "The date (partial dates supported)." }
       },
-      "required": ["kind", "date"],
-      "additionalProperties": false
+      "required": ["kind", "date"]
     },
 
     "ContactCardMedia": {
@@ -606,8 +492,7 @@
         "blobId":    { "$ref": "#/$defs/BlobId", "description": "BlobId of a hosted media blob. On input: an UploadBlobID; on output: a permanent ContactBlobID (cnt: prefix)." },
         "mediaType": { "type": "string", "description": "MIME type (e.g. image/jpeg)." }
       },
-      "required": ["kind"],
-      "additionalProperties": false
+      "required": ["kind"]
     },
 
     "ContactCard": {
@@ -630,8 +515,7 @@
         "anniversaries":  { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardAnniversary" }, "description": "String-keyed map of anniversary entries." },
         "media":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardMedia" }, "description": "String-keyed map of media entries (photos, logos, sounds)." }
       },
-      "required": ["@type", "version", "id"],
-      "additionalProperties": false
+      "required": ["@type", "version", "id"]
     },
 
     "ContactCardCreate": {
@@ -651,8 +535,7 @@
         "anniversaries":  { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardAnniversary" } },
         "media":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardMedia" } }
       },
-      "required": ["@type", "version", "addressBookIds"],
-      "additionalProperties": false
+      "required": ["@type", "version", "addressBookIds"]
     },
 
     "ContactCardUpdate": {
@@ -669,8 +552,7 @@
         "notes":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardNote" } },
         "anniversaries":  { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardAnniversary" } },
         "media":          { "type": "object", "additionalProperties": { "$ref": "#/$defs/ContactCardMedia" } }
-      },
-      "additionalProperties": false
+      }
     },
 
     "Principal": {
@@ -685,8 +567,7 @@
         "timeZone":    { "type": "string", "description": "IANA time zone identifier for this principal." },
         "picture":     { "anyOf": [{ "$ref": "#/$defs/BlobId" }, { "type": "null" }], "description": "BlobId of a profile picture, or null if none." }
       },
-      "required": ["id", "type", "name"],
-      "additionalProperties": false
+      "required": ["id", "type", "name"]
     },
 
     "ShareNotificationBy": {
@@ -697,8 +578,7 @@
         "name":        { "type": "string", "description": "Display name of the actor." },
         "principalId": { "anyOf": [{ "$ref": "#/$defs/PrincipalId" }, { "type": "null" }], "description": "Id of the actor principal, if applicable." }
       },
-      "required": ["type", "name"],
-      "additionalProperties": false
+      "required": ["type", "name"]
     },
 
     "ShareNotification": {
@@ -714,8 +594,7 @@
         "oldRights":       { "anyOf": [{ "type": "object", "additionalProperties": { "type": "boolean" } }, { "type": "null" }], "description": "Rights before the change. Null if the principal was newly added." },
         "newRights":       { "anyOf": [{ "type": "object", "additionalProperties": { "type": "boolean" } }, { "type": "null" }], "description": "Rights after the change. Null if the principal was removed." }
       },
-      "required": ["id", "created", "changedBy", "objectType", "objectAccountId", "objectId"],
-      "additionalProperties": false
+      "required": ["id", "created", "changedBy", "objectType", "objectAccountId", "objectId"]
     }
   }
 }

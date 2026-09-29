@@ -8,6 +8,5 @@
     "sinceState": { "type": "string", "minLength": 1, "description": "The state string from the last Mailbox/get or Mailbox/changes response." },
     "maxChanges": { "type": "integer", "minimum": 0, "description": "Maximum number of change records to return. If exceeded, hasMoreChanges will be true." }
   },
-  "required": ["accountId", "sinceState"],
-  "additionalProperties": false
+  "required": ["accountId", "sinceState"]
 }

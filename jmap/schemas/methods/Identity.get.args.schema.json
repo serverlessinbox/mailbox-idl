@@ -17,6 +17,5 @@
       "description": "Identity properties to return. Defaults to all properties."
     }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

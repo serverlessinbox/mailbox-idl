@@ -9,7 +9,7 @@
     "list": {
       "type": "array",
       "description": "The list of Email objects that were requested and found.",
-      "items": { "$ref": "../core/types.schema.json#/$defs/EmailExt" }
+      "items": { "$ref": "../core/types.schema.json#/$defs/Email" }
     },
     "notFound": {
       "description": "IDs from the request that could not be found, or null if all were found.",
@@ -19,6 +19,5 @@
       ]
     }
   },
-  "required": ["accountId", "state", "list"],
-  "additionalProperties": false
+  "required": ["accountId", "state", "list"]
 }

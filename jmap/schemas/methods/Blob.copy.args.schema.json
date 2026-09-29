@@ -13,6 +13,5 @@
       "items": { "$ref": "../core/types.schema.json#/$defs/Id" }
     }
   },
-  "required": ["fromAccountId", "accountId", "blobIds"],
-  "additionalProperties": false
+  "required": ["fromAccountId", "accountId", "blobIds"]
 }

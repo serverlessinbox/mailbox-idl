@@ -23,6 +23,5 @@
       "description": "Blob ids not found in the account."
     }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

@@ -9,29 +9,7 @@
     "list": {
       "description": "The list of Thread objects that were found.",
       "type": "array",
-      "items": {
-        "allOf": [
-          {
-            "type": "object",
-            "properties": {
-              "id": { "$ref": "../core/types.schema.json#/$defs/ThreadId" },
-              "emailIds": {
-                "type": "array",
-                "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
-              }
-            },
-            "required": ["id", "emailIds"],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "patternProperties": {
-              "^sib:": {}
-            }
-          }
-        ],
-        "unevaluatedProperties": false
-      }
+      "items": { "$ref": "../core/types.schema.json#/$defs/Thread" }
     },
     "notFound": {
       "type": "array",
@@ -39,6 +17,5 @@
       "items": { "$ref": "../core/types.schema.json#/$defs/ThreadId" }
     }
   },
-  "required": ["accountId", "state", "list"],
-  "additionalProperties": false
+  "required": ["accountId", "state", "list"]
 }

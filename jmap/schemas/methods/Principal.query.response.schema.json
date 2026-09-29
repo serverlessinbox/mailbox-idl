@@ -17,6 +17,5 @@
     "total": { "type": "integer", "minimum": 0, "description": "Total number of matching principals. Only present if calculateTotal was true." },
     "limit": { "type": "integer", "minimum": 0, "description": "The limit applied. Only present if a limit was applied." }
   },
-  "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"],
-  "additionalProperties": false
+  "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"]
 }

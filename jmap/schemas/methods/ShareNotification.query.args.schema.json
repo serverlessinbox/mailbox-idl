@@ -25,6 +25,5 @@
     "limit": { "type": "integer", "minimum": 0, "description": "Maximum number of ids to return." },
     "calculateTotal": { "type": "boolean", "description": "If true, return the total number of share notifications." }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

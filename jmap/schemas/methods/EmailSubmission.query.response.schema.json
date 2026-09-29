@@ -17,6 +17,5 @@
     "total": { "type": ["integer", "null"], "minimum": 0, "description": "Total number of results (if calculateTotal was true)." },
     "limit": { "type": ["integer", "null"], "minimum": 0, "description": "The limit applied to this query." }
   },
-  "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"],
-  "additionalProperties": false
+  "required": ["accountId", "queryState", "canCalculateChanges", "position", "ids"]
 }

@@ -29,6 +29,5 @@
       "description": "If true, also destroy all ContactCards in the address book. Default false."
     }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

@@ -25,6 +25,5 @@
       "description": "Ids to destroy. Clients may destroy an identity whose mayDelete is true."
     }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

@@ -20,6 +20,5 @@
     "upToId": { "$ref": "../core/types.schema.json#/$defs/PrincipalId", "description": "Return changes only up to and including this PrincipalId." },
     "calculateTotal": { "type": "boolean", "description": "If true, return the updated total count of results." }
   },
-  "required": ["accountId", "sinceQueryState"],
-  "additionalProperties": false
+  "required": ["accountId", "sinceQueryState"]
 }

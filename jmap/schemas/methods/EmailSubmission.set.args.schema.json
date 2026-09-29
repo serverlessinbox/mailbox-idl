@@ -35,6 +35,5 @@
       "description": "List of submission ids (or creation id references) whose associated Emails should be destroyed on successful send."
     }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

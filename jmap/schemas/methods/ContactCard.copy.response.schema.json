@@ -22,6 +22,5 @@
       "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
     }
   },
-  "required": ["fromAccountId", "accountId"],
-  "additionalProperties": false
+  "required": ["fromAccountId", "accountId"]
 }

@@ -24,6 +24,5 @@
       "items": { "$ref": "../core/types.schema.json#/$defs/AddressBookId" }
     }
   },
-  "required": ["accountId", "oldState", "newState", "hasMoreChanges", "created", "updated", "destroyed"],
-  "additionalProperties": false
+  "required": ["accountId", "oldState", "newState", "hasMoreChanges", "created", "updated", "destroyed"]
 }

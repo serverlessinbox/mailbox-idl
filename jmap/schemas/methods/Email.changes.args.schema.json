@@ -8,6 +8,5 @@
     "sinceState": { "type": "string", "minLength": 1, "description": "The state string from the last Email/get or Email/changes response. Only changes after this state are returned." },
     "maxChanges": { "type": "integer", "minimum": 0, "description": "Maximum number of change records to return. Omit for no limit. If exceeded, hasMoreChanges will be true." }
   },
-  "required": ["accountId", "sinceState"],
-  "additionalProperties": false
+  "required": ["accountId", "sinceState"]
 }

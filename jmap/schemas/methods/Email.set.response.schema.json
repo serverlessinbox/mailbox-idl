@@ -28,14 +28,14 @@
       "type": ["object", "null"],
       "description": "Successfully created emails, keyed by the client-assigned creation id.",
       "propertyNames": { "$ref": "#/$defs/CreationId" },
-      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/EmailExt" }
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/Email" }
     },
 
     "updated": {
       "type": ["object", "null"],
       "description": "Map of successfully updated EmailId to null or a partial Email object containing only the properties the server changed (RFC 8620 §5.3).",
       "propertyNames": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
-      "additionalProperties": { "anyOf": [{ "$ref": "../core/types.schema.json#/$defs/EmailExt" }, { "type": "null" }] }
+      "additionalProperties": { "anyOf": [{ "$ref": "../core/types.schema.json#/$defs/Email" }, { "type": "null" }] }
     },
 
     "destroyed": {
@@ -67,6 +67,5 @@
       "additionalProperties": { "$ref": "#/$defs/SetError" }
     }
   },
-  "required": ["accountId", "oldState", "newState"],
-  "additionalProperties": false
+  "required": ["accountId", "oldState", "newState"]
 }

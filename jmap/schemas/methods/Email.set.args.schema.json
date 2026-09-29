@@ -12,8 +12,7 @@
       "description": "JMAP PatchObject: keys are JSON Pointers to properties; values are the new values (or null to remove).",
       "patternProperties": {
         "^/": {}
-      },
-      "additionalProperties": false
+      }
     }
   },
   "type": "object",
@@ -25,7 +24,7 @@
       "type": "object",
       "description": "Map of client-assigned creation ids to Email objects.",
       "propertyNames": { "$ref": "#/$defs/CreationId" },
-      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/EmailExt" }
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/Email" }
     },
 
     "update": {
@@ -41,6 +40,5 @@
       "items": { "$ref": "../core/types.schema.json#/$defs/EmailId" }
     }
   },
-  "required": ["accountId"],
-  "additionalProperties": false
+  "required": ["accountId"]
 }

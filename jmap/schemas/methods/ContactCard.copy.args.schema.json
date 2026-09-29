@@ -19,8 +19,7 @@
           "id": { "$ref": "../core/types.schema.json#/$defs/ContactCardId", "description": "The id of the ContactCard in the source account." },
           "addressBookId": { "$ref": "../core/types.schema.json#/$defs/AddressBookId", "description": "The AddressBook to place the copy in." }
         },
-        "required": ["id", "addressBookId"],
-        "additionalProperties": false
+        "required": ["id", "addressBookId"]
       }
     },
     "onSuccessDestroyOriginal": {
@@ -32,6 +31,5 @@
       "description": "Guard on source state when destroying originals."
     }
   },
-  "required": ["fromAccountId", "accountId", "create"],
-  "additionalProperties": false
+  "required": ["fromAccountId", "accountId", "create"]
 }

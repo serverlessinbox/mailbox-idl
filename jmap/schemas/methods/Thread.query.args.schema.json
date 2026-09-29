@@ -20,8 +20,7 @@
           "isAscending": { "type": "boolean" },
           "collation": { "type": "string" }
         },
-        "required": ["property"],
-        "additionalProperties": false
+        "required": ["property"]
       },
       "description": "List of Comparator objects specifying sort order."
     },

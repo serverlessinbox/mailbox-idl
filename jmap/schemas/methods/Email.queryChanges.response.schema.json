@@ -22,8 +22,7 @@
           "id": { "$ref": "../core/types.schema.json#/$defs/EmailId" },
           "index": { "type": "integer", "minimum": 0 }
         },
-        "required": ["id", "index"],
-        "additionalProperties": false
+        "required": ["id", "index"]
       }
     },
     "total": { "type": "integer", "minimum": 0, "description": "Updated total count of results (if calculateTotal was true in the original query)." },
@@ -36,6 +35,5 @@
     "hasMoreChanges",
     "removed",
     "added"
-  ],
-  "additionalProperties": false
+  ]
 }

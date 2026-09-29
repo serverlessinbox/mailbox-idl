@@ -39,6 +39,5 @@
       "description": "Truncate body values to this byte length."
     }
   },
-  "required": ["accountId", "blobIds"],
-  "additionalProperties": false
+  "required": ["accountId", "blobIds"]
 }

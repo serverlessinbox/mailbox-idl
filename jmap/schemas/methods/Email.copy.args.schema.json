@@ -28,8 +28,7 @@
             "additionalProperties": { "type": "boolean", "enum": [true] }
           }
         },
-        "required": ["id", "mailboxIds"],
-        "additionalProperties": false
+        "required": ["id", "mailboxIds"]
       }
     },
     "onSuccessDestroyOriginal": {
@@ -41,6 +40,5 @@
       "description": "Guard on source state when destroying originals."
     }
   },
-  "required": ["fromAccountId", "accountId", "create"],
-  "additionalProperties": false
+  "required": ["fromAccountId", "accountId", "create"]
 }
