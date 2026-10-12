@@ -1,0 +1,13 @@
+import type {
+  ListDomainsRequest,
+  ListDomainsResponse,
+  WatchDomainsRequest,
+  WatchDomainsResponse,
+} from './domains_pb';
+
+import {
+  ListDomainsRequestSchema,
+  ListDomainsResponseSchema,
+  WatchDomainsRequestSchema,
+  WatchDomainsResponseSchema,
+} from './domains_pb';

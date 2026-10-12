@@ -1,0 +1,29 @@
+  /**
+   * Lists domains.
+   * 
+   * Paged.
+   */
+  async listDomains(request?: ListDomainsRequestData): Promise<ListDomainsResponse> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (this.authorization) {
+      headers['Authorization'] = this.authorization;
+    }
+
+    const requestMessage = create(ListDomainsRequestSchema, request || {});
+    const response = await this.fetch(`${this.endpoint}/ListDomains`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(toJson(ListDomainsRequestSchema, requestMessage)),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`ListDomains failed: ${response.status} ${error}`);
+    }
+
+    const responseData = (await response.json()) as any;
+    return fromJson(ListDomainsResponseSchema, responseData);
+  }

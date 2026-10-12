@@ -1,0 +1,46 @@
+type UserServiceClient struct {
+	baseURL       string
+	servicePath   string
+	httpClient    *http.Client
+	tokenProvider BearerTokenProvider
+}
+
+func NewUserServiceClient(baseURL string, opts ...ClientOption) *UserServiceClient {
+	o := &clientOptions{httpClient: &http.Client{}}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(o)
+		}
+	}
+	return &UserServiceClient{
+		baseURL:       normalizeBaseURL(baseURL),
+		servicePath:   kebabCaseServicePath("UserService"),
+		httpClient:    o.httpClient,
+		tokenProvider: o.tokenProvider,
+	}
+}
+
+var _ usersv1.UserService = (*UserServiceClient)(nil)
+
+func (c *UserServiceClient) GetUser(ctx context.Context, req *usersv1.GetUserRequest) (*usersv1.GetUserResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request is required")
+	}
+	resp := &usersv1.GetUserResponse{}
+	if err := doProtoJSONCall(ctx, c.httpClient, c.tokenProvider, c.baseURL, c.servicePath, "GetUser", req, resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *UserServiceClient) ListUsers(ctx context.Context, req *commonv1.Empty) (*usersv1.ListUsersResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("request is required")
+	}
+	resp := &usersv1.ListUsersResponse{}
+	if err := doProtoJSONCall(ctx, c.httpClient, c.tokenProvider, c.baseURL, c.servicePath, "ListUsers", req, resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
