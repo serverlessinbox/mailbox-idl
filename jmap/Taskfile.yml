@@ -21,7 +21,7 @@ tasks:
           exit 2
         fi
         yarn --cwd "{{.TASKFILE_DIR}}" install --immutable
-        OUTPUT_DIR="{{.OUTPUT_DIR}}" yarn --cwd "{{.TASKFILE_DIR}}" node ./scripts/generate-ts.mjs
+        OUTPUT_DIR="{{.OUTPUT_DIR}}" yarn --cwd "{{.TASKFILE_DIR}}" run generate:ts
 
   generate:go:
     desc: Generate Go types from JMAP JSON Schemas
@@ -36,5 +36,5 @@ tasks:
         fi
         yarn --cwd "{{.TASKFILE_DIR}}" install --immutable
         OUTPUT_DIR="{{.OUTPUT_DIR}}" PACKAGE="{{.PACKAGE}}" \
-          yarn --cwd "{{.TASKFILE_DIR}}" node ./scripts/generate-go.mjs
+          yarn --cwd "{{.TASKFILE_DIR}}" run generate:go
 
