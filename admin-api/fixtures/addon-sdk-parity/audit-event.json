@@ -1,0 +1,17 @@
+{
+  "tenantId": "tenant_V1StGXR8_Z5jdHi6B-myT",
+  "entityType": "users",
+  "entityId": "user_Uakgb_J5m9g-0JDMbcJqL",
+  "entityName": "alice",
+  "action": "UsersService/UpdateUser",
+  "status": "success",
+  "actor": {
+    "actorType": "user",
+    "actorId": "7c1f0a52-3d4e-4b6a-9f10-2a8e5c1d9b34",
+    "username": "admin@example.com",
+    "ipAddress": "203.0.113.7"
+  },
+  "changes": [
+    { "field": "displayName", "oldValue": "Alice", "newValue": "Alice Smith" }
+  ]
+}
