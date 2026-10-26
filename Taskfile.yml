@@ -39,11 +39,13 @@ tasks:
       - task -d admin-api generate:go:http-client OUTPUT_DIR={{.OUTPUT_DIR}} GO_PACKAGE_PREFIX={{.GO_PACKAGE_PREFIX}} GO_MODULE_TRIM={{.GO_MODULE_TRIM}} CLIENT_PACKAGE={{.CLIENT_PACKAGE}} CLIENT_FILENAME={{.CLIENT_FILENAME}} COMPOUND_CLIENT={{.COMPOUND_CLIENT}} COMPOUND_CLIENT_FILENAME={{.COMPOUND_CLIENT_FILENAME}}
 
   admin-api:generate:ts:
-    desc: Generate TypeScript SDK for Admin API (output outside this repo; OUTPUT_DIR required)
+    desc: Generate TypeScript SDK for Admin API (output outside this repo; OUTPUT_DIR required; HANDLER_CONTEXT_MODULE enables the *_service.ts files; PROTO_PATH limits generation to one proto file)
     vars:
       OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      HANDLER_CONTEXT_MODULE: '{{.HANDLER_CONTEXT_MODULE}}'
+      PROTO_PATH: '{{.PROTO_PATH}}'
     cmds:
-      - task -d admin-api generate:ts OUTPUT_DIR={{.OUTPUT_DIR}}
+      - task -d admin-api generate:ts OUTPUT_DIR={{.OUTPUT_DIR}} HANDLER_CONTEXT_MODULE={{.HANDLER_CONTEXT_MODULE}} PROTO_PATH={{.PROTO_PATH}}
 
   admin-api:lint:
     desc: Lint Admin API protobuf definitions

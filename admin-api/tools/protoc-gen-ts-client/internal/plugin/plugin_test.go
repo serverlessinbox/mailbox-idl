@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 
+	"admin-api/tools/protoc-gen-ts-client/internal/config"
 	"admin-api/tools/protoc-gen-ts-client/internal/generate"
 	"admin-api/tools/protoc-gen-ts-client/internal/naming"
 	"admin-api/tools/protoc-gen-ts-client/internal/render"
@@ -46,7 +47,11 @@ func runPlugin(t *testing.T, files ...*descriptorpb.FileDescriptorProto) []strin
 	if err != nil {
 		t.Fatalf("NewRenderer: %v", err)
 	}
-	tsPlugin := NewPlugin(source.NewReader(), generate.NewGenerator(renderer, naming.NewNaming()))
+	cfg := config.NewConfig()
+	if err := cfg.Set("handler_context_module", "@example/sdk"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	tsPlugin := NewPlugin(source.NewReader(), generate.NewGenerator(renderer, naming.NewNaming(), cfg))
 
 	var toGenerate []string
 	for _, file := range files {

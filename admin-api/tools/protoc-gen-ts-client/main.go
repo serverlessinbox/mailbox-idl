@@ -21,7 +21,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "protoc-gen-ts-client:", err)
 		os.Exit(1)
 	}
-	generator := generate.NewGenerator(renderer, naming.NewNaming())
+	generator := generate.NewGenerator(renderer, naming.NewNaming(), cfg)
 	tsPlugin := plugin.NewPlugin(source.NewReader(), generator)
 
 	protogen.Options{ParamFunc: cfg.Set}.Run(tsPlugin.Run)

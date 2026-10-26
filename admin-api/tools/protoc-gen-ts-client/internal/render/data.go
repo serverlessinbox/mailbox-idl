@@ -34,7 +34,9 @@ type ServiceDefinitionData struct {
 	Imports     PbImportsData
 	ServiceName string
 	BasePath    string
-	Methods     []RuntimeMethod
+	// HandlerContextModule is the module specifier HandlerContext is imported from.
+	HandlerContextModule string
+	Methods              []RuntimeMethod
 }
 
 // ClientMethodData feeds the "clientMethod" block.

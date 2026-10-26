@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"admin-api/tools/protoc-gen-ts-client/internal/config"
 	"admin-api/tools/protoc-gen-ts-client/internal/model"
 	"admin-api/tools/protoc-gen-ts-client/internal/naming"
 	"admin-api/tools/protoc-gen-ts-client/internal/render"
@@ -20,7 +21,11 @@ func newTestGenerator(t *testing.T) *Generator {
 	if err != nil {
 		t.Fatalf("NewRenderer: %v", err)
 	}
-	return NewGenerator(renderer, naming.NewNaming())
+	cfg := config.NewConfig()
+	if err := cfg.Set("handler_context_module", "@example/sdk"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	return NewGenerator(renderer, naming.NewNaming(), cfg)
 }
 
 func sampleFile() model.File {
@@ -116,6 +121,36 @@ func TestGenerateFileWithoutServicesEmitsNothing(t *testing.T) {
 	}
 	if len(result.Files) != 0 || len(result.Services) != 0 {
 		t.Errorf("result = %#v, want empty", result)
+	}
+}
+
+// Without a handler context module the generated service files could not
+// import HandlerContext, so only the client is produced.
+func TestGenerateFileWithoutHandlerContextModuleEmitsNoServiceFile(t *testing.T) {
+	renderer, err := render.NewRenderer()
+	if err != nil {
+		t.Fatalf("NewRenderer: %v", err)
+	}
+	generator := NewGenerator(renderer, naming.NewNaming(), config.NewConfig())
+
+	result, err := generator.GenerateFile(sampleFile())
+	if err != nil {
+		t.Fatalf("GenerateFile: %v", err)
+	}
+
+	if len(result.Files) != 1 || result.Files[0].Filename != "email_identities_client.ts" {
+		t.Errorf("files = %#v, want only email_identities_client.ts", result.Files)
+	}
+	if len(result.Services) != 1 {
+		t.Errorf("Services = %#v, want the client reference kept", result.Services)
+	}
+}
+
+func TestServiceDefinitionDataCarriesHandlerContextModule(t *testing.T) {
+	file := sampleFile()
+	data := newTestGenerator(t).serviceDefinitionData(file, file.Services[0])
+	if data.HandlerContextModule != "@example/sdk" {
+		t.Errorf("HandlerContextModule = %q, want %q", data.HandlerContextModule, "@example/sdk")
 	}
 }
 

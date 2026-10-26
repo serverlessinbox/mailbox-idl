@@ -3,6 +3,7 @@ package generate
 import (
 	"fmt"
 
+	"admin-api/tools/protoc-gen-ts-client/internal/config"
 	"admin-api/tools/protoc-gen-ts-client/internal/model"
 	"admin-api/tools/protoc-gen-ts-client/internal/naming"
 	"admin-api/tools/protoc-gen-ts-client/internal/render"
@@ -13,11 +14,13 @@ import (
 type Generator struct {
 	renderer *render.Renderer
 	naming   *naming.Naming
+	config   *config.Config
 }
 
-// NewGenerator returns a Generator that renders with renderer and names with naming.
-func NewGenerator(renderer *render.Renderer, names *naming.Naming) *Generator {
-	return &Generator{renderer: renderer, naming: names}
+// NewGenerator returns a Generator that renders with renderer, names with naming
+// and reads its parameters from cfg when it generates a file.
+func NewGenerator(renderer *render.Renderer, names *naming.Naming, cfg *config.Config) *Generator {
+	return &Generator{renderer: renderer, naming: names, config: cfg}
 }
 
 // GenerateFile renders the client file and the service definition file of every
@@ -29,14 +32,16 @@ func (g *Generator) GenerateFile(file model.File) (FileOutputs, error) {
 		if err != nil {
 			return FileOutputs{}, fmt.Errorf("service %s: %w", service.Name, err)
 		}
-		definition, err := g.renderer.ServiceDefinition(g.serviceDefinitionData(file, service))
-		if err != nil {
-			return FileOutputs{}, fmt.Errorf("service %s: %w", service.Name, err)
+		result.Files = append(result.Files, Output{Filename: string(file.Prefix) + "_client.ts", Content: client})
+
+		if g.config.HandlerContextModule != "" {
+			definition, err := g.renderer.ServiceDefinition(g.serviceDefinitionData(file, service))
+			if err != nil {
+				return FileOutputs{}, fmt.Errorf("service %s: %w", service.Name, err)
+			}
+			result.Files = append(result.Files, Output{Filename: string(file.Prefix) + "_service.ts", Content: definition})
 		}
-		result.Files = append(result.Files,
-			Output{Filename: string(file.Prefix) + "_client.ts", Content: client},
-			Output{Filename: string(file.Prefix) + "_service.ts", Content: definition},
-		)
+
 		result.Services = append(result.Services, model.ServiceRef{
 			Name:       service.Name,
 			ClientName: g.naming.ClientName(service.Name),
@@ -77,10 +82,11 @@ func (g *Generator) serviceDefinitionData(file model.File, service model.Service
 		})
 	}
 	return render.ServiceDefinitionData{
-		Imports:     g.importsData(file, service),
-		ServiceName: string(service.Name),
-		BasePath:    g.naming.BasePath(file.ProtoName),
-		Methods:     methods,
+		Imports:              g.importsData(file, service),
+		ServiceName:          string(service.Name),
+		BasePath:             g.naming.BasePath(file.ProtoName),
+		HandlerContextModule: g.config.HandlerContextModule,
+		Methods:              methods,
 	}
 }
 

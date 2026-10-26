@@ -119,9 +119,11 @@ tasks:
 
 
   generate:ts:
-    desc: Generate TypeScript SDK from protobuf (output outside this repo; OUTPUT_DIR required)
+    desc: Generate TypeScript SDK from protobuf (output outside this repo; OUTPUT_DIR required; HANDLER_CONTEXT_MODULE enables the *_service.ts files; PROTO_PATH limits generation to one proto file)
     vars:
       OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      HANDLER_CONTEXT_MODULE: '{{.HANDLER_CONTEXT_MODULE}}'
+      PROTO_PATH: '{{.PROTO_PATH}}'
     cmds:
       - |
         set -euo pipefail
@@ -132,13 +134,27 @@ tasks:
         # Build the local buf plugin for the host platform — the checked-out binary
         # may be from another OS/arch (buf execs it by relative path).
         (cd tools/protoc-gen-ts-client && GOWORK=off go build -o protoc-gen-ts-client .)
-        buf generate --template buf.gen.ts.yaml -o "{{.OUTPUT_DIR}}"
-    sources:
-      - proto/**/*.proto
-      - buf.yaml
-      - buf.lock
-      - buf.gen.ts.yaml
-      - tools/protoc-gen-ts-client/**
+
+        # The local plugin's option list ends the template; the module option is added after paths=.
+        TMP_DIR=$(mktemp -d)
+        trap "rm -rf $TMP_DIR" EXIT
+        TMP_YAML="$TMP_DIR/buf.gen.yaml"
+        if [ -n "{{.HANDLER_CONTEXT_MODULE}}" ]; then
+          awk -v module="{{.HANDLER_CONTEXT_MODULE}}" '{ print } /^      - paths=source_relative$/ { print "      - handler_context_module=" module }' buf.gen.ts.yaml > "$TMP_YAML"
+          if ! grep -q '^      - handler_context_module=' "$TMP_YAML"; then
+            echo "ERROR: buf.gen.ts.yaml has no paths=source_relative option line to add handler_context_module after." >&2
+            exit 2
+          fi
+        else
+          cp buf.gen.ts.yaml "$TMP_YAML"
+        fi
+
+        PATH_ARGS=()
+        if [ -n "{{.PROTO_PATH}}" ]; then
+          PATH_ARGS=(--path "{{.PROTO_PATH}}")
+        fi
+        buf generate --template "$TMP_YAML" -o "{{.OUTPUT_DIR}}" "${PATH_ARGS[@]+"${PATH_ARGS[@]}"}"
+    method: none
 
   lint:
     desc: Lint protobuf definitions

@@ -87,9 +87,10 @@ func TestDocCommentGolden(t *testing.T) {
 
 func TestServiceDefinitionGolden(t *testing.T) {
 	got, err := newTestRenderer(t).ServiceDefinition(ServiceDefinitionData{
-		Imports:     sampleImports(),
-		ServiceName: "DomainsService",
-		BasePath:    "/domains",
+		Imports:              sampleImports(),
+		ServiceName:          "DomainsService",
+		BasePath:             "/domains",
+		HandlerContextModule: "@example/sdk",
 		Methods: []RuntimeMethod{
 			{Name: "ListDomains", HandlerName: "listDomains", Input: "ListDomainsRequest", Output: "ListDomainsResponse"},
 		},

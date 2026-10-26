@@ -45,6 +45,14 @@ task jmap:generate:go OUTPUT_DIR=/path/to/your/go/module/jmapsdk PACKAGE=jmapsdk
 # Admin API: TypeScript client
 task admin-api:generate:ts OUTPUT_DIR=/path/to/your/project/src/admin-api
 
+# Admin API: TypeScript client plus the *_service.ts handler interfaces, which import
+# HandlerContext from the given module (without HANDLER_CONTEXT_MODULE no *_service.ts is written).
+# PROTO_PATH optionally limits generation to one proto file.
+task admin-api:generate:ts \
+  OUTPUT_DIR=/path/to/your/project/src/admin-api \
+  HANDLER_CONTEXT_MODULE=@your-scope/your-sdk \
+  PROTO_PATH=proto/idp_users.proto
+
 # Admin API: Go types and interfaces
 task admin-api:generate:go \
   OUTPUT_DIR=/path/to/your/go/module \

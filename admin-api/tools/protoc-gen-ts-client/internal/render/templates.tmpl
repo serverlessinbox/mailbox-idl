@@ -30,15 +30,11 @@ import {
 
 {{template "pbImports" .Imports}}
 
-export type HandlerContext<TAuth = unknown, TAudit = unknown> = {
-  auth: TAuth;
-  audit: TAudit;
-  requestId?: string;
-};
+import type { HandlerContext } from '{{.HandlerContextModule}}';
 
-export interface {{.ServiceName}}Handlers<TAuth = unknown, TAudit = unknown> {
+export interface {{.ServiceName}}Handlers {
 {{- range .Methods}}
-  {{.HandlerName}}(ctx: HandlerContext<TAuth, TAudit>, req: {{.Input}}): Promise<{{.Output}}>;
+  {{.HandlerName}}(ctx: HandlerContext, req: {{.Input}}): Promise<{{.Output}}>;
 {{- end}}
 }
 

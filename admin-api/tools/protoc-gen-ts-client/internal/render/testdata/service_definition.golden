@@ -14,14 +14,10 @@ import {
   WatchDomainsResponseSchema,
 } from './domains_pb';
 
-export type HandlerContext<TAuth = unknown, TAudit = unknown> = {
-  auth: TAuth;
-  audit: TAudit;
-  requestId?: string;
-};
+import type { HandlerContext } from '@example/sdk';
 
-export interface DomainsServiceHandlers<TAuth = unknown, TAudit = unknown> {
-  listDomains(ctx: HandlerContext<TAuth, TAudit>, req: ListDomainsRequest): Promise<ListDomainsResponse>;
+export interface DomainsServiceHandlers {
+  listDomains(ctx: HandlerContext, req: ListDomainsRequest): Promise<ListDomainsResponse>;
 }
 
 export const DomainsServiceRuntime = {
