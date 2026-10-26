@@ -21,6 +21,11 @@ service StackUpdateService {
   // Serves both as a creation-status poll endpoint and a detail-fetch endpoint.
   rpc DescribeChangeSet(DescribeChangeSetRequest) returns (DescribeChangeSetResponse);
 
+  // GetUpdateParameters returns the CloudFormation parameters of the target template version:
+  // each with its constraints, the value the stack holds today and the value the server
+  // proposes, plus the stack parameters the target template no longer declares.
+  // Read-only.
+  rpc GetUpdateParameters(GetUpdateParametersRequest) returns (GetUpdateParametersResponse);
 }
 
 // ============================================
@@ -85,6 +90,13 @@ message CreateChangeSetRequest {
   // To target next_major, explicitly pass next_major.version.
   // Must match semver pattern if provided.
   optional string target_template_version = 1 [(validate.rules).string = {pattern: "^v?\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*)?$"}];
+
+  // Explicit value for every parameter of the target template. The server rejects the request
+  // with an invalid-input error (before superseding any pending changeset) when an entry is
+  // missing, duplicated or unknown, when a value violates the template constraints, or when
+  // use_previous_value is misused. Exactly one entry per parameter of the target template is
+  // required.
+  repeated ParameterValue parameters = 2;
 }
 
 message CreateChangeSetResponse {
@@ -93,6 +105,165 @@ message CreateChangeSetResponse {
 
   // CloudFormation ChangeSet ARN.
   string change_set_arn = 2;
+}
+
+// ============================================
+// GetUpdateParameters
+// ============================================
+
+message GetUpdateParametersRequest {
+  // Target template version. If omitted, defaults to next_minor from GetUpdateOptions.
+  // Must be the latest available version for its track; otherwise the server rejects it.
+  // Must match semver pattern if provided.
+  optional string target_template_version = 1 [(validate.rules).string = {pattern: "^v?\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*)?$"}];
+}
+
+message GetUpdateParametersResponse {
+  // Target template version the parameters belong to, as bare semver (no "v" prefix).
+  string target_template_version = 1;
+
+  // Parameter groups in template order. Parameters the template does not group are listed
+  // in a trailing group with an empty id.
+  repeated ParameterGroup groups = 2;
+
+  // All parameters of the target template, in template order.
+  repeated TemplateParameter parameters = 3;
+
+  // Parameters the stack has today that the target template no longer declares. Submitting one
+  // of them in CreateChangeSet is rejected as an unknown key.
+  repeated RemovedParameter removed = 4;
+}
+
+// ParameterGroup is a labelled set of template parameters.
+message ParameterGroup {
+  // Group identifier from the template metadata; empty for the trailing group of ungrouped parameters.
+  string id = 1;
+
+  // Human-readable group label.
+  string label = 2;
+
+  // Keys of the parameters in this group, in display order. Each key matches TemplateParameter.key.
+  repeated string parameter_keys = 3;
+}
+
+// TemplateParameter describes one parameter of the target template together with the
+// server-computed proposal for its value. The constraint fields mirror the template; the
+// server enforces them on CreateChangeSet.
+message TemplateParameter {
+  // CloudFormation parameter key.
+  string key = 1;
+
+  // Human-readable label; the key when the template defines none.
+  string label = 2;
+
+  // Parameter description from the template.
+  string description = 3;
+
+  // CloudFormation parameter type (e.g., "String", "Number").
+  string type = 4;
+
+  // AllowedValues from the template. Empty when the template declares none; otherwise a
+  // submitted value must be one of them.
+  repeated string allowed_values = 5;
+
+  // Default from the template. Absent when the template declares none.
+  optional string default_value = 6;
+
+  // True for NoEcho parameters. The server never returns their values, so current_value and
+  // proposed_value are absent.
+  bool no_echo = 7;
+
+  // AllowedPattern regular expression from the template. Absent when not declared.
+  optional string allowed_pattern = 8;
+
+  // MinLength from the template. Absent when not declared.
+  optional int64 min_length = 9;
+
+  // MaxLength from the template. Absent when not declared.
+  optional int64 max_length = 10;
+
+  // MinValue from the template (Number type). Absent when not declared.
+  optional double min_value = 11;
+
+  // MaxValue from the template (Number type). Absent when not declared.
+  optional double max_value = 12;
+
+  // Value the stack holds today. Absent when the parameter is NEW or no_echo.
+  optional string current_value = 13;
+
+  // Value the server proposes for this parameter. Absent when no_echo or proposed_source is NONE.
+  optional string proposed_value = 14;
+
+  // How proposed_value was derived.
+  ProposedValueSource proposed_source = 15;
+
+  // How this parameter differs from the stack today.
+  ParameterChange change = 16;
+
+  // Constraint the current value violates under the target template; UNSPECIFIED when none.
+  ParameterConstraint violated_constraint = 17;
+
+  // True when the caller must supply a value for this parameter.
+  bool required = 18;
+}
+
+// RemovedParameter is a parameter on the stack that the target template no longer declares.
+message RemovedParameter {
+  // CloudFormation parameter key.
+  string key = 1;
+
+  // Value the stack holds today. Absent when the value is masked (NoEcho).
+  optional string current_value = 2;
+}
+
+// ParameterValue is one submitted parameter in CreateChangeSet.
+message ParameterValue {
+  // CloudFormation parameter key; must be a parameter of the target template.
+  string key = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Value to set. Must be empty when use_previous_value is true.
+  string value = 2;
+
+  // Keep the value the stack holds today. Only valid for a key the stack already has; the
+  // only way to leave a NoEcho parameter unchanged.
+  bool use_previous_value = 3;
+}
+
+// How the proposed value of a template parameter was derived.
+enum ProposedValueSource {
+  PROPOSED_VALUE_SOURCE_UNSPECIFIED = 0;
+  // The current value is still valid and is proposed unchanged.
+  PROPOSED_VALUE_SOURCE_CURRENT = 1;
+  // The current value differs only in letter case from an allowed value; the allowed spelling is proposed.
+  PROPOSED_VALUE_SOURCE_CASE_MATCHED = 2;
+  // The template default is proposed.
+  PROPOSED_VALUE_SOURCE_DEFAULT = 3;
+  // No usable proposal; proposed_value is absent.
+  PROPOSED_VALUE_SOURCE_NONE = 4;
+  // NoEcho parameter: the previous value is kept and not disclosed.
+  PROPOSED_VALUE_SOURCE_PREVIOUS = 5;
+}
+
+// How a template parameter differs from the stack today.
+enum ParameterChange {
+  PARAMETER_CHANGE_UNSPECIFIED = 0;
+  // The parameter exists on the stack and its current value is valid.
+  PARAMETER_CHANGE_UNCHANGED = 1;
+  // The target template adds this parameter; the stack has no value for it.
+  PARAMETER_CHANGE_NEW = 2;
+  // The current value is not allowed by the target template; see violated_constraint.
+  PARAMETER_CHANGE_VALUE_NOT_ALLOWED = 3;
+}
+
+// Template constraint a value violates.
+enum ParameterConstraint {
+  PARAMETER_CONSTRAINT_UNSPECIFIED = 0;
+  PARAMETER_CONSTRAINT_ALLOWED_VALUES = 1;
+  PARAMETER_CONSTRAINT_ALLOWED_PATTERN = 2;
+  PARAMETER_CONSTRAINT_LENGTH = 3;
+  PARAMETER_CONSTRAINT_RANGE = 4;
+  // The value is not a valid number for a Number parameter.
+  PARAMETER_CONSTRAINT_NUMBER_FORMAT = 5;
 }
 
 // ============================================
