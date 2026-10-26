@@ -84,7 +84,7 @@ managed:
       value: @GO_PACKAGE_PREFIX@/users;usersv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
 plugins:
-  - local: ["tools/protoc-gen-go-http-client/protoc-gen-go-http-client"]
+  - local: ["../tools/protoc-gen-go-http-client/protoc-gen-go-http-client"]
     out: .
     opt:
       - client_mode=external

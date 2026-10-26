@@ -1,0 +1,30 @@
+# buf.gen.go.httpclient.yaml.tmpl - Go HTTP client generation (from protobuf)
+version: v2
+managed:
+  enabled: true
+  disable:
+    - file_option: java_package
+    - file_option: java_outer_classname
+    - file_option: java_multiple_files
+    - file_option: java_string_check_utf8
+    - file_option: objc_class_prefix
+    - file_option: csharp_namespace
+    - file_option: php_namespace
+    - file_option: php_metadata_namespace
+    - file_option: ruby_package
+    - file_option: optimize_for
+    - file_option: cc_enable_arenas
+  override:
+    - file_option: go_package
+      path: preferences.proto
+      value: @GO_PACKAGE_PREFIX@/userapi;userapiv1
+      module: buf.build/serverlessinbox/mailbox-idl-user-api
+plugins:
+  - local: ["../tools/protoc-gen-go-http-client/protoc-gen-go-http-client"]
+    out: .
+    opt:
+      - client_mode=external
+      - client_package=@CLIENT_PACKAGE@
+      - client_filename=@CLIENT_FILENAME@
+      - compound_client=@COMPOUND_CLIENT@
+      - compound_client_filename=@COMPOUND_CLIENT_FILENAME@

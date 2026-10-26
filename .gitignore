@@ -8,15 +8,13 @@
 # main.go, so the binary sits inside the package directory rather than a build
 # output dir. Rebuilt by Taskfile.yml on every codegen run, and
 # architecture-specific — tracking them dirtied the tree after each build.
-admin-api/tools/protoc-gen-go-interface/protoc-gen-go-interface
-admin-api/tools/protoc-gen-go-http-client/protoc-gen-go-http-client
-admin-api/tools/protoc-gen-ts-client/protoc-gen-ts-client
+tools/protoc-gen-go-interface/protoc-gen-go-interface
+tools/protoc-gen-go-http-client/protoc-gen-go-http-client
+tools/protoc-gen-ts-client/protoc-gen-ts-client
 
-# Installed protoc plugins (protoc-gen-go, protoc-gen-validate). Installed to a
-# per-task tools/bin/ directory by go install, platform-specific.
-admin-api/tools/bin/
-push-ws/tools/bin/
-user-api/tools/bin/
+# Installed protoc plugins (protoc-gen-go, protoc-gen-validate). Installed to the one
+# shared tools/bin/ by go install for every namespace, platform-specific.
+tools/bin/
 
 # Generated client code belongs in each consumer's own repo, never here. A misdirected
 # codegen run once committed a stale copy of webmail-ui's generated JMAP client.

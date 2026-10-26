@@ -19,7 +19,18 @@ managed:
       value: @GO_PACKAGE_PREFIX@/userapi;userapiv1
       module: buf.build/serverlessinbox/mailbox-idl-user-api
 plugins:
-  - local: tools/bin/protoc-gen-go
+  - local: ../tools/bin/protoc-gen-go
+    out: .
+    opt:
+      - module=@GO_MODULE_TRIM@
+
+  - local: ../tools/bin/protoc-gen-validate
+    out: .
+    opt:
+      - lang=go
+      - module=@GO_MODULE_TRIM@
+
+  - local: ["../tools/protoc-gen-go-interface/protoc-gen-go-interface"]
     out: .
     opt:
       - module=@GO_MODULE_TRIM@
