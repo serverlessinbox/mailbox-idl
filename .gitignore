@@ -16,6 +16,7 @@ admin-api/tools/protoc-gen-ts-client/protoc-gen-ts-client
 # per-task tools/bin/ directory by go install, platform-specific.
 admin-api/tools/bin/
 push-ws/tools/bin/
+user-api/tools/bin/
 
 # Generated client code belongs in each consumer's own repo, never here. A misdirected
 # codegen run once committed a stale copy of webmail-ui's generated JMAP client.

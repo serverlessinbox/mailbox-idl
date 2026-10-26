@@ -80,3 +80,27 @@ tasks:
     desc: Run breaking-change checks for Push WS protos
     cmds:
       - task -d push-ws breaking
+
+  user-api:generate:go:
+    desc: Generate Go types for User API protocol (output outside this repo)
+    vars:
+      OUTPUT_DIR: '{{.OUTPUT_DIR}}'
+      GO_PACKAGE_PREFIX: '{{.GO_PACKAGE_PREFIX}}'
+      GO_MODULE_TRIM: '{{.GO_MODULE_TRIM}}'
+    cmds:
+      - task -d user-api generate:go OUTPUT_DIR={{.OUTPUT_DIR}} GO_PACKAGE_PREFIX={{.GO_PACKAGE_PREFIX}} GO_MODULE_TRIM={{.GO_MODULE_TRIM}}
+
+  user-api:generate:ts:
+    desc: Generate TypeScript types for User API protocol (output outside this repo)
+    cmds:
+      - task -d user-api generate:ts OUTPUT_DIR={{.OUTPUT_DIR}}
+
+  user-api:lint:
+    desc: Lint User API protobuf definitions
+    cmds:
+      - task -d user-api lint
+
+  user-api:breaking:
+    desc: Run breaking-change checks for User API protos
+    cmds:
+      - task -d user-api breaking
