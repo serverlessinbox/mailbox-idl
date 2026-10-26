@@ -79,4 +79,4 @@ tasks:
   breaking:
     desc: Run breaking change checks (against local baseline)
     cmds:
-      - buf breaking --against '.git#branch=main'
+      - buf breaking --against '../.git#branch=main,subdir=push-ws'
