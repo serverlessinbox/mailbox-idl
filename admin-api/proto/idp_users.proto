@@ -82,7 +82,8 @@ message SetIdpUserEnabledResponse {}
 message SetIdpUserPasswordRequest {
   string username = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
   string password = 2 [(validate.rules).string = {min_len: 8, max_len: 1024}];
-  optional bool permanent = 3;
+  reserved 3;
+  reserved "permanent";
 }
 
 message SetIdpUserPasswordResponse {}
