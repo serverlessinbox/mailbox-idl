@@ -2,76 +2,106 @@ syntax = "proto3";
 
 package userapi.v1;
 
-// PreferencesService lets an authenticated user read and change their own display preferences.
-// The caller is identified by the authentication context the request arrives with, never by a
-// field in a message, so no request here names whose preferences are read or written.
+import "google/protobuf/struct.proto";
+
+// PreferencesService lets an authenticated user read and change their own preferences.
+//
+// Preferences come in two parts:
+//   - shared preferences: one typed message (SharedPreferences) that every client of the user
+//     honours;
+//   - client settings: one free-form JSON object per client application (for example the webmail
+//     or a future mobile app), which only that client reads and writes.
+//
+// The user is the authenticated principal; no request names a user. The client is the name the
+// request gives in client_name, the fixed name a client application uses for itself. Each client
+// reads and writes only the settings under the name it gives.
+//
+// Writes are last-write-wins: an update replaces the part it names without checking any earlier
+// read. A write changes only the part it names: UpdateSharedPreferences never changes any client's
+// settings, and UpdateClientSettings never changes the shared preferences or another client's
+// settings.
 service PreferencesService {
-  // GetPreferences returns the caller's current preferences and the version they are stored at.
-  // Pass the returned version as expected_version on the next UpdatePreferences call.
+  // GetPreferences returns the user's shared preferences and the settings of the named client.
+  //
+  // Fails with HTTP 400 when client_name is missing or malformed.
   rpc GetPreferences(GetPreferencesRequest) returns (GetPreferencesResponse);
 
-  // UpdatePreferences replaces the caller's stored preferences with the given document.
-  // The write succeeds only if expected_version equals the version currently stored. A mismatch
-  // means another write landed first; the caller must fetch again, re-apply its changes and retry.
-  rpc UpdatePreferences(UpdatePreferencesRequest) returns (UpdatePreferencesResponse);
+  // UpdateSharedPreferences sets the shared preferences named in the given message and touches
+  // no client's settings. A field present in shared is set; a field left out keeps its stored
+  // value; an empty language clears the stored language.
+  //
+  // Fails with HTTP 400 when shared is absent or a field is malformed.
+  rpc UpdateSharedPreferences(UpdateSharedPreferencesRequest) returns (UpdateSharedPreferencesResponse);
+
+  // UpdateClientSettings replaces the settings of the named client with the given object. It
+  // touches neither the shared preferences nor any other client's settings.
+  //
+  // Fails with HTTP 400 when client_name is missing or malformed, settings is absent, settings
+  // exceeds the size limit, or the write would add a client beyond the client limit.
+  rpc UpdateClientSettings(UpdateClientSettingsRequest) returns (UpdateClientSettingsResponse);
 }
 
-// GetPreferencesRequest has no fields: the preferences returned are the caller's own.
-message GetPreferencesRequest {}
+// SharedPreferences are the preferences every client of the user honours. Every field is
+// optional. In an update, a field present is set, a field left out keeps its stored value, and
+// an empty language clears it. A field with no stored value means the user has not chosen one,
+// and each client applies its own default.
+message SharedPreferences {
+  // Display language as a BCP 47 language tag (for example "en" or "nl-NL"), at most 35
+  // characters. The server checks the tag's shape only, not whether a client supports the
+  // language. An empty value clears the stored language.
+  optional string language = 1;
+}
 
-// GetPreferencesResponse carries the caller's stored preferences and their version.
+// GetPreferencesRequest names the client whose settings are returned.
+message GetPreferencesRequest {
+  // Required. The fixed name the calling client uses for itself, for example "webmail". It must
+  // match ^[a-z][a-z0-9-]{0,15}$. A name that has stored no settings returns empty settings.
+  // A missing or malformed name is rejected with HTTP 400.
+  string client_name = 1;
+}
+
+// GetPreferencesResponse carries the shared preferences and the named client's settings.
 message GetPreferencesResponse {
-  // The stored preferences. A field that is unset here has no stored value and the client
-  // applies its own default.
-  Preferences preferences = 1;
+  // The stored shared preferences; all fields unset when nothing has been stored.
+  SharedPreferences shared = 1;
 
-  // Monotonic version of the stored preferences. Zero means nothing has been stored yet.
-  // Send it back as expected_version when writing.
-  int64 version = 2;
+  // The settings the named client stored, as a JSON object. The server never interprets
+  // them. An empty object means this client has stored no settings and applies its own
+  // defaults. Other clients' settings are never returned.
+  google.protobuf.Struct settings = 2;
 }
 
-// UpdatePreferencesRequest replaces the caller's stored preferences.
-message UpdatePreferencesRequest {
-  // The version the caller last read. Must equal the stored version for the write to apply.
-  // Use 0 when no preferences have been stored yet, which makes the write create them.
-  int64 expected_version = 1;
-
-  // The complete new preferences document. The stored document is replaced by this one, so an
-  // unset field is cleared rather than kept from the previous document.
-  Preferences preferences = 2;
+// UpdateSharedPreferencesRequest sets the shared preferences named in shared.
+message UpdateSharedPreferencesRequest {
+  // The shared preferences to set. Only the fields present are set; a field left out keeps its
+  // stored value, and an empty language clears it. Required: a request without shared is
+  // rejected with HTTP 400.
+  SharedPreferences shared = 1;
 }
 
-// UpdatePreferencesResponse confirms the write and reports the stored result.
-message UpdatePreferencesResponse {
-  // The preferences as stored after the write.
-  Preferences preferences = 1;
-
-  // The new version of the stored preferences. Use it as expected_version for the next write.
-  int64 version = 2;
+// UpdateSharedPreferencesResponse confirms the write.
+message UpdateSharedPreferencesResponse {
+  // The shared preferences as stored after the write.
+  SharedPreferences shared = 1;
 }
 
-// Preferences is the set of user-adjustable display settings. Every field is optional so that
-// a client can leave a setting at its default by not sending it.
-message Preferences {
-  // Colour theme for the web client. Unset means the client's default theme.
-  optional Theme theme = 1;
+// UpdateClientSettingsRequest replaces the settings of the named client.
+message UpdateClientSettingsRequest {
+  // Required. The fixed name the calling client uses for itself, for example "webmail". It must
+  // match ^[a-z][a-z0-9-]{0,15}$. A missing or malformed name is rejected with HTTP 400.
+  string client_name = 1;
 
-  // Display language as a BCP 47 language tag (for example "en" or "nl-NL"). The server checks
-  // the tag's shape only, not whether the language is supported by the client.
-  optional string language = 2;
+  // The complete new settings of the named client, as a JSON object. They replace the stored
+  // object, so a setting left out is removed; send back the settings that stay. Required: a
+  // request without settings is rejected with HTTP 400 rather than treated as a clear. An empty
+  // object {} clears the client's settings. The server stores the object as given and never
+  // interprets it. Serialized as JSON it must be at most 4096 bytes. A user can hold settings for
+  // at most 16 clients.
+  google.protobuf.Struct settings = 2;
 }
 
-// Theme is the colour scheme the web client renders with.
-enum Theme {
-  // No theme chosen. Not a valid stored value for Preferences.theme; a field is left unset instead.
-  THEME_UNSPECIFIED = 0;
-
-  // Always use the light colour scheme.
-  THEME_LIGHT = 1;
-
-  // Always use the dark colour scheme.
-  THEME_DARK = 2;
-
-  // Follow the operating system's light or dark setting.
-  THEME_AUTO = 3;
+// UpdateClientSettingsResponse confirms the write.
+message UpdateClientSettingsResponse {
+  // The named client's settings as stored after the write; empty when they were cleared.
+  google.protobuf.Struct settings = 1;
 }
