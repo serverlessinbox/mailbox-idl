@@ -1,0 +1,414 @@
+syntax = "proto3";
+
+package userapi.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// JobsService lets an authenticated user start, follow and cancel their own background jobs.
+//
+// A job runs on the server after the request returns. Import reads mail from an external mail
+// source, such as an IMAP account the user names, into their own mailbox. Export is covered by
+// the same service and shares this job model when it ships.
+//
+// The user is the authenticated principal; no request names a user or an account. A user has at
+// most one active job across all kinds. A job the user cannot see, including another user's job,
+// is reported as not found.
+//
+// Errors use HTTP status codes: 400 for an invalid field, 404 for an unknown or invisible job,
+// 409 for a start that conflicts with an active job, a cooldown or a limit, and 500 for an
+// internal failure. Every fact the user needs about a job, including why it stopped, is carried
+// in Job; error responses carry no further structured detail.
+service JobsService {
+  // StartImport starts an import of the named external mail source, such as an IMAP account, into
+  // the user's own mailbox.
+  //
+  // The job is queued and returns at once. Progress is read with GetJob or ListJobs. The
+  // credentials are used only to run this job: the password is never returned, logged or stored in
+  // readable form, and a later job needs them again.
+  //
+  // Fails with HTTP 400 when a field is missing or malformed; the message names the field and the
+  // reason and never echoes a value. Fails with HTTP 409 when the user already has an active job,
+  // when the same source failed authentication recently (retry_allowed_at says when another
+  // attempt is allowed), or when a start limit is reached. The reason is given as one of the
+  // tokens ACTIVE_JOB, AUTH_COOLDOWN or START_LIMIT.
+  rpc StartImport(StartImportRequest) returns (StartImportResponse);
+
+  // GetJob returns one job of the user.
+  //
+  // Fails with HTTP 404 when no job with that id belongs to the user.
+  rpc GetJob(GetJobRequest) returns (GetJobResponse);
+
+  // ListJobs returns the user's jobs, newest first, one page at a time.
+  //
+  // With active_only set, only queued and running jobs are returned. Use it to find the job that
+  // blocks a new start.
+  //
+  // Fails with HTTP 400 when page_size is out of range or page_token is malformed.
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+
+  // CancelJob asks for a job to stop and returns the job as it stands.
+  //
+  // A queued job becomes CANCELLED at once. A running job sets cancel_requested and stops within
+  // one progress save; poll GetJob until its status is CANCELLED. Cancelling a finished job
+  // returns it unchanged, so the call can be repeated safely.
+  //
+  // Fails with HTTP 404 when no job with that id belongs to the user.
+  rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
+}
+
+// Kind of work a job does.
+enum JobKind {
+  // Not set. A server never returns this value.
+  JOB_KIND_UNSPECIFIED = 0;
+
+  // Imports mail from an external mail source, such as an IMAP account, into the user's mailbox.
+  JOB_KIND_IMPORT = 1;
+
+  // Exports the user's mail and contacts. Reserved for the export feature.
+  JOB_KIND_EXPORT = 2;
+}
+
+// Lifecycle state of a job.
+enum JobStatus {
+  // Not set. A server never returns this value.
+  JOB_STATUS_UNSPECIFIED = 0;
+
+  // Accepted and waiting for a worker to start it.
+  JOB_STATUS_QUEUED = 1;
+
+  // A worker is processing the job.
+  JOB_STATUS_RUNNING = 2;
+
+  // Finished every step it was given. Per-message failures are counted in counters and failures
+  // and do not by themselves make the job FAILED.
+  JOB_STATUS_SUCCEEDED = 3;
+
+  // Stopped before finishing. error_code says why.
+  JOB_STATUS_FAILED = 4;
+
+  // Stopped because the user asked for it. Messages already stored remain in the mailbox.
+  JOB_STATUS_CANCELLED = 5;
+
+  // Export only: the exported file is no longer available.
+  JOB_STATUS_EXPIRED = 6;
+}
+
+// Coarse reason a job failed or a message was not processed.
+enum JobErrorCode {
+  // Not set. A server never returns this value.
+  JOB_ERROR_CODE_UNSPECIFIED = 0;
+
+  // No error.
+  JOB_ERROR_CODE_NONE = 1;
+
+  // The server rejected the login or the app password. Starts for the same source are blocked
+  // until retry_allowed_at.
+  JOB_ERROR_CODE_AUTH_FAILED = 2;
+
+  // The source server could not be reached, or the connection was refused or dropped.
+  JOB_ERROR_CODE_UNREACHABLE = 3;
+
+  // The secure connection could not be established or its certificate did not verify.
+  JOB_ERROR_CODE_TLS = 4;
+
+  // A size, count or structure limit stopped the job or a message.
+  JOB_ERROR_CODE_LIMIT = 5;
+
+  // The user has reached a start limit. Used on a failed job only when the limit applies while
+  // the job runs.
+  JOB_ERROR_CODE_CAP_REACHED = 6;
+
+  // The job ran longer than the server allows.
+  JOB_ERROR_CODE_TIMED_OUT = 7;
+
+  // An unexpected server error. The job can be started again.
+  JOB_ERROR_CODE_INTERNAL = 8;
+}
+
+// How the connection to the IMAP server is secured.
+enum ConnectionSecurity {
+  // Not set. A server never returns this value.
+  CONNECTION_SECURITY_UNSPECIFIED = 0;
+
+  // The connection is encrypted from the first byte, as on port 993.
+  CONNECTION_SECURITY_IMPLICIT_TLS = 1;
+
+  // The connection starts in plain text and is upgraded with STARTTLS, as on port 143. The
+  // server must offer STARTTLS; a server that does not is refused, never used in plain text.
+  CONNECTION_SECURITY_STARTTLS = 2;
+}
+
+// Progress state of one folder within an import.
+enum FolderState {
+  // Not set. A server never returns this value.
+  FOLDER_STATE_UNSPECIFIED = 0;
+
+  // Not started yet.
+  FOLDER_STATE_PENDING = 1;
+
+  // Being processed now.
+  FOLDER_STATE_RUNNING = 2;
+
+  // Every message in the folder has been handled.
+  FOLDER_STATE_DONE = 3;
+
+  // The folder could not be processed. Its failures are listed in the job.
+  FOLDER_STATE_FAILED = 4;
+}
+
+// A job as the user sees it. The same message describes every kind of job; kind-specific facts
+// sit in the detail that matches kind.
+message Job {
+  // Server-assigned identifier, unique for the user.
+  string job_id = 1;
+
+  // Kind of work the job does.
+  JobKind kind = 2;
+
+  // Where the job stands in its lifecycle.
+  JobStatus status = 3;
+
+  // When the job was accepted.
+  google.protobuf.Timestamp created_at = 4;
+
+  // When the job last changed, including each progress save.
+  google.protobuf.Timestamp updated_at = 5;
+
+  // When the job reached a terminal status. Unset while the job is queued or running.
+  optional google.protobuf.Timestamp finished_at = 6;
+
+  // True once the user has asked for the job to stop and it has not stopped yet.
+  bool cancel_requested = 7;
+
+  // Why the job failed or stopped, or JOB_ERROR_CODE_NONE when it has not.
+  JobErrorCode error_code = 8;
+
+  // For a job that failed with AUTH_FAILED, the time after which a new start for the same source
+  // is allowed. Unset for every other job.
+  optional google.protobuf.Timestamp retry_allowed_at = 9;
+
+  // Totals across all folders.
+  JobCounters counters = 10;
+
+  // Name of the folder being processed now. Empty when no folder is being processed.
+  string current_folder = 11;
+
+  // Progress of each folder the job covers. Capped at 200 folders.
+  repeated FolderProgress folders = 12;
+
+  // The first failures the job recorded, at most 50. Each names the folder, the message it
+  // concerns and the reason. Remote server text is never included.
+  repeated JobFailure failures = 13;
+
+  // Expected total number of messages, when the server could count them before processing.
+  optional uint64 total_estimate = 14;
+
+  // Kind-specific details. Set when kind is JOB_KIND_IMPORT.
+  oneof detail {
+    // Details of an import job, including the connection it uses. Never includes the password.
+    ImportDetail import = 20;
+  }
+}
+
+// Details of an import job.
+message ImportDetail {
+  // The source the job reads from. Never includes a password.
+  oneof source {
+    ImapSourceDetail imap = 1;
+  }
+
+  // The start of the window the job imports, inclusive.
+  optional google.protobuf.Timestamp import_from = 10;
+
+  // The end of the window, exclusive.
+  optional google.protobuf.Timestamp import_until = 11;
+
+  // Whether the job only counted messages and folders, without storing anything.
+  bool dry_run = 12;
+}
+
+// Details of an IMAP source an import job reads from, including the connection it uses. Never
+// includes the password.
+message ImapSourceDetail {
+  // The IMAP host the job connects to.
+  string host = 1;
+
+  // The IMAP port the job connects to.
+  uint32 port = 2;
+
+  // How the connection is secured.
+  ConnectionSecurity security = 3;
+
+  // The IMAP login the job uses. The app password is never echoed.
+  string login = 4;
+
+  // The folders the job was limited to. Empty means every eligible folder.
+  repeated string folders = 5;
+
+  // Whether messages flagged as deleted on the server were imported.
+  bool include_deleted = 6;
+}
+
+// Message counts of a job. Each count is the number of messages, except bytes which is the total
+// size of the messages read.
+message JobCounters {
+  // Messages found in the folders the job covers.
+  uint64 discovered = 1;
+
+  // Messages stored as new emails.
+  uint64 created = 2;
+
+  // Messages that matched an email already stored and were only added to more mailboxes.
+  uint64 merged = 3;
+
+  // Messages left out, for example because they fall outside the date window or are flagged as
+  // deleted and deleted messages are not included.
+  uint64 skipped = 4;
+
+  // Messages that could not be processed. Each one has an entry in Job.failures while that list
+  // has room.
+  uint64 failed = 5;
+
+  // Total size of the messages read, in bytes.
+  uint64 bytes = 6;
+}
+
+// Progress of one folder within a job.
+message FolderProgress {
+  // Folder name as the source server reports it.
+  string name = 1;
+
+  // Where the folder stands.
+  FolderState state = 2;
+
+  // Messages found in this folder.
+  uint64 discovered = 3;
+
+  // Messages stored as new emails from this folder.
+  uint64 created = 4;
+
+  // Messages that matched an existing email and were added to more mailboxes.
+  uint64 merged = 5;
+
+  // Messages left out of this folder.
+  uint64 skipped = 6;
+
+  // Messages in this folder that could not be processed.
+  uint64 failed = 7;
+}
+
+// One message or folder the job could not process.
+message JobFailure {
+  // Folder the failure happened in.
+  string folder = 1;
+
+  // Identifier of the message within the source folder, when the failure concerns one message.
+  // Empty when the failure concerns the whole folder.
+  string reference = 2;
+
+  // Coarse reason. Server text is never included.
+  JobErrorCode reason = 3;
+}
+
+// Request to start an import.
+message StartImportRequest {
+  // Where the mail comes from. Exactly one source must be set; a request without one is refused
+  // with HTTP 400.
+  oneof source {
+    ImapSource imap = 1;
+  }
+
+  // Messages received at or after this instant. Unset means no lower bound.
+  optional google.protobuf.Timestamp import_from = 10;
+
+  // Messages received before this instant. Unset means no upper bound. The window is half-open:
+  // when both bounds are set, import_from must be earlier than import_until, else HTTP 400.
+  optional google.protobuf.Timestamp import_until = 11;
+
+  // Whether to only count messages and folders, without storing anything. Defaults to false.
+  bool dry_run = 12;
+}
+
+// An IMAP account an import reads from, with the credentials it connects with.
+message ImapSource {
+  // Host name of the IMAP server, for example "imap.example.com". Hostnames only, 1 to 255 bytes:
+  // IP addresses are refused, and so are unusual encodings of addresses.
+  string host = 1;
+
+  // Port of the IMAP server. Must be 993 for implicit TLS or 143 for STARTTLS; any other value is
+  // refused with HTTP 400.
+  uint32 port = 2;
+
+  // How the connection is secured. Port 993 requires CONNECTION_SECURITY_IMPLICIT_TLS and port 143
+  // requires CONNECTION_SECURITY_STARTTLS; a mismatch is refused with HTTP 400. A value of
+  // CONNECTION_SECURITY_UNSPECIFIED is refused with HTTP 400.
+  ConnectionSecurity security = 3;
+
+  // IMAP login name, 1 to 256 bytes. Must not contain CR, LF or NUL.
+  string login = 4;
+
+  // App password for the account, 1 to 1024 bytes. Must not contain CR, LF or NUL. Used only to
+  // run this job; it is never returned or logged, and a later job needs it again.
+  string password = 5;
+
+  // Folders to import, by the names the server reports. Empty means every eligible folder. At
+  // most 200 names, each 1 to 512 bytes. No name may contain CR, LF or NUL.
+  repeated string folders = 6;
+
+  // Whether messages flagged as deleted on the server are imported. Defaults to false.
+  bool include_deleted = 7;
+}
+
+// Response to StartImport.
+message StartImportResponse {
+  // The job that was queued.
+  Job job = 1;
+}
+
+// Request for one job.
+message GetJobRequest {
+  // Identifier of the job, as returned when it was started or listed.
+  string job_id = 1;
+}
+
+// Response with one job.
+message GetJobResponse {
+  // The job as it stands now.
+  Job job = 1;
+}
+
+// Request for a page of the user's jobs.
+message ListJobsRequest {
+  // Only jobs of this kind. Unset returns every kind.
+  optional JobKind kind = 1;
+
+  // When true, only queued and running jobs are returned.
+  bool active_only = 2;
+
+  // Number of jobs per page, from 1 to 50. Unset means 20.
+  optional uint32 page_size = 3;
+
+  // Token from next_page_token of an earlier response. Empty for the first page.
+  string page_token = 4;
+}
+
+// One page of jobs.
+message ListJobsResponse {
+  // Jobs on this page, newest first.
+  repeated Job jobs = 1;
+
+  // Token for the next page. Empty when this is the last page.
+  string next_page_token = 2;
+}
+
+// Request to cancel a job.
+message CancelJobRequest {
+  // Identifier of the job to cancel.
+  string job_id = 1;
+}
+
+// Response to CancelJob.
+message CancelJobResponse {
+  // The job as it stands after the request. A finished job is returned unchanged.
+  Job job = 1;
+}
