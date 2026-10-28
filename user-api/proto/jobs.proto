@@ -4,33 +4,93 @@ package userapi.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// JobsService lets an authenticated user start, follow and cancel their own background jobs.
+// JobsService lets an authenticated user connect to an external mail server, and start, follow and
+// cancel background jobs that use those connections.
 //
-// A job runs on the server after the request returns. Import reads mail from an external mail
-// source, such as an IMAP account the user names, into their own mailbox. Export is covered by
-// the same service and shares this job model when it ships.
+// A remote connection stores one IMAP login for 24 hours from its creation. Any number of jobs may
+// run on it one after another until it expires. A job runs on the server after the request returns.
+// Import reads mail from the external server into one account of the user.
 //
-// The user is the authenticated principal; no request names a user or an account. A user has at
-// most one active job across all kinds. A job the user cannot see, including another user's job,
-// is reported as not found.
+// Every method requires the jobs scope; a token whose scope claim lacks it is refused with HTTP 403.
+// The user is the authenticated principal; no request names a user or a tenant. A user has at most
+// one active job across all kinds. A job, connection or account the user cannot see, including one
+// that belongs to another user, is reported as not found.
 //
 // Errors use HTTP status codes: 400 for an invalid field, 404 for an unknown or invisible job,
-// 409 for a start that conflicts with an active job, a cooldown or a limit, and 500 for an
-// internal failure. Every fact the user needs about a job, including why it stopped, is carried
-// in Job; error responses carry no further structured detail.
+// connection or account, 409 for a conflict, a cooldown or a limit, and 500 for an internal failure.
+// The reason for a 409 is one of the tokens ACTIVE_JOB, START_LIMIT, AUTH_COOLDOWN, LIMIT, BUSY and
+// CONNECTION_STATE. Every fact the user needs about a job or a connection, including why it stopped,
+// is carried in Job or RemoteConnection; error responses carry no further structured detail.
 service JobsService {
-  // StartImport starts an import of the named external mail source, such as an IMAP account, into
-  // the user's own mailbox.
+  // CreateRemoteConnection stores a connection to an external mail server and returns it at once.
+  // The server makes no network connection while this call runs; InspectRemoteConnection checks the
+  // login and lists the folders.
   //
-  // The job is queued and returns at once. Progress is read with GetJob or ListJobs. The
-  // credentials are used only to run this job: the password is never returned, logged or stored in
-  // readable form, and a later job needs them again.
+  // Checks run in this order: field validation, admission (cooldown and create limits), reading the
+  // connection public key, then the write. The password is sealed on receipt. It is never returned,
+  // logged or stored in readable form. The connection is valid for 24 hours from creation and serves
+  // any number of sequential jobs of either kind until then.
   //
-  // Fails with HTTP 400 when a field is missing or malformed; the message names the field and the
-  // reason and never echoes a value. Fails with HTTP 409 when the user already has an active job,
-  // when the same source failed authentication recently (retry_allowed_at says when another
-  // attempt is allowed), or when a start limit is reached. The reason is given as one of the
-  // tokens ACTIVE_JOB, AUTH_COOLDOWN or START_LIMIT.
+  // Fails with HTTP 400 when no connection kind is set or a field fails validation; the message
+  // names the field and the reason and never echoes a value. Fails with HTTP 409 AUTH_COOLDOWN when
+  // the same source failed authentication recently; retry_allowed_at on the connection in
+  // ListRemoteConnections shows when another attempt is allowed. Fails with HTTP 409 LIMIT when a
+  // principal, tenant or host limit is reached within the last 24 hours. Fails with HTTP 500 when no
+  // connection public key is available; nothing is stored.
+  rpc CreateRemoteConnection(CreateRemoteConnectionRequest) returns (CreateRemoteConnectionResponse);
+
+  // GetRemoteConnection returns one connection of the user that has neither expired nor been removed.
+  //
+  // Fails with HTTP 404 when the connection is absent, belongs to another user, has expired or has
+  // been removed.
+  rpc GetRemoteConnection(GetRemoteConnectionRequest) returns (GetRemoteConnectionResponse);
+
+  // ListRemoteConnections returns the user's connections, newest first. The list is not paged; the
+  // create limits bound its size.
+  rpc ListRemoteConnections(ListRemoteConnectionsRequest) returns (ListRemoteConnectionsResponse);
+
+  // InspectRemoteConnection logs in to the server, lists its folders and reads the message count of
+  // each folder. The call uses only LIST and STATUS: it never opens a folder and never reads or
+  // writes a message. It is allowed while the connection is CREATED or INSPECTED and no job is active
+  // on it, and at most 10 attempts are made per connection. The whole inspection takes at most 20
+  // seconds.
+  //
+  // inspection is set only when the login succeeded. AUTH_FAILED sets the state to FAILED, sets
+  // error_code and retry_allowed_at, and removes the stored password. UNREACHABLE and TLS keep the
+  // state and set only error_code. A host that cannot be reached for any of these reasons gives the
+  // same UNREACHABLE result: a host name that does not resolve, a host that refuses the address and a
+  // closed port are indistinguishable to the user.
+  //
+  // Fails with HTTP 404 when the connection cannot be used (see GetRemoteConnection). Fails with HTTP
+  // 409 CONNECTION_STATE when the state is FAILED or a job is active on the connection. Fails with
+  // HTTP 409 LIMIT when the attempts are used up. Fails with HTTP 409 BUSY when the server is at
+  // capacity; retry shortly. Fails with HTTP 500 when the inspection fails for a server reason.
+  rpc InspectRemoteConnection(InspectRemoteConnectionRequest) returns (InspectRemoteConnectionResponse);
+
+  // DeleteRemoteConnection removes the connection and its stored password at once. A removed
+  // connection reads as not found.
+  //
+  // Fails with HTTP 404 when the connection cannot be used (see GetRemoteConnection). Fails with HTTP
+  // 409 CONNECTION_STATE when a job is active on the connection; cancel the job first.
+  rpc DeleteRemoteConnection(DeleteRemoteConnectionRequest) returns (DeleteRemoteConnectionResponse);
+
+  // StartImport starts an import from an inspected connection into an account of the user, and
+  // returns at once. A connection serves one job at a time, and the user has one active job across
+  // all kinds.
+  //
+  // Checks run in this order: field validation, account resolution, start limit, connection check,
+  // the start, then enqueueing the job. The job is queued and progress is read with GetJob or
+  // ListJobs.
+  //
+  // Fails with HTTP 400 when a field is missing or malformed, including an empty or malformed
+  // connection_id or account_id, an owned account that does not hold mail (reported for the field
+  // account_id), and an options arm that does not match the connection's kind. The message names the
+  // field and the reason and never echoes a value. Fails with HTTP 404 for account_id when the
+  // account does not exist, is not owned by the user, belongs to another tenant or was deleted.
+  // Fails with HTTP 404 for connection_id when the connection is absent, belongs to another user,
+  // has expired, has been removed or is not INSPECTED. Fails with HTTP 409 ACTIVE_JOB when the user
+  // already has an active job. Fails with HTTP 409 START_LIMIT when the start limit is reached.
+  // Fails with HTTP 500 for an internal failure.
   rpc StartImport(StartImportRequest) returns (StartImportResponse);
 
   // GetJob returns one job of the user.
@@ -64,7 +124,7 @@ enum JobKind {
   // Imports mail from an external mail source, such as an IMAP account, into the user's mailbox.
   JOB_KIND_IMPORT = 1;
 
-  // Exports the user's mail and contacts. Reserved for the export feature.
+  // Export job. No operation of this service starts one.
   JOB_KIND_EXPORT = 2;
 }
 
@@ -89,7 +149,7 @@ enum JobStatus {
   // Stopped because the user asked for it. Messages already stored remain in the mailbox.
   JOB_STATUS_CANCELLED = 5;
 
-  // Export only: the exported file is no longer available.
+  // Export only. Import jobs never have this status.
   JOB_STATUS_EXPIRED = 6;
 }
 
@@ -101,8 +161,8 @@ enum JobErrorCode {
   // No error.
   JOB_ERROR_CODE_NONE = 1;
 
-  // The server rejected the login or the app password. Starts for the same source are blocked
-  // until retry_allowed_at.
+  // The server rejected the login or the app password. Creating a connection for the same host,
+  // port and login is blocked until retry_allowed_at.
   JOB_ERROR_CODE_AUTH_FAILED = 2;
 
   // The source server could not be reached, or the connection was refused or dropped.
@@ -123,6 +183,10 @@ enum JobErrorCode {
 
   // An unexpected server error. The job can be started again.
   JOB_ERROR_CODE_INTERNAL = 8;
+
+  // The destination account no longer exists, is no longer owned by the user or no longer holds
+  // mail. Nothing further is stored.
+  JOB_ERROR_CODE_ACCOUNT_UNAVAILABLE = 9;
 }
 
 // How the connection to the IMAP server is secured.
@@ -156,183 +220,53 @@ enum FolderState {
   FOLDER_STATE_FAILED = 4;
 }
 
-// A job as the user sees it. The same message describes every kind of job; kind-specific facts
-// sit in the detail that matches kind.
-message Job {
-  // Server-assigned identifier, unique for the user.
-  string job_id = 1;
+// Lifecycle state of a remote connection. A removed connection is never returned: it reads as not
+// found.
+enum RemoteConnectionState {
+  // Not set. A server never returns this value.
+  REMOTE_CONNECTION_STATE_UNSPECIFIED = 0;
 
-  // Kind of work the job does.
-  JobKind kind = 2;
+  // Stored and not yet inspected. No job can start on it.
+  REMOTE_CONNECTION_STATE_CREATED = 1;
 
-  // Where the job stands in its lifecycle.
-  JobStatus status = 3;
+  // Inspected successfully. A job can start on it until expires_at.
+  REMOTE_CONNECTION_STATE_INSPECTED = 2;
 
-  // When the job was accepted.
-  google.protobuf.Timestamp created_at = 4;
-
-  // When the job last changed, including each progress save.
-  google.protobuf.Timestamp updated_at = 5;
-
-  // When the job reached a terminal status. Unset while the job is queued or running.
-  optional google.protobuf.Timestamp finished_at = 6;
-
-  // True once the user has asked for the job to stop and it has not stopped yet.
-  bool cancel_requested = 7;
-
-  // Why the job failed or stopped, or JOB_ERROR_CODE_NONE when it has not.
-  JobErrorCode error_code = 8;
-
-  // For a job that failed with AUTH_FAILED, the time after which a new start for the same source
-  // is allowed. Unset for every other job.
-  optional google.protobuf.Timestamp retry_allowed_at = 9;
-
-  // Totals across all folders.
-  JobCounters counters = 10;
-
-  // Name of the folder being processed now. Empty when no folder is being processed.
-  string current_folder = 11;
-
-  // Progress of each folder the job covers. Capped at 200 folders.
-  repeated FolderProgress folders = 12;
-
-  // The first failures the job recorded, at most 50. Each names the folder, the message it
-  // concerns and the reason. Remote server text is never included.
-  repeated JobFailure failures = 13;
-
-  // Expected total number of messages, when the server could count them before processing.
-  optional uint64 total_estimate = 14;
-
-  // Kind-specific details. Set when kind is JOB_KIND_IMPORT.
-  oneof detail {
-    // Details of an import job, including the connection it uses. Never includes the password.
-    ImportDetail import = 20;
-  }
+  // Authentication failed. The stored password has been removed and error_code says why.
+  REMOTE_CONNECTION_STATE_FAILED = 3;
 }
 
-// Details of an import job.
-message ImportDetail {
-  // The source the job reads from. Never includes a password.
-  oneof source {
-    ImapSourceDetail imap = 1;
-  }
+// Role of an IMAP folder, from its SPECIAL-USE attribute or, for INBOX, from its name.
+enum ImapFolderRole {
+  // Not set. A server never returns this value.
+  IMAP_FOLDER_ROLE_UNSPECIFIED = 0;
 
-  // The start of the window the job imports, inclusive.
-  optional google.protobuf.Timestamp import_from = 10;
+  // An ordinary folder with no special role.
+  IMAP_FOLDER_ROLE_NONE = 1;
 
-  // The end of the window, exclusive.
-  optional google.protobuf.Timestamp import_until = 11;
+  // The inbox, named INBOX.
+  IMAP_FOLDER_ROLE_INBOX = 2;
 
-  // Whether the job only counted messages and folders, without storing anything.
-  bool dry_run = 12;
+  // Sent mail.
+  IMAP_FOLDER_ROLE_SENT = 3;
+
+  // Drafts.
+  IMAP_FOLDER_ROLE_DRAFTS = 4;
+
+  // Archived mail.
+  IMAP_FOLDER_ROLE_ARCHIVE = 5;
+
+  // Deleted mail.
+  IMAP_FOLDER_ROLE_TRASH = 6;
+
+  // Spam.
+  IMAP_FOLDER_ROLE_JUNK = 7;
 }
 
-// Details of an IMAP source an import job reads from, including the connection it uses. Never
-// includes the password.
-message ImapSourceDetail {
-  // The IMAP host the job connects to.
-  string host = 1;
-
-  // The IMAP port the job connects to.
-  uint32 port = 2;
-
-  // How the connection is secured.
-  ConnectionSecurity security = 3;
-
-  // The IMAP login the job uses. The app password is never echoed.
-  string login = 4;
-
-  // The folders the job was limited to. Empty means every eligible folder.
-  repeated string folders = 5;
-
-  // Whether messages flagged as deleted on the server were imported.
-  bool include_deleted = 6;
-}
-
-// Message counts of a job. Each count is the number of messages, except bytes which is the total
-// size of the messages read.
-message JobCounters {
-  // Messages found in the folders the job covers.
-  uint64 discovered = 1;
-
-  // Messages stored as new emails.
-  uint64 created = 2;
-
-  // Messages that matched an email already stored and were only added to more mailboxes.
-  uint64 merged = 3;
-
-  // Messages left out, for example because they fall outside the date window or are flagged as
-  // deleted and deleted messages are not included.
-  uint64 skipped = 4;
-
-  // Messages that could not be processed. Each one has an entry in Job.failures while that list
-  // has room.
-  uint64 failed = 5;
-
-  // Total size of the messages read, in bytes.
-  uint64 bytes = 6;
-}
-
-// Progress of one folder within a job.
-message FolderProgress {
-  // Folder name as the source server reports it.
-  string name = 1;
-
-  // Where the folder stands.
-  FolderState state = 2;
-
-  // Messages found in this folder.
-  uint64 discovered = 3;
-
-  // Messages stored as new emails from this folder.
-  uint64 created = 4;
-
-  // Messages that matched an existing email and were added to more mailboxes.
-  uint64 merged = 5;
-
-  // Messages left out of this folder.
-  uint64 skipped = 6;
-
-  // Messages in this folder that could not be processed.
-  uint64 failed = 7;
-}
-
-// One message or folder the job could not process.
-message JobFailure {
-  // Folder the failure happened in.
-  string folder = 1;
-
-  // Identifier of the message within the source folder, when the failure concerns one message.
-  // Empty when the failure concerns the whole folder.
-  string reference = 2;
-
-  // Coarse reason. Server text is never included.
-  JobErrorCode reason = 3;
-}
-
-// Request to start an import.
-message StartImportRequest {
-  // Where the mail comes from. Exactly one source must be set; a request without one is refused
-  // with HTTP 400.
-  oneof source {
-    ImapSource imap = 1;
-  }
-
-  // Messages received at or after this instant. Unset means no lower bound.
-  optional google.protobuf.Timestamp import_from = 10;
-
-  // Messages received before this instant. Unset means no upper bound. The window is half-open:
-  // when both bounds are set, import_from must be earlier than import_until, else HTTP 400.
-  optional google.protobuf.Timestamp import_until = 11;
-
-  // Whether to only count messages and folders, without storing anything. Defaults to false.
-  bool dry_run = 12;
-}
-
-// An IMAP account an import reads from, with the credentials it connects with.
-message ImapSource {
-  // Host name of the IMAP server, for example "imap.example.com". Hostnames only, 1 to 255 bytes:
-  // IP addresses are refused, and so are unusual encodings of addresses.
+// An IMAP server login that a remote connection uses.
+message ImapConnection {
+  // Host name of the IMAP server, for example "imap.example.com". Hostnames only, 1 to 255 bytes.
+  // IP addresses and unusual encodings of addresses are refused with HTTP 400.
   string host = 1;
 
   // Port of the IMAP server. Must be 993 for implicit TLS or 143 for STARTTLS; any other value is
@@ -347,16 +281,206 @@ message ImapSource {
   // IMAP login name, 1 to 256 bytes. Must not contain CR, LF or NUL.
   string login = 4;
 
-  // App password for the account, 1 to 1024 bytes. Must not contain CR, LF or NUL. Used only to
-  // run this job; it is never returned or logged, and a later job needs it again.
+  // App password for the login, 1 to 1024 bytes. Must not contain CR, LF or NUL. It is sealed on
+  // receipt and is never returned or logged. A job on the connection uses it; it is removed when the
+  // connection is deleted, when authentication fails, or when the connection expires.
   string password = 5;
+}
 
-  // Folders to import, by the names the server reports. Empty means every eligible folder. At
-  // most 200 names, each 1 to 512 bytes. No name may contain CR, LF or NUL.
-  repeated string folders = 6;
+// Request to create a remote connection.
+message CreateRemoteConnectionRequest {
+  // The kind of connection. Exactly one must be set; otherwise the request is refused with HTTP 400.
+  oneof connection {
+    ImapConnection imap = 1;
+  }
+}
+
+// Response to CreateRemoteConnection.
+message CreateRemoteConnectionResponse {
+  // The connection that was stored.
+  RemoteConnection connection = 1;
+}
+
+// Request for one remote connection.
+message GetRemoteConnectionRequest {
+  // Identifier of the connection, 1 to 128 bytes, as returned when it was created or listed.
+  string connection_id = 1;
+}
+
+// Response with one remote connection.
+message GetRemoteConnectionResponse {
+  // The connection as it stands now.
+  RemoteConnection connection = 1;
+}
+
+// Request for the user's remote connections.
+message ListRemoteConnectionsRequest {}
+
+// The user's remote connections.
+message ListRemoteConnectionsResponse {
+  // Connections, newest first.
+  repeated RemoteConnection connections = 1;
+}
+
+// Request to inspect a remote connection.
+message InspectRemoteConnectionRequest {
+  // Identifier of the connection to inspect, 1 to 128 bytes.
+  string connection_id = 1;
+}
+
+// Response to InspectRemoteConnection.
+message InspectRemoteConnectionResponse {
+  // The connection as it stands after the inspection.
+  RemoteConnection connection = 1;
+
+  // The folders and their message counts. Set only when the login succeeded.
+  optional ConnectionInspection inspection = 2;
+}
+
+// Request to delete a remote connection.
+message DeleteRemoteConnectionRequest {
+  // Identifier of the connection to delete, 1 to 128 bytes.
+  string connection_id = 1;
+}
+
+// Response to DeleteRemoteConnection.
+message DeleteRemoteConnectionResponse {}
+
+// A remote connection as the user sees it. The same message describes every kind of connection;
+// kind-specific facts sit in the detail that matches kind.
+message RemoteConnection {
+  // Server-assigned identifier, unique for the user.
+  string connection_id = 1;
+
+  // Where the connection stands in its lifecycle.
+  RemoteConnectionState state = 2;
+
+  // When the connection was created.
+  google.protobuf.Timestamp created_at = 3;
+
+  // When the connection stops being usable: 24 hours after creation. No new job can start after it.
+  google.protobuf.Timestamp expires_at = 4;
+
+  // The outcome of the last inspection or job. NONE when it was successful.
+  JobErrorCode error_code = 5;
+
+  // Set only after AUTH_FAILED: the time after which a connection for the same host, port and login
+  // may be created again.
+  optional google.protobuf.Timestamp retry_allowed_at = 6;
+
+  // Set while a job runs on the connection.
+  optional string active_job_id = 7;
+
+  // Kind-specific details of the connection. Never includes the password.
+  oneof detail {
+    // Details of an IMAP connection.
+    ImapConnectionDetail imap = 10;
+  }
+}
+
+// Details of an IMAP connection. Never includes the password.
+message ImapConnectionDetail {
+  // The IMAP host the connection uses.
+  string host = 1;
+
+  // The IMAP port the connection uses.
+  uint32 port = 2;
+
+  // How the connection is secured.
+  ConnectionSecurity security = 3;
+
+  // The IMAP login the connection uses.
+  string login = 4;
+}
+
+// What an inspection found on the server. Each kind of connection has its own result.
+message ConnectionInspection {
+  // The result for an IMAP connection.
+  oneof result {
+    ImapInspection imap = 1;
+  }
+}
+
+// The folders of an IMAP server and the message count of each.
+message ImapInspection {
+  // Folders on the server, at most 200.
+  repeated ImapFolder folders = 1;
+
+  // True when the server has more folders than folders lists.
+  bool folders_truncated = 2;
+
+  // The hierarchy delimiter of the server. Empty unless it is one printable ASCII character.
+  string hierarchy_delimiter = 3;
+
+  // Sum of message_count over the folders an import without a folder list would read. Only folders
+  // whose count is known contribute.
+  optional uint64 total_messages = 4;
+}
+
+// One folder on an IMAP server.
+message ImapFolder {
+  // Full path of the folder, decoded to UTF-8 with the server's hierarchy delimiter, 1 to 512 bytes.
+  // Control characters (C0, C1 and DEL), invalid UTF-8 and bidirectional controls (U+202A to U+202E
+  // and U+2066 to U+2069) are replaced by an underscore. This exact name is what
+  // ImapImportOptions.folders and FolderProgress.name use.
+  string name = 1;
+
+  // The role of the folder.
+  ImapFolderRole role = 2;
+
+  // True when the folder can hold messages and is not virtual. False for \Noselect and \NonExistent
+  // folders, for the virtual all-mail, flagged and important folders, and for the later of two
+  // folders whose names are the same after replacement.
+  bool selectable = 3;
+
+  // True for Trash and Junk: an import without a folder list leaves them out. They can still be
+  // chosen by name.
+  bool default_excluded = 4;
+
+  // Messages in the folder, from STATUS MESSAGES. Unset when STATUS failed or the inspection time
+  // ran out before this folder was counted.
+  optional uint64 message_count = 5;
+}
+
+// Request to start an import.
+message StartImportRequest {
+  // Inclusive lower bound on the time a message was received. Unset means no lower bound.
+  optional google.protobuf.Timestamp import_from = 10;
+
+  // Exclusive upper bound on the time a message was received. Unset means no upper bound. When both
+  // bounds are set, import_from must be earlier than import_until, else the request is refused with
+  // HTTP 400.
+  optional google.protobuf.Timestamp import_until = 11;
+
+  // Id of the account the mail is imported into. Required, 1 to 255 bytes. Only accounts the user
+  // owns that hold mail are accepted. An account the user cannot use is reported as not found. An
+  // empty or malformed id, or an owned account that holds no mail, is refused with HTTP 400 for the
+  // field account_id. The value is never echoed.
+  string account_id = 13;
+
+  // Id of the connection to import from. Required, 1 to 128 bytes. It must be a connection of the
+  // user in state INSPECTED; any other connection is reported as not found.
+  string connection_id = 14;
+
+  // Options of the import, matching the kind of the connection. Unset means the defaults. When set,
+  // the arm must match the connection's kind, else the request is refused with HTTP 400.
+  oneof options {
+    // Options for an IMAP import.
+    ImapImportOptions imap = 20;
+  }
+}
+
+// Options of an IMAP import.
+message ImapImportOptions {
+  // Folders to import, by the names exactly as ImapFolder.name reports them. At most 200 names, each
+  // 1 to 512 bytes. No name may contain CR, LF or NUL. Empty means every eligible folder.
+  //
+  // A folder is eligible when it can be selected (not \Noselect or \NonExistent) and is not a virtual
+  // all-mail, flagged or important folder. Trash and Junk are eligible only when named here.
+  repeated string folders = 1;
 
   // Whether messages flagged as deleted on the server are imported. Defaults to false.
-  bool include_deleted = 7;
+  bool include_deleted = 2;
 }
 
 // Response to StartImport.
@@ -411,4 +535,168 @@ message CancelJobRequest {
 message CancelJobResponse {
   // The job as it stands after the request. A finished job is returned unchanged.
   Job job = 1;
+}
+
+// A job as the user sees it. The same message describes every kind of job; kind-specific facts
+// sit in the detail that matches kind.
+message Job {
+  // Server-assigned identifier, unique for the user.
+  string job_id = 1;
+
+  // Kind of work the job does.
+  JobKind kind = 2;
+
+  // Where the job stands in its lifecycle.
+  JobStatus status = 3;
+
+  // When the job was accepted.
+  google.protobuf.Timestamp created_at = 4;
+
+  // When the job last changed, including each progress save.
+  google.protobuf.Timestamp updated_at = 5;
+
+  // When the job reached a terminal status. Unset while the job is queued or running.
+  optional google.protobuf.Timestamp finished_at = 6;
+
+  // True once the user has asked for the job to stop and it has not stopped yet.
+  bool cancel_requested = 7;
+
+  // Why the job failed or stopped, or JOB_ERROR_CODE_NONE when it has not.
+  JobErrorCode error_code = 8;
+
+  // Set only for a job that failed with AUTH_FAILED: the time after which a connection for the same
+  // source may be created again. Unset for every other job.
+  optional google.protobuf.Timestamp retry_allowed_at = 9;
+
+  // Totals across all folders.
+  JobCounters counters = 10;
+
+  // Name of the folder being processed now. Empty when no folder is being processed.
+  string current_folder = 11;
+
+  // Progress of each folder the job covers. Capped at 200 folders.
+  repeated FolderProgress folders = 12;
+
+  // The first failures the job recorded, at most 50. Each names the folder, the message it
+  // concerns and the reason. Remote server text is never included.
+  repeated JobFailure failures = 13;
+
+  // Expected total number of messages, when the server could count them before processing.
+  optional uint64 total_estimate = 14;
+
+  // The account the job reads into or, for an export, reads from. Set for every kind. The account
+  // may no longer exist when the job is read.
+  string account_id = 15;
+
+  // Kind-specific details. Set when kind is JOB_KIND_IMPORT.
+  oneof detail {
+    // Details of an import job, including the connection it uses. Never includes the password.
+    ImportDetail import = 20;
+  }
+}
+
+// Details of an import job.
+message ImportDetail {
+  // The source the job reads from. Never includes a password.
+  oneof source {
+    ImapSourceDetail imap = 1;
+  }
+
+  // The start of the window the job imports, inclusive.
+  optional google.protobuf.Timestamp import_from = 10;
+
+  // The end of the window, exclusive.
+  optional google.protobuf.Timestamp import_until = 11;
+}
+
+// Details of an IMAP source an import job reads from, including the connection it uses. Never
+// includes the password.
+message ImapSourceDetail {
+  // The IMAP host the job connects to.
+  string host = 1;
+
+  // The IMAP port the job connects to.
+  uint32 port = 2;
+
+  // How the connection is secured.
+  ConnectionSecurity security = 3;
+
+  // The IMAP login the job uses. The app password is never echoed.
+  string login = 4;
+
+  // The folders the job was limited to, by the names exactly as ImapFolder.name reports them. Empty
+  // means every eligible folder.
+  //
+  // A folder is eligible when it can be selected (not \Noselect or \NonExistent) and is not a virtual
+  // all-mail, flagged or important folder. Trash and Junk are eligible only when named in the
+  // request.
+  repeated string folders = 5;
+
+  // Whether messages flagged as deleted on the server were imported.
+  bool include_deleted = 6;
+}
+
+// Message counts of a job. Each count is the number of messages, except bytes which is the total
+// size of the messages read.
+message JobCounters {
+  // Messages found in the folders the job covers.
+  uint64 discovered = 1;
+
+  // Messages stored as new emails.
+  uint64 created = 2;
+
+  // Messages that matched an email already stored and were only added to more mailboxes.
+  uint64 merged = 3;
+
+  // Messages left out, for example because they fall outside the date window or are flagged as
+  // deleted and deleted messages are not included.
+  uint64 skipped = 4;
+
+  // Messages that could not be processed. Each one has an entry in Job.failures while that list
+  // has room.
+  uint64 failed = 5;
+
+  // Total size of the messages read, in bytes.
+  uint64 bytes = 6;
+}
+
+// Progress of one folder within a job.
+message FolderProgress {
+  // Full path of the folder, decoded to UTF-8 with the source's hierarchy delimiter. The same name
+  // ImapFolder.name reports.
+  string name = 1;
+
+  // Where the folder stands.
+  FolderState state = 2;
+
+  // Messages found in this folder.
+  uint64 discovered = 3;
+
+  // Messages stored as new emails from this folder.
+  uint64 created = 4;
+
+  // Messages that matched an existing email and were added to more mailboxes.
+  uint64 merged = 5;
+
+  // Messages left out of this folder.
+  uint64 skipped = 6;
+
+  // Messages in this folder that could not be processed.
+  uint64 failed = 7;
+
+  // True for a folder an import without a folder list leaves out (Trash, Junk).
+  bool default_excluded = 8;
+}
+
+// One message or folder the job could not process.
+message JobFailure {
+  // Folder the failure happened in.
+  string folder = 1;
+
+  // Identifier of the message within the source folder, when the failure concerns one message.
+  // Empty when the failure concerns the whole folder.
+  string reference = 2;
+
+  // Coarse reason. Server text is never included.
+  JobErrorCode reason = 3;
 }
