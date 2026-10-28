@@ -51,6 +51,10 @@ managed:
       value: @GO_PACKAGE_PREFIX@/mail_feedback;mail_feedbackv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
+      path: mail_log.proto
+      value: @GO_PACKAGE_PREFIX@/mail_log;mail_logv1
+      module: buf.build/serverlessinbox/mailbox-idl-admin-api
+    - file_option: go_package
       path: monitoring.proto
       value: @GO_PACKAGE_PREFIX@/monitoring;monitoringv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api

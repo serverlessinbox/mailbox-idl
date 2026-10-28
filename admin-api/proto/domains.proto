@@ -109,6 +109,10 @@ message Domain {
   google.protobuf.Timestamp created_at = 16;  // When the domain was added
   google.protobuf.Timestamp updated_at = 17;  // When the domain was last modified
   bool is_primary = 18;  // Whether this is the primary domain for the account
+
+  // Account that receives mail sent to any address on this domain that has no alias.
+  // Unset means catch-all is off. Changed only through SetDomainCatchAll.
+  optional string catch_all_account_id = 19;
 }
 
 message DNSApplyState {
@@ -340,6 +344,26 @@ message DeleteDomainRecordResponse {
 }
 
 // ============================================
+// Catch-All Operations - Request/Response
+// ============================================
+
+// SetDomainCatchAllRequest sets or clears the catch-all account of a domain.
+message SetDomainCatchAllRequest {
+  // domain_id: The domain ID to update
+  string domain_id = 1 [(validate.rules).string = {
+    min_len: 1
+    pattern: "^dom_[a-zA-Z0-9_-]{21}$"
+  }];
+  // account_id: Account that receives unknown addresses on the domain. Unset or empty turns catch-all off.
+  optional string account_id = 2;
+}
+
+// SetDomainCatchAllResponse returns the updated domain.
+message SetDomainCatchAllResponse {
+  Domain domain = 1;  // The domain after the change
+}
+
+// ============================================
 // Test Email Operations
 // ============================================
 
@@ -423,6 +447,11 @@ service DomainsService {
 
   // DeleteDomainRecord removes a single auto-applied DNS record from Route53.
   rpc DeleteDomainRecord(DeleteDomainRecordRequest) returns (DeleteDomainRecordResponse);
+
+  // Catch-All
+
+  // SetDomainCatchAll sets the account that receives unknown addresses on a domain, or turns catch-all off.
+  rpc SetDomainCatchAll(SetDomainCatchAllRequest) returns (SetDomainCatchAllResponse);
 
   // Testing
   

@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package maillog.v1;
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+// ============================================
+// Enums
+// ============================================
+
+// MailLogOutcome is the final result of one inbound message for one recipient.
+enum MailLogOutcome {
+  MAIL_LOG_OUTCOME_UNSPECIFIED = 0;
+  MAIL_LOG_OUTCOME_DELIVERED = 1;          // Stored in the recipient's mailbox
+  MAIL_LOG_OUTCOME_JUNKED = 2;             // Stored in the recipient's Junk mailbox; junk_reason says why
+  MAIL_LOG_OUTCOME_UNKNOWN_RECIPIENT = 3;  // No alias and no catch-all accepts the address; final, not retried
+  MAIL_LOG_OUTCOME_INACTIVE_ALIAS = 4;     // The alias exists but is inactive; final, not retried
+  MAIL_LOG_OUTCOME_DELIVERY_FAILED = 5;    // Not stored because of an infrastructure failure; the message is retried. failure says which step failed
+}
+
+// MailLogRoute says how an inbound address was matched to a mailbox.
+// Set only for DELIVERED and JUNKED.
+enum MailLogRoute {
+  MAIL_LOG_ROUTE_UNSPECIFIED = 0;
+  MAIL_LOG_ROUTE_ALIAS = 1;      // Matched an exact alias of the recipient
+  MAIL_LOG_ROUTE_CATCH_ALL = 2;  // No alias matched; the domain's catch-all account received it
+}
+
+// MailLogJunkReason is the single reason a message was stored as junk.
+// Set only for JUNKED. When several checks fail, the first in this order applies: virus, spam, DMARC.
+enum MailLogJunkReason {
+  MAIL_LOG_JUNK_REASON_UNSPECIFIED = 0;
+  MAIL_LOG_JUNK_REASON_VIRUS = 1;  // The virus scan verdict failed
+  MAIL_LOG_JUNK_REASON_SPAM = 2;   // The spam verdict failed
+  MAIL_LOG_JUNK_REASON_DMARC = 3;  // The DMARC verdict failed
+}
+
+// MailLogFailure names the processing step that failed for a DELIVERY_FAILED outcome.
+enum MailLogFailure {
+  MAIL_LOG_FAILURE_UNSPECIFIED = 0;
+  MAIL_LOG_FAILURE_RESOLUTION = 1;      // Resolving the recipient address failed
+  MAIL_LOG_FAILURE_ACCOUNT_LOOKUP = 2;  // Loading the routed account failed
+  MAIL_LOG_FAILURE_STORE = 3;           // Storing the message for the routed account failed
+}
+
+// ============================================
+// Messages
+// ============================================
+
+// MailLogEntry is one row of the mail log: the outcome of one inbound message for one recipient.
+// Entries are written by email processing and kept for 30 days.
+message MailLogEntry {
+  string message_id = 1;  // SES message ID of the inbound message
+  string recipient = 2;   // Canonical recipient address (plus tag stripped)
+  string original_recipient = 3 [(validate.rules).string.max_len = 320];  // Recipient address as addressed
+  string sender = 4 [(validate.rules).string.max_len = 320];              // Envelope sender, sanitized
+  string subject = 5 [(validate.rules).string.max_len = 120];             // Decoded and sanitized subject; may be empty
+  google.protobuf.Timestamp received_at = 6;  // SES mail timestamp
+  MailLogOutcome outcome = 7;
+  MailLogRoute route = 8;             // Set for DELIVERED and JUNKED
+  MailLogJunkReason junk_reason = 9;  // Set for JUNKED
+  MailLogFailure failure = 10;        // Set for DELIVERY_FAILED
+  optional string account_id = 11;    // Account that received the message; set for DELIVERED and JUNKED
+  int32 attempt = 12;                 // SQS receive count of the processing attempt that wrote this row
+}
+
+// ============================================
+// Mail Log Service
+// ============================================
+
+// MailLogService lists the inbound mail log of the caller's tenant.
+service MailLogService {
+  // ListMailLog returns log entries for the tenant, newest first, optionally filtered by recipient and time window.
+  rpc ListMailLog(ListMailLogRequest) returns (ListMailLogResponse);
+}
+
+// ListMailLogRequest selects log entries for a time window and an optional recipient.
+message ListMailLogRequest {
+  // recipient: Address to filter on. Trimmed, lower-cased and stripped of its plus tag before matching. Unset returns all recipients.
+  optional string recipient = 1 [(validate.rules).string.max_len = 320];
+  // from: Start of the window (inclusive). Defaults to 7 days ago; values older than 30 days ago are raised to 30 days ago.
+  google.protobuf.Timestamp from = 2;
+  // to: End of the window (inclusive). Defaults to now.
+  google.protobuf.Timestamp to = 3;
+  // page_size: Maximum entries to return. 0 means 50; values above 100 are clamped to 100; negative is invalid.
+  int32 page_size = 4 [(validate.rules).int32.gte = 0];
+  // page_token: Opaque token from the previous response. Empty for the first page.
+  string page_token = 5 [(validate.rules).string.max_len = 2048];
+}
+
+// ListMailLogResponse returns one page of log entries.
+message ListMailLogResponse {
+  repeated MailLogEntry entries = 1;  // Entries for this page, newest first; empty when nothing matches
+  string next_page_token = 2;         // Token for the next page; empty on the last page
+}
