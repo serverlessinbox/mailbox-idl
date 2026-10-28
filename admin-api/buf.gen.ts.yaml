@@ -57,6 +57,10 @@ managed:
       value: github.com/serverlessinbox/mailbox-idl/admin-api/mail_feedback;mail_feedbackv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
     - file_option: go_package
+      path: mail_log.proto
+      value: github.com/serverlessinbox/mailbox-idl/admin-api/mail_log;mail_logv1
+      module: buf.build/serverlessinbox/mailbox-idl-admin-api
+    - file_option: go_package
       path: monitoring.proto
       value: github.com/serverlessinbox/mailbox-idl/admin-api/monitoring;monitoringv1
       module: buf.build/serverlessinbox/mailbox-idl-admin-api
