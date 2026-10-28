@@ -187,6 +187,10 @@ enum JobErrorCode {
   // The destination account no longer exists, is no longer owned by the user or no longer holds
   // mail. Nothing further is stored.
   JOB_ERROR_CODE_ACCOUNT_UNAVAILABLE = 9;
+
+  // A message from the source could not be parsed as an email. The message is counted as failed; the
+  // job continues.
+  JOB_ERROR_CODE_INVALID_MESSAGE = 10;
 }
 
 // How the connection to the IMAP server is secured.
