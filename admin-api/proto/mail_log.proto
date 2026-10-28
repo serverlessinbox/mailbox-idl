@@ -54,7 +54,7 @@ message MailLogEntry {
   string message_id = 1;  // SES message ID of the inbound message
   string recipient = 2;   // Canonical recipient address (plus tag stripped)
   string original_recipient = 3 [(validate.rules).string.max_len = 320];  // Recipient address as addressed
-  string sender = 4 [(validate.rules).string.max_len = 320];              // Envelope sender, sanitized
+  string sender = 4 [(validate.rules).string.max_len = 320];              // Sender address from the From header (envelope sender when absent), sanitized
   string subject = 5 [(validate.rules).string.max_len = 120];             // Decoded and sanitized subject; may be empty
   google.protobuf.Timestamp received_at = 6;  // SES mail timestamp
   MailLogOutcome outcome = 7;
