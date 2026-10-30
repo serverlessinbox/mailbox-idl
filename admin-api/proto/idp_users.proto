@@ -59,7 +59,7 @@ message GetIdpUserResponse {
 message CreateIdpUserRequest {
   string username = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
   optional string email = 2 [(validate.rules).string = {email: true, max_len: 255}];
-  string password = 3 [(validate.rules).string = {min_len: 8, max_len: 1024}];
+  string password = 3 [(validate.rules).string = {min_len: 8, max_len: 1024}, debug_redact = true];
 
   // Optional desired enabled state. If omitted, defaults to true.
   optional bool enabled = 4;
@@ -81,7 +81,7 @@ message SetIdpUserEnabledResponse {}
 
 message SetIdpUserPasswordRequest {
   string username = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
-  string password = 2 [(validate.rules).string = {min_len: 8, max_len: 1024}];
+  string password = 2 [(validate.rules).string = {min_len: 8, max_len: 1024}, debug_redact = true];
   reserved 3;
   reserved "permanent";
 }
