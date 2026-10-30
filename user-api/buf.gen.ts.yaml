@@ -28,6 +28,10 @@ managed:
       path: jobs.proto
       value: github.com/serverlessinbox/mailbox-idl/user-api/userapi;userapiv1
       module: buf.build/serverlessinbox/mailbox-idl-user-api
+    - file_option: go_package
+      path: common.proto
+      value: github.com/serverlessinbox/mailbox-idl/user-api/userapi/common;commonv1
+      module: buf.build/serverlessinbox/mailbox-idl-user-api
 plugins:
   - remote: buf.build/bufbuild/es:v2.15.0
     out: .

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package common.v1;
+
+// ============================================
+// Shared Errors
+// ============================================
+
+// ErrorResponse is the body of every non-2xx response. code is one of: invalid_argument, unauthenticated,
+// forbidden, not_found, method_not_allowed, conflict, unsupported_media_type, internal.
+message ErrorResponse {
+  // code: Machine-readable error category, one of the values listed on this message. Clients branch on it.
+  string code = 1;
+  // message: Human-readable description of the failure. Its wording is not stable; do not parse it.
+  string message = 2;
+}
