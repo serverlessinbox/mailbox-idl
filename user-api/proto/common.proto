@@ -1,16 +1,54 @@
 syntax = "proto3";
 
-package common.v1;
+package userapi.common.v1;
+
+import "google/protobuf/timestamp.proto";
 
 // ============================================
 // Shared Errors
 // ============================================
 
-// ErrorResponse is the body of every non-2xx response. code is one of: invalid_argument, unauthenticated,
-// forbidden, not_found, method_not_allowed, conflict, unsupported_media_type, internal.
+// ErrorCode is the closed set of error categories. Each maps to one HTTP status. Clients branch on it.
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_INVALID_ARGUMENT = 1;        // 400
+  ERROR_CODE_UNAUTHENTICATED = 2;         // 401
+  ERROR_CODE_FORBIDDEN = 3;               // 403
+  ERROR_CODE_NOT_FOUND = 4;               // 404
+  ERROR_CODE_METHOD_NOT_ALLOWED = 5;      // 405
+  ERROR_CODE_CONFLICT = 6;                // 409
+  ERROR_CODE_UNSUPPORTED_MEDIA_TYPE = 7;  // 415
+  ERROR_CODE_INTERNAL = 8;                // 500
+}
+
+// ErrorReason says why a CONFLICT was refused. It is UNSPECIFIED for every other code and for a conflict with no listed reason.
+enum ErrorReason {
+  ERROR_REASON_UNSPECIFIED = 0;
+  ERROR_REASON_ALREADY_ACTIVE = 1;  // An equivalent operation is already in progress.
+  ERROR_REASON_LIMIT_REACHED = 2;   // A quota or a rate cap is reached; the called operation says which one.
+  ERROR_REASON_COOLDOWN = 3;        // The caller must wait; retry_at says until when.
+  ERROR_REASON_BUSY = 4;            // The server is temporarily saturated; retry shortly.
+  ERROR_REASON_INVALID_STATE = 5;   // The resource's current state does not allow the operation.
+}
+
+// FieldViolation names one request field that was refused.
+message FieldViolation {
+  // field: The request field's proto name (snake_case).
+  string field = 1;
+  // description: Human-readable reason. Its wording is not stable.
+  string description = 2;
+}
+
+// ErrorResponse is the body of every non-2xx response.
 message ErrorResponse {
-  // code: Machine-readable error category, one of the values listed on this message. Clients branch on it.
-  string code = 1;
+  // code: Machine-readable error category. Clients branch on it.
+  ErrorCode code = 1;
   // message: Human-readable description of the failure. Its wording is not stable; do not parse it.
   string message = 2;
+  // reason: Set on CONFLICT only. Clients branch on it.
+  ErrorReason reason = 3;
+  // retry_at: Set with ERROR_REASON_COOLDOWN: the earliest instant the same request can succeed.
+  google.protobuf.Timestamp retry_at = 4;
+  // violations: Set on INVALID_ARGUMENT when the refused fields are known. Never carries the submitted value.
+  repeated FieldViolation violations = 5;
 }
