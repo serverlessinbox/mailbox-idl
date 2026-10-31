@@ -1,0 +1,257 @@
+syntax = "proto3";
+
+package userapi.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// PersonalAccessTokensService lets an authenticated user create, list, read, rotate and revoke
+// their own personal access tokens. A personal access token is a bearer credential for clients that
+// cannot sign in interactively, such as mobile apps. Its secret is shown once, in CreatePersonalAccessToken
+// or RotatePersonalAccessToken, and is never returned again.
+//
+// Every method requires the right tokens/manage and an interactive login. A request authenticated with a
+// personal access token is refused with HTTP 403, so a token cannot create, rotate or revoke tokens.
+// A token only limits: it never grants a right its user does not hold.
+//
+// The user is the authenticated principal; no request names a user. A token another user owns is reported
+// as not found.
+//
+// The limit is fixed at creation. To change it, create a new token.
+//
+// Errors use HTTP status codes, named as in common.proto: 400 INVALID_ARGUMENT for an invalid field, 403
+// FORBIDDEN for a request without the right tokens/manage or with a personal access token, 404 NOT_FOUND for
+// an unknown, invisible or no longer listed token, 409 CONFLICT for a name already in use or a token that changed
+// during a rotation, 429 RESOURCE_EXHAUSTED
+// for a cap or rate limit, and 500 INTERNAL for an internal failure.
+service PersonalAccessTokensService {
+  // CreatePersonalAccessToken stores a new token and returns it with its secret. The secret is returned
+  // only in this response. A notification is sent to the user's primary address.
+  //
+  // Fails with HTTP 400 INVALID_ARGUMENT when a field fails validation: name or expires_in_days is out of
+  // range, limit has no entry or more than 10 entries, more than one ALL entry is given, two ACCOUNT entries
+  // name the same account_id, an entry holds no right, a right is not in the vocabulary, a non-resource right
+  // is outside the ALL entry, or tokens/manage is given. The message names the field and the reason and never
+  // echoes a value; violations lists the refused fields. Fails with HTTP 409 CONFLICT when the name is already
+  // used by an active token of the caller. Fails with HTTP 429 RESOURCE_EXHAUSTED when the caller already has
+  // 20 active tokens. Fails with HTTP 429 RESOURCE_EXHAUSTED, with retry_at set, when the caller has created 5
+  // tokens within the last hour. Fails with HTTP 500 INTERNAL for an internal failure.
+  rpc CreatePersonalAccessToken(CreatePersonalAccessTokenRequest) returns (CreatePersonalAccessTokenResponse);
+
+  // ListPersonalAccessTokens returns the caller's tokens, newest first, one page at a time. By default only
+  // active tokens are returned. With include_inactive set, expired and revoked tokens are included while they
+  // remain within 30 days of their expiry or revocation.
+  //
+  // Fails with HTTP 400 INVALID_ARGUMENT when page_size is out of range or page_token is malformed.
+  rpc ListPersonalAccessTokens(ListPersonalAccessTokensRequest) returns (ListPersonalAccessTokensResponse);
+
+  // GetPersonalAccessToken returns one token of the caller, including inactive tokens still within the
+  // retention period described in ListPersonalAccessTokens.
+  //
+  // Fails with HTTP 404 NOT_FOUND when no token with that id belongs to the caller.
+  rpc GetPersonalAccessToken(GetPersonalAccessTokenRequest) returns (GetPersonalAccessTokenResponse);
+
+  // RotatePersonalAccessToken replaces the token's secret with a new one and returns the token with the new
+  // secret. The limit is unchanged. The new expiry is the rotation time plus the validity period: expires_in_days
+  // when set, otherwise the token's current validity period. For an active token the previous secret stays
+  // valid for 24 hours after the rotation,
+  // and then stops working. An expired or revoked token becomes active again: its old secret has already
+  // stopped working, so no previous secret overlaps, and revoked_at is cleared. A token can be rotated in any
+  // status while it is listed (see ListPersonalAccessTokens). A notification is sent to the user's primary
+  // address.
+  //
+  // Fails with HTTP 400 INVALID_ARGUMENT when expires_in_days is out of range, from 1 to 365; zero is allowed.
+  // Fails with HTTP 404 NOT_FOUND when no token with that id belongs to the caller or it is no longer listed.
+  // Fails with HTTP 409 CONFLICT, with reason INVALID_STATE, when the token changed during the rotation, for
+  // example a revoke that landed meanwhile; the caller can retry. Fails with HTTP 409 CONFLICT when reactivating an expired or revoked token would give
+  // two active tokens the same name. Fails with HTTP 429 RESOURCE_EXHAUSTED, with retry_at set, when the token
+  // was already rotated within the last hour. Fails with HTTP 429 RESOURCE_EXHAUSTED when reactivating would
+  // take the caller above 20 active tokens. Fails with HTTP 500 INTERNAL for an internal failure.
+  rpc RotatePersonalAccessToken(RotatePersonalAccessTokenRequest) returns (RotatePersonalAccessTokenResponse);
+
+  // RevokePersonalAccessToken revokes the token. Its current and previous secrets stop working at once.
+  // Revoking a token that is already revoked succeeds and changes nothing, so the call can be repeated safely.
+  // A notification is sent to the user's primary address.
+  //
+  // Fails with HTTP 404 NOT_FOUND when no token with that id belongs to the caller.
+  rpc RevokePersonalAccessToken(RevokePersonalAccessTokenRequest) returns (RevokePersonalAccessTokenResponse);
+}
+
+// The kind of resource a limit entry covers.
+enum LimitResourceKind {
+  // Not set. A server never returns this value.
+  LIMIT_RESOURCE_KIND_UNSPECIFIED = 0;
+
+  // Every account of the user. The only kind an entry of non-resource rights may use.
+  LIMIT_RESOURCE_KIND_ALL = 1;
+
+  // One account of the user, named by account_id.
+  LIMIT_RESOURCE_KIND_ACCOUNT = 2;
+}
+
+// The resource a limit entry covers.
+message LimitResource {
+  // Which resources the entry covers.
+  LimitResourceKind kind = 1;
+
+  // The account the entry covers. Set for LIMIT_RESOURCE_KIND_ACCOUNT; empty for LIMIT_RESOURCE_KIND_ALL.
+  string account_id = 2;
+}
+
+// One entry of a token's limit: the rights the token may use on one resource.
+message LimitEntry {
+  // The resource the rights apply to.
+  LimitResource resource = 1;
+
+  // The rights the entry allows on its resource, each named as the server's rights vocabulary names it. At least one, all
+  // distinct. A right on resources may appear in an ALL or ACCOUNT entry; any other right only in the ALL
+  // entry. The right tokens/manage is refused in every entry.
+  repeated string rights = 2;
+}
+
+// A personal access token as the user sees it. It never includes the secret.
+message PersonalAccessToken {
+  // Server-assigned identifier, unique for the user, time-sortable.
+  string token_id = 1;
+
+  // Name the user gave the token, 1 to 64 characters after trimming surrounding whitespace. Unique among the
+  // user's active tokens.
+  string name = 2;
+
+  // The rights and accounts the token may use, one entry per resource. Fixed at creation. Each right takes
+  // effect only while the user holds it.
+  repeated LimitEntry limit = 3;
+
+  // The last 4 characters of the secret, so the user can recognise the token. Never the whole secret.
+  string hint = 4;
+
+  // Where the token stands in its lifecycle.
+  PersonalAccessTokenStatus status = 5;
+
+  // When the token was created.
+  google.protobuf.Timestamp created_at = 6;
+
+  // When the token stops working unless it is rotated.
+  google.protobuf.Timestamp expires_at = 7;
+
+  // The validity period in days. Set at creation from expires_in_days, where zero means 90. A rotation with a
+  // non-zero expires_in_days replaces it; a rotation with zero keeps it.
+  uint32 validity_days = 8;
+
+  // When the token was last used to authenticate a request. Unset when it has never been used. It is updated
+  // at most once every 30 minutes, so it can lag the latest use.
+  optional google.protobuf.Timestamp last_used_at = 9;
+
+  // When the token was last rotated. Unset when it has never been rotated.
+  optional google.protobuf.Timestamp rotated_at = 10;
+
+  // Set only after a rotation of an active token: the time until which the secret from before that rotation
+  // still works.
+  optional google.protobuf.Timestamp previous_secret_valid_until = 11;
+
+  // Set only once the token is revoked.
+  optional google.protobuf.Timestamp revoked_at = 12;
+}
+
+// Lifecycle state of a personal access token.
+enum PersonalAccessTokenStatus {
+  // Not set. A server never returns this value.
+  PERSONAL_ACCESS_TOKEN_STATUS_UNSPECIFIED = 0;
+
+  // The token works, and expires_at is in the future.
+  PERSONAL_ACCESS_TOKEN_STATUS_ACTIVE = 1;
+
+  // The token has passed expires_at and no longer works. Rotating it makes it active again.
+  PERSONAL_ACCESS_TOKEN_STATUS_EXPIRED = 2;
+
+  // The user revoked the token. Its secrets no longer work. Rotating it makes it active again.
+  PERSONAL_ACCESS_TOKEN_STATUS_REVOKED = 3;
+}
+
+// Request to create a personal access token.
+message CreatePersonalAccessTokenRequest {
+  // Name of the token, 1 to 64 characters after trimming surrounding whitespace. Must be unique among the
+  // caller's active tokens; a name already in use is refused with HTTP 409.
+  string name = 1;
+
+  // The rights and accounts the token may use. Required: 1 to 10 entries; see LimitEntry and LimitResource for
+  // the entry rules. At most one ALL entry, and the account_id of each ACCOUNT entry is distinct. The server
+  // checks the structure only: it does not check the rights or accounts against the caller. A right or account
+  // the user does not hold grants nothing when the token is used.
+  repeated LimitEntry limit = 2;
+
+  // Days until the token expires, from 1 to 365. Zero selects the default of 90 days.
+  uint32 expires_in_days = 3;
+}
+
+// Response to CreatePersonalAccessToken.
+message CreatePersonalAccessTokenResponse {
+  // The token that was created.
+  PersonalAccessToken token = 1;
+
+  // The secret of the token: "sipat_" followed by 43 base64url characters and a 6-character base62 checksum,
+  // 55 characters in total. It is shown only in this response and is never stored in readable form. A secret
+  // that is lost cannot be retrieved; RotatePersonalAccessToken issues a new one.
+  string secret = 2;
+}
+
+// Request for a page of the caller's personal access tokens.
+message ListPersonalAccessTokensRequest {
+  // When true, expired and revoked tokens within 30 days of their expiry or revocation are included.
+  bool include_inactive = 1;
+
+  // Number of tokens per page, from 1 to 100. Unset means 50.
+  optional uint32 page_size = 2;
+
+  // Token from next_page_token of an earlier response. Empty for the first page.
+  string page_token = 3;
+}
+
+// One page of personal access tokens.
+message ListPersonalAccessTokensResponse {
+  // Tokens on this page, newest first.
+  repeated PersonalAccessToken tokens = 1;
+
+  // Token for the next page. Empty when this is the last page.
+  string next_page_token = 2;
+}
+
+// Request for one personal access token.
+message GetPersonalAccessTokenRequest {
+  // Identifier of the token, as returned when it was created or listed.
+  string token_id = 1;
+}
+
+// Response with one personal access token.
+message GetPersonalAccessTokenResponse {
+  // The token as it stands now.
+  PersonalAccessToken token = 1;
+}
+
+// Request to rotate a personal access token.
+message RotatePersonalAccessTokenRequest {
+  // Identifier of the token to rotate.
+  string token_id = 1;
+
+  // Days until the rotated token expires, from 1 to 365. Zero keeps the token's current validity period. A
+  // non-zero value becomes the token's validity period from then on.
+  uint32 expires_in_days = 2;
+}
+
+// Response to RotatePersonalAccessToken.
+message RotatePersonalAccessTokenResponse {
+  // The token after the rotation.
+  PersonalAccessToken token = 1;
+
+  // The new secret, in the format described for CreatePersonalAccessTokenResponse.secret. It is shown only in
+  // this response.
+  string secret = 2;
+}
+
+// Request to revoke a personal access token.
+message RevokePersonalAccessTokenRequest {
+  // Identifier of the token to revoke.
+  string token_id = 1;
+}
+
+// Response to RevokePersonalAccessToken.
+message RevokePersonalAccessTokenResponse {}

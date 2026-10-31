@@ -19,6 +19,7 @@ enum ErrorCode {
   ERROR_CODE_CONFLICT = 6;                // 409
   ERROR_CODE_UNSUPPORTED_MEDIA_TYPE = 7;  // 415
   ERROR_CODE_INTERNAL = 8;                // 500
+  ERROR_CODE_RESOURCE_EXHAUSTED = 9;      // 429
 }
 
 // ErrorReason says why a CONFLICT was refused. It is UNSPECIFIED for every other code and for a conflict with no listed reason.
@@ -47,7 +48,7 @@ message ErrorResponse {
   string message = 2;
   // reason: Set on CONFLICT only. Clients branch on it.
   ErrorReason reason = 3;
-  // retry_at: Set with ERROR_REASON_COOLDOWN: the earliest instant the same request can succeed.
+  // retry_at: Set with ERROR_REASON_COOLDOWN, and with ERROR_CODE_RESOURCE_EXHAUSTED when the earliest retry instant is known: the earliest instant the same request can succeed.
   google.protobuf.Timestamp retry_at = 4;
   // violations: Set on INVALID_ARGUMENT when the refused fields are known. Never carries the submitted value.
   repeated FieldViolation violations = 5;
