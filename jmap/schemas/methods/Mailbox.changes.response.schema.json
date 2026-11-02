@@ -22,6 +22,11 @@
       "type": "array",
       "description": "IDs of mailboxes destroyed since sinceState.",
       "items": { "$ref": "../core/types.schema.json#/$defs/MailboxId" }
+    },
+    "updatedProperties": {
+      "type": ["array", "null"],
+      "description": "If only the totalEmails, unreadEmails, totalThreads and/or unreadThreads properties changed, the names of the Mailbox properties that may have changed; null if the server cannot tell that only counts changed.",
+      "items": { "type": "string" }
     }
   },
   "required": [

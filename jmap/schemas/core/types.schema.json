@@ -321,11 +321,11 @@
       "properties": {
         "id":           { "$ref": "#/$defs/AddressBookId", "description": "The address book id (server-set, immutable)." },
         "name":         { "type": "string", "description": "User-visible name of the address book." },
-        "description":  { "type": "string", "description": "Optional human-readable description." },
+        "description":  { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Optional human-readable description, or null if unset." },
         "sortOrder":    { "type": "integer", "minimum": 0, "description": "Client sort-order hint; lower values sort first." },
         "isDefault":    { "type": "boolean", "description": "Whether this is the default address book for new contacts." },
         "isSubscribed": { "type": "boolean", "description": "Whether the user is subscribed to this address book." },
-        "shareWith":    { "type": "object", "additionalProperties": { "$ref": "#/$defs/AddressBookRights" }, "description": "PrincipalId → AddressBookRights map of shared access (server-set for non-owners)." },
+        "shareWith":    { "anyOf": [{ "type": "object", "additionalProperties": { "$ref": "#/$defs/AddressBookRights" } }, { "type": "null" }], "description": "PrincipalId → AddressBookRights map of shared access (server-set for non-owners), or null if unset." },
         "myRights":     { "$ref": "#/$defs/AddressBookRights", "description": "The rights the current user has on this address book (server-set)." }
       },
       "required": ["id", "name", "sortOrder", "isDefault", "isSubscribed", "myRights"]
@@ -562,9 +562,9 @@
         "id":          { "$ref": "#/$defs/PrincipalId", "description": "The principal id (server-set, immutable)." },
         "type":        { "type": "string", "enum": ["individual", "group", "resource", "location", "other"], "description": "Principal type (RFC 9670 §4)." },
         "name":        { "type": "string", "description": "Human-readable display name for this principal." },
-        "description": { "type": "string", "description": "Optional free-text description." },
+        "description": { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Optional free-text description, or null if unset." },
         "email":       { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Primary email address for this principal, if any. Must conform to addr-spec syntax (RFC 5322 §3.4.1) (RFC 9670 §2)." },
-        "timeZone":    { "type": "string", "description": "IANA time zone identifier for this principal." },
+        "timeZone":    { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "IANA time zone identifier for this principal, or null if unset." },
         "picture":     { "anyOf": [{ "$ref": "#/$defs/BlobId" }, { "type": "null" }], "description": "BlobId of a profile picture, or null if none." }
       },
       "required": ["id", "type", "name"]
@@ -576,6 +576,7 @@
       "properties": {
         "type":        { "type": "string", "description": "Type of actor, e.g. \"principal\" or \"system\"." },
         "name":        { "type": "string", "description": "Display name of the actor." },
+        "email":       { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Email address of the actor, or null if none is available." },
         "principalId": { "anyOf": [{ "$ref": "#/$defs/PrincipalId" }, { "type": "null" }], "description": "Id of the actor principal, if applicable." }
       },
       "required": ["type", "name"]
@@ -591,6 +592,7 @@
         "objectType":      { "type": "string", "description": "The data type that was shared (e.g. \"AddressBook\")." },
         "objectAccountId": { "$ref": "#/$defs/AccountId", "description": "The account that owns the shared object." },
         "objectId":        { "type": "string", "description": "The id of the shared object." },
+        "name":            { "type": "string", "description": "Name of the object at the time the notification was made." },
         "oldRights":       { "anyOf": [{ "type": "object", "additionalProperties": { "type": "boolean" } }, { "type": "null" }], "description": "Rights before the change. Null if the principal was newly added." },
         "newRights":       { "anyOf": [{ "type": "object", "additionalProperties": { "type": "boolean" } }, { "type": "null" }], "description": "Rights after the change. Null if the principal was removed." }
       },
