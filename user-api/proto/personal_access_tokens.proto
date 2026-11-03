@@ -74,6 +74,14 @@ service PersonalAccessTokensService {
   //
   // Fails with HTTP 404 NOT_FOUND when no token with that id belongs to the caller.
   rpc RevokePersonalAccessToken(RevokePersonalAccessTokenRequest) returns (RevokePersonalAccessTokenResponse);
+
+  // ListTokenRights returns the rights a personal access token may hold, in display order. The list is the
+  // same for every caller. A right takes effect on a token only while the user holds it. tokens/manage is
+  // never listed.
+  //
+  // Fails with HTTP 403 FORBIDDEN for a request without the right tokens/manage or with a personal access token.
+  // Fails with HTTP 500 INTERNAL for an internal failure.
+  rpc ListTokenRights(ListTokenRightsRequest) returns (ListTokenRightsResponse);
 }
 
 // The kind of resource a limit entry covers.
@@ -255,3 +263,22 @@ message RevokePersonalAccessTokenRequest {
 
 // Response to RevokePersonalAccessToken.
 message RevokePersonalAccessTokenResponse {}
+
+// One right a personal access token may hold, named as the server's rights vocabulary names it.
+message TokenRight {
+  // The name of the right. The same string is used in LimitEntry.rights.
+  string name = 1;
+
+  // True when the right may sit in an ACCOUNT or ALL entry of a token's limit. False when the right may sit
+  // only in an ALL entry.
+  bool per_account = 2;
+}
+
+// Request for the rights a personal access token may hold. It takes no fields.
+message ListTokenRightsRequest {}
+
+// The rights a personal access token may hold.
+message ListTokenRightsResponse {
+  // The rights, in display order. The same list for every caller.
+  repeated TokenRight rights = 1;
+}
