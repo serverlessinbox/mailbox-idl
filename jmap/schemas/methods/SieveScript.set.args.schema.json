@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/SieveScript.set.args.schema.json",
+  "title": "SieveScript/set args",
+  "description": "Arguments for SieveScript/set (RFC 9661). Creates, updates, or destroys SieveScript objects, and optionally changes the active script when every operation succeeds.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to apply changes to." },
+    "ifInState": { "type": ["string", "null"], "description": "Optimistic concurrency guard. Fails with stateMismatch if the SieveScript state differs." },
+    "create": {
+      "type": ["object", "null"],
+      "description": "Map of client-assigned creation ids to SieveScript create objects. name is optional and nullable (defaults to the script id); blobId is required and is an upload id or an sv: id of this account.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SieveScriptCreate" }
+    },
+    "update": {
+      "type": ["object", "null"],
+      "description": "Map of SieveScript id to PatchObject. Only explicitly listed properties are changed; server-set properties may be included only with their current value.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PatchObject" }
+    },
+    "destroy": {
+      "type": ["array", "null"],
+      "description": "SieveScript ids to delete.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" }
+    },
+    "onSuccessActivateScript": {
+      "type": ["string", "null"],
+      "description": "Id of the script to activate if every create, update and destroy succeeded. Creation references (#id) are allowed. An invalid or unknown id is ignored."
+    },
+    "onSuccessDeactivateScript": {
+      "type": "boolean",
+      "description": "If true and every create, update and destroy succeeded, deactivate the active script. Processed before onSuccessActivateScript."
+    }
+  },
+  "required": ["accountId"]
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/SieveScript.validate.response.schema.json",
+  "title": "SieveScript/validate response",
+  "description": "Response from SieveScript/validate (RFC 9661). error is an invalidSieve SetError for every content failure, including size and encoding, and null when the content is valid.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the blob belongs to." },
+    "error": {
+      "anyOf": [
+        { "$ref": "../core/types.schema.json#/$defs/SetError" },
+        { "type": "null" }
+      ],
+      "description": "The SetError describing why the content is invalid, or null if it is valid."
+    }
+  },
+  "required": ["accountId", "error"]
+}

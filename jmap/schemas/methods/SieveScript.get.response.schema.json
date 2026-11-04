@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/SieveScript.get.response.schema.json",
+  "title": "SieveScript/get response",
+  "description": "Response from SieveScript/get (RFC 9661).",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the scripts belong to." },
+    "state": { "type": "string", "description": "The current state of the SieveScript type." },
+    "list": {
+      "type": "array",
+      "description": "The list of SieveScript objects that were found.",
+      "items": { "$ref": "../core/types.schema.json#/$defs/SieveScript" }
+    },
+    "notFound": {
+      "type": "array",
+      "description": "IDs from the request that could not be found.",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["accountId", "state", "list", "notFound"]
+}

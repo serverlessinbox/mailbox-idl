@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/SieveScript.query.args.schema.json",
+  "title": "SieveScript/query args",
+  "description": "Arguments for SieveScript/query (RFC 9661). Returns an ordered list of SieveScript ids matching a filter. Evaluated in memory over the account's scripts.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to query scripts from." },
+    "filter": {
+      "anyOf": [
+        { "$ref": "../core/types.schema.json#/$defs/SieveScriptFilterCondition" },
+        {
+          "type": "object",
+          "description": "A FilterOperator combining conditions with AND, OR or NOT.",
+          "properties": {
+            "operator": { "type": "string", "enum": ["AND", "OR", "NOT"] },
+            "conditions": { "type": "array", "items": { "type": "object" } }
+          },
+          "required": ["operator", "conditions"]
+        },
+        { "type": "null" }
+      ],
+      "description": "Filter: a SieveScriptFilterCondition (name: case-insensitive contains; isActive: Boolean) or a FilterOperator over such conditions. Null or omitted returns all scripts."
+    },
+    "sort": {
+      "type": ["array", "null"],
+      "description": "Sort criteria. Each Comparator has a property (name or isActive), optional isAscending (default true) and optional collation. Only i;ascii-casemap is supported and is the default.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "property": { "type": "string" },
+          "isAscending": { "type": "boolean" },
+          "collation": { "type": "string" }
+        },
+        "required": ["property"],
+        "additionalProperties": true
+      }
+    },
+    "position": { "type": "integer", "minimum": 0, "description": "0-based index of the first result to return." },
+    "anchor": { "$ref": "../core/types.schema.json#/$defs/Id", "description": "A SieveScript id to anchor the result page at." },
+    "anchorOffset": { "type": "integer", "description": "Offset from the anchor (may be negative)." },
+    "limit": { "type": "integer", "description": "Maximum number of ids to return. A negative value is invalidArguments." },
+    "calculateTotal": { "type": "boolean", "description": "If true, return the total number of matching scripts." }
+  },
+  "required": ["accountId"]
+}

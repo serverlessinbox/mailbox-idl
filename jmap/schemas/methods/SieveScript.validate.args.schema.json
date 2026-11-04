@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/SieveScript.validate.args.schema.json",
+  "title": "SieveScript/validate args",
+  "description": "Arguments for SieveScript/validate (RFC 9661). Checks script content without storing anything.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account the blob belongs to." },
+    "blobId": { "$ref": "../core/types.schema.json#/$defs/BlobId", "description": "Upload blob id, or sv: blob id of this account, of the script content to check." }
+  },
+  "required": ["accountId", "blobId"]
+}

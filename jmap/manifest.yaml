@@ -8,6 +8,7 @@ capabilities:
   - https://specs.serverlessinbox.com/page-token
   - https://specs.serverlessinbox.com/websocket
   - https://specs.serverlessinbox.com/identity-extras
+  - urn:ietf:params:jmap:sieve
 methods:
   - name: Mailbox/get
     capability: urn:ietf:params:jmap:mail
@@ -262,3 +263,23 @@ methods:
     capability: urn:ietf:params:jmap:principals
     argsSchema: schemas/methods/ShareNotification.changes.args.schema.json
     responseSchema: schemas/methods/ShareNotification.changes.response.schema.json
+
+  - name: SieveScript/get
+    capability: urn:ietf:params:jmap:sieve
+    argsSchema: schemas/methods/SieveScript.get.args.schema.json
+    responseSchema: schemas/methods/SieveScript.get.response.schema.json
+
+  - name: SieveScript/set
+    capability: urn:ietf:params:jmap:sieve
+    argsSchema: schemas/methods/SieveScript.set.args.schema.json
+    responseSchema: schemas/methods/SieveScript.set.response.schema.json
+
+  - name: SieveScript/query
+    capability: urn:ietf:params:jmap:sieve
+    argsSchema: schemas/methods/SieveScript.query.args.schema.json
+    responseSchema: schemas/methods/SieveScript.query.response.schema.json
+
+  - name: SieveScript/validate
+    capability: urn:ietf:params:jmap:sieve
+    argsSchema: schemas/methods/SieveScript.validate.args.schema.json
+    responseSchema: schemas/methods/SieveScript.validate.response.schema.json

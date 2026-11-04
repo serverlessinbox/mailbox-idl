@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/SieveScript.get.args.schema.json",
+  "title": "SieveScript/get args",
+  "description": "Arguments for SieveScript/get (RFC 9661). Fetches SieveScript objects of an account.",
+  "type": "object",
+  "properties": {
+    "accountId": { "$ref": "../core/types.schema.json#/$defs/AccountId", "description": "The account to fetch scripts from." },
+    "ids": {
+      "anyOf": [
+        { "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/Id" } },
+        { "type": "null" }
+      ],
+      "description": "IDs of specific scripts to fetch. Null or omitted to fetch all scripts."
+    },
+    "properties": {
+      "anyOf": [
+        { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        { "type": "null" }
+      ],
+      "description": "SieveScript properties to include in the response. Null or omitted for all properties."
+    }
+  },
+  "required": ["accountId"]
+}

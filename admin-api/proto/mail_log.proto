@@ -17,10 +17,11 @@ enum MailLogOutcome {
   MAIL_LOG_OUTCOME_UNKNOWN_RECIPIENT = 3;  // No alias and no catch-all accepts the address; final, not retried
   MAIL_LOG_OUTCOME_INACTIVE_ALIAS = 4;     // The alias exists but is inactive; final, not retried
   MAIL_LOG_OUTCOME_DELIVERY_FAILED = 5;    // Not stored because of an infrastructure failure; the message is retried. failure says which step failed
+  MAIL_LOG_OUTCOME_DISCARDED = 6;          // Not stored: the recipient's Sieve script discarded it. filter_script_id names the script
 }
 
 // MailLogRoute says how an inbound address was matched to a mailbox.
-// Set only for DELIVERED and JUNKED.
+// Set for DELIVERED, JUNKED and DISCARDED.
 enum MailLogRoute {
   MAIL_LOG_ROUTE_UNSPECIFIED = 0;
   MAIL_LOG_ROUTE_ALIAS = 1;      // Matched an exact alias of the recipient
@@ -44,6 +45,14 @@ enum MailLogFailure {
   MAIL_LOG_FAILURE_STORE = 3;           // Storing the message for the routed account failed
 }
 
+// MailLogFilterNote says what a Sieve script reported for a message. Set only together with filter_script_id.
+// The two notes are exclusive: a script error drops every recorded filing action, including an ignored redirect.
+enum MailLogFilterNote {
+  MAIL_LOG_FILTER_NOTE_UNSPECIFIED = 0;
+  MAIL_LOG_FILTER_NOTE_SCRIPT_ERROR = 1;      // The script failed at run time; the message was delivered to the default mailbox
+  MAIL_LOG_FILTER_NOTE_REDIRECT_IGNORED = 2;  // The script asked for a redirect, which is not performed; the other filing actions were applied
+}
+
 // ============================================
 // Messages
 // ============================================
@@ -58,11 +67,13 @@ message MailLogEntry {
   string subject = 5 [(validate.rules).string.max_len = 120];             // Decoded and sanitized subject; may be empty
   google.protobuf.Timestamp received_at = 6;  // SES mail timestamp
   MailLogOutcome outcome = 7;
-  MailLogRoute route = 8;             // Set for DELIVERED and JUNKED
+  MailLogRoute route = 8;             // Set for DELIVERED, JUNKED and DISCARDED
   MailLogJunkReason junk_reason = 9;  // Set for JUNKED
   MailLogFailure failure = 10;        // Set for DELIVERY_FAILED
-  optional string account_id = 11;    // Account that received the message; set for DELIVERED and JUNKED
+  optional string account_id = 11;    // Account that received the message; set for DELIVERED, JUNKED and DISCARDED
   int32 attempt = 12;                 // SQS receive count of the processing attempt that wrote this row
+  MailLogFilterNote filter_note = 13;     // Set with filter_script_id when the script reported a note; unspecified otherwise
+  optional string filter_script_id = 14;  // Id of the recipient account's Sieve script evaluated for this message; set when one was evaluated
 }
 
 // ============================================
