@@ -24,7 +24,7 @@
     },
     "sort": {
       "type": ["array", "null"],
-      "description": "Sort criteria. Each Comparator has a property (name or isActive), optional isAscending (default true) and optional collation. Only i;ascii-casemap is supported and is the default.",
+      "description": "Sort criteria. Each Comparator has a property (name or isActive), optional isAscending (default true) and optional collation. Supported collations: i;unicode-casemap (the default), i;ascii-casemap and i;octet; any other is unsupportedSort.",
       "items": {
         "type": "object",
         "properties": {
