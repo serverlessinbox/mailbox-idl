@@ -283,3 +283,13 @@ methods:
     capability: urn:ietf:params:jmap:sieve
     argsSchema: schemas/methods/SieveScript.validate.args.schema.json
     responseSchema: schemas/methods/SieveScript.validate.response.schema.json
+
+  - name: PushSubscription/get
+    capability: urn:ietf:params:jmap:core
+    argsSchema: schemas/methods/PushSubscription.get.args.schema.json
+    responseSchema: schemas/methods/PushSubscription.get.response.schema.json
+
+  - name: PushSubscription/set
+    capability: urn:ietf:params:jmap:core
+    argsSchema: schemas/methods/PushSubscription.set.args.schema.json
+    responseSchema: schemas/methods/PushSubscription.set.response.schema.json

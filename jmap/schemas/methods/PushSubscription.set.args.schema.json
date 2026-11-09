@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/PushSubscription.set.args.schema.json",
+  "title": "PushSubscription/set args",
+  "description": "Arguments for PushSubscription/set (RFC 8620 §7.2 / §5.3). Account-less and without ifInState: the subscriptions belong to the calling credential.",
+  "type": "object",
+  "properties": {
+    "create": {
+      "type": ["object", "null"],
+      "description": "Map of creation id to PushSubscriptionCreate objects.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PushSubscriptionCreate" }
+    },
+    "update": {
+      "type": ["object", "null"],
+      "description": "Map of PushSubscription id to PushSubscriptionUpdate patch objects.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PushSubscriptionUpdate" }
+    },
+    "destroy": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "PushSubscription ids to destroy."
+    }
+  }
+}

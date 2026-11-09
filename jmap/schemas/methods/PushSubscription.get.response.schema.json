@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/PushSubscription.get.response.schema.json",
+  "title": "PushSubscription/get response",
+  "description": "Response for PushSubscription/get (RFC 8620 §7.2 / §5.1). Has no accountId and no state.",
+  "type": "object",
+  "properties": {
+    "list": {
+      "type": "array",
+      "items": { "$ref": "../core/types.schema.json#/$defs/PushSubscription" },
+      "description": "The requested PushSubscription objects of the calling credential."
+    },
+    "notFound": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "Ids that were not found, including ids of other credentials and expired subscriptions."
+    }
+  },
+  "required": ["list"]
+}

@@ -63,6 +63,14 @@ export class CoreTypesEmitter {
     'Principal',
     'ShareNotificationBy',
     'ShareNotification',
+    'PushSubscription',
+    'PushSubscriptionKeys',
+    'PushSubscriptionCreate',
+    'PushSubscriptionUpdate',
+    'PushSubscriptionCreated',
+    'PushSubscriptionUpdated',
+    'PushVerification',
+    'StateChange',
   ];
 
   public constructor(

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/PushSubscription.set.response.schema.json",
+  "title": "PushSubscription/set response",
+  "description": "Response for PushSubscription/set (RFC 8620 §7.2 / §5.3). Has no accountId, no oldState and no newState.",
+  "type": "object",
+  "properties": {
+    "created": {
+      "type": ["object", "null"],
+      "description": "Map of creation id to the server-set id and expires of each created PushSubscription.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/PushSubscriptionCreated" }
+    },
+    "updated": {
+      "type": ["object", "null"],
+      "description": "Map of successfully updated PushSubscription id to its server-side changes: {expires} when the server changed expires, otherwise null.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "additionalProperties": {
+        "anyOf": [
+          { "$ref": "../core/types.schema.json#/$defs/PushSubscriptionUpdated" },
+          { "type": "null" }
+        ]
+      }
+    },
+    "destroyed": {
+      "anyOf": [{ "type": "array", "items": { "$ref": "../core/types.schema.json#/$defs/Id" } }, { "type": "null" }],
+      "description": "PushSubscription ids that were successfully destroyed."
+    },
+    "notCreated": {
+      "type": ["object", "null"],
+      "description": "Creation ids that failed, with a SetError.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/CreationId" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    },
+    "notUpdated": {
+      "type": ["object", "null"],
+      "description": "PushSubscription ids that failed to update, with a SetError.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    },
+    "notDestroyed": {
+      "type": ["object", "null"],
+      "description": "PushSubscription ids that failed to destroy, with a SetError.",
+      "propertyNames": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "additionalProperties": { "$ref": "../core/types.schema.json#/$defs/SetError" }
+    }
+  }
+}

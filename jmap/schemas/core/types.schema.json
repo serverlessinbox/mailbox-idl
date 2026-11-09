@@ -639,6 +639,101 @@
         "newRights":       { "anyOf": [{ "type": "object", "additionalProperties": { "type": "boolean" } }, { "type": "null" }], "description": "Rights after the change. Null if the principal was removed." }
       },
       "required": ["id", "created", "changedBy", "objectType", "objectAccountId", "objectId"]
+    },
+
+    "PushSubscription": {
+      "type": "object",
+      "description": "A JMAP PushSubscription object (RFC 8620 §7.2) as returned by PushSubscription/get. url and keys are never returned.",
+      "properties": {
+        "id":               { "$ref": "#/$defs/Id", "description": "The subscription id (server-set, immutable)." },
+        "deviceClientId":   { "type": "string", "description": "Client-supplied device identifier (immutable)." },
+        "verificationCode": { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Always null in responses (RFC 8620 §7.2)." },
+        "expires":          { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "The expiry in force, whole seconds, or null when the subscription does not expire." },
+        "types":            { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Deliverable state type names to push, or null for all deliverable types." }
+      },
+      "required": ["id", "deviceClientId", "verificationCode", "expires", "types"]
+    },
+
+    "PushSubscriptionKeys": {
+      "type": "object",
+      "description": "The RFC 8291 client keys of a PushSubscription (RFC 8620 §7.2). Both values are URL-safe base64.",
+      "properties": {
+        "p256dh": { "type": "string", "description": "The client P-256 public key, uncompressed (65 bytes)." },
+        "auth":   { "type": "string", "description": "The 16-byte authentication secret." }
+      },
+      "required": ["p256dh", "auth"],
+      "additionalProperties": false
+    },
+
+    "PushSubscriptionCreate": {
+      "type": "object",
+      "description": "Client-settable fields when creating a PushSubscription (RFC 8620 §7.2). url is required; keys is optional and enables RFC 8291 encryption.",
+      "properties": {
+        "deviceClientId":   { "type": "string", "description": "Client-supplied device identifier." },
+        "verificationCode": { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "Must be null or omitted on create." },
+        "expires":          { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "Requested expiry, or null for the server maximum." },
+        "types":            { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "Deliverable state type names to push, or null for all." },
+        "url":              { "type": "string", "description": "Absolute https URL the server POSTs to. Port absent or 443; no userinfo or fragment." },
+        "keys":             { "anyOf": [{ "$ref": "#/$defs/PushSubscriptionKeys" }, { "type": "null" }], "description": "RFC 8291 client keys, or null for unencrypted POSTs." }
+      },
+      "required": ["deviceClientId", "url"]
+    },
+
+    "PushSubscriptionUpdate": {
+      "type": "object",
+      "description": "Client-settable fields when updating a PushSubscription (RFC 8620 §7.2). Immutable properties are not present.",
+      "properties": {
+        "verificationCode": { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "The verification code sent to the subscription URL; settable once." },
+        "expires":          { "anyOf": [{ "$ref": "#/$defs/JmapDate" }, { "type": "null" }], "description": "New expiry, or null for the server maximum." },
+        "types":            { "anyOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "null" }], "description": "New deliverable state type names, or null for all." }
+      }
+    },
+
+    "PushSubscriptionCreated": {
+      "type": "object",
+      "description": "The server-set result of a created PushSubscription (RFC 8620 §5.3).",
+      "properties": {
+        "id":      { "$ref": "#/$defs/Id", "description": "The server-assigned subscription id." },
+        "expires": { "$ref": "#/$defs/JmapDate", "description": "The expiry in force." }
+      },
+      "required": ["id", "expires"]
+    },
+
+    "PushSubscriptionUpdated": {
+      "type": "object",
+      "description": "The server-side changes of an updated PushSubscription (RFC 8620 §5.3). Present only when the server changed expires.",
+      "properties": {
+        "expires": { "$ref": "#/$defs/JmapDate", "description": "The expiry in force, after server clamping." }
+      },
+      "required": ["expires"]
+    },
+
+    "PushVerification": {
+      "type": "object",
+      "description": "The body POSTed to a PushSubscription URL to prove the client controls it (RFC 8620 §7.2).",
+      "properties": {
+        "@type":              { "type": "string", "const": "PushVerification", "description": "Must be \"PushVerification\"." },
+        "pushSubscriptionId": { "$ref": "#/$defs/Id", "description": "The id of the PushSubscription being verified." },
+        "verificationCode":   { "type": "string", "description": "The server-generated code; the client sets it as the subscription's verificationCode to verify it." }
+      },
+      "required": ["@type", "pushSubscriptionId", "verificationCode"]
+    },
+
+    "StateChange": {
+      "type": "object",
+      "description": "The body POSTed to a PushSubscription URL when state changes (RFC 8620 §7.1). changed maps accountId to TypeName to state.",
+      "properties": {
+        "@type":  { "type": "string", "const": "StateChange", "description": "Must be \"StateChange\"." },
+        "changed": {
+          "type": "object",
+          "description": "AccountId → TypeName → state string.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      },
+      "required": ["@type", "changed"]
     }
   }
 }

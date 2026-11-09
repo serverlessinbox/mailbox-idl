@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://serverlessinbox.com/schemas/jmap/methods/PushSubscription.get.args.schema.json",
+  "title": "PushSubscription/get args",
+  "description": "Arguments for PushSubscription/get (RFC 8620 §7.2 / §5.1). Account-less: the subscriptions belong to the calling credential. Naming url or keys in properties is forbidden.",
+  "type": "object",
+  "properties": {
+    "ids": {
+      "type": ["array", "null"],
+      "items": { "$ref": "../core/types.schema.json#/$defs/Id" },
+      "description": "PushSubscription ids to fetch. If null, returns every subscription of the calling credential."
+    },
+    "properties": {
+      "type": ["array", "null"],
+      "items": { "type": "string" },
+      "description": "PushSubscription properties to return. Null returns every property except url and keys."
+    }
+  }
+}
